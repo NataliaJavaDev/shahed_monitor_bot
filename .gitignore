@@ -26,3 +26,4 @@ tdlib-files/
 
 .env
 *.env
+secret.env
