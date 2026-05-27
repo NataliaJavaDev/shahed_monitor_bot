@@ -11,7 +11,7 @@ public record AppProperties(
 ) {
     public record Telegram(
             String botToken,
-            String targetChatId
+            String targetChannelId
     ) {}
 
     public record Monitor(

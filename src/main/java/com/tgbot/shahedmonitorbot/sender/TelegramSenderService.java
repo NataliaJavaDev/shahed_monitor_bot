@@ -17,15 +17,20 @@ public class TelegramSenderService {
     }
 
     public void send(String text) {
-        SendMessage message = SendMessage.builder()
-                .chatId(properties.telegram().targetChatId())
-                .text(text)
-                .build();
+    System.out.println("SENDING TO TELEGRAM");
+    System.out.println("TARGET = " + properties.telegram().targetChannelId());
+    System.out.println("TEXT = " + text);
 
-        try {
-            telegramClient.execute(message);
-        } catch (Exception e) {
-            throw new RuntimeException("Не вдалося відправити повідомлення в Telegram", e);
-        }
+    SendMessage message = SendMessage.builder()
+            .chatId(properties.telegram().targetChannelId())
+            .text(text)
+            .build();
+
+    try {
+        telegramClient.execute(message);
+        System.out.println("MESSAGE SENT");
+    } catch (Exception e) {
+        System.err.println("TELEGRAM SEND ERROR:");
+        e.printStackTrace();
     }
-}
+    }}

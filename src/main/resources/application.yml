@@ -1,11 +1,13 @@
 app:
   telegram:
-    bot-token: ${BOT_TOKEN}
-    target-chat-id: ${TARGET_CHANNEL_ID}
+    bot-token: "${BOT_TOKEN}"
+    target-channel-id: "${TARGET_CHANNEL_ID}"
 
   monitor:
     keywords:
       - "біла церква"
+      - "білу церкву"
+      - "білої церкви"
       - "бц"
       - "білоцерківський район"
       - "фурси"

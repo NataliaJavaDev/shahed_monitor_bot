@@ -25,20 +25,49 @@ public class AlertProcessingService {
         this.senderService = senderService;
     }
 
+    // public void process(String sourceName, String text) {
+    //     if (text == null || text.isBlank()) {
+    //         return;
+    //     }
+
+    //     if (!keywordMatcherService.isRelevant(text)) {
+    //         return;
+    //     }
+
+    //     if (deduplicationService.isDuplicate(text)) {
+    //         return;
+    //     }
+
+    //     String message = formatter.format(sourceName, text);
+    //     senderService.send(message);
+    // }
+
+
     public void process(String sourceName, String text) {
-        if (text == null || text.isBlank()) {
-            return;
-        }
+    System.out.println("PROCESSING TEXT: " + text);
 
-        if (!keywordMatcherService.isRelevant(text)) {
-            return;
-        }
-
-        if (deduplicationService.isDuplicate(text)) {
-            return;
-        }
-
-        String message = formatter.format(sourceName, text);
-        senderService.send(message);
+    if (text == null || text.isBlank()) {
+        System.out.println("TEXT IS EMPTY");
+        return;
     }
+
+    boolean relevant = keywordMatcherService.isRelevant(text);
+    System.out.println("IS RELEVANT: " + relevant);
+
+    if (!relevant) {
+        return;
+    }
+
+    boolean duplicate = deduplicationService.isDuplicate(text);
+    System.out.println("IS DUPLICATE: " + duplicate);
+
+    if (duplicate) {
+        return;
+    }
+
+    String message = formatter.format(sourceName, text);
+    System.out.println("FORMATTED MESSAGE: " + message);
+
+    senderService.send(message);
+}
 }

@@ -1,6 +1,6 @@
 public class SourceChannel {
 
-    private Long chatId;
+    private Long channelId;
 
     private String name;
 
