@@ -23,3 +23,6 @@ target/
 tdlib-data/
 tdlib-files/
 *.log
+
+.env
+*.env
