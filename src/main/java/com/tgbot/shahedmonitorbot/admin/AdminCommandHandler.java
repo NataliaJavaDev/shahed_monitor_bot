@@ -56,9 +56,13 @@ public class AdminCommandHandler {
         }
 
         if (text.equals("/admin")) {
-            senderService.sendToChat(chatId, menuService.mainMenuText());
-            return;
-        }
+    senderService.sendToChatWithReplyKeyboard(
+            chatId,
+            menuService.mainMenuText(),
+            menuService.mainReplyKeyboard()
+    );
+    return;
+}
 
         if (text.equals("/keywords")) {
             sendKeywords(chatId);
@@ -104,6 +108,39 @@ public class AdminCommandHandler {
             removeKeyword(userId, chatId, keyword);
             return;
         }
+
+        if (text.equals("🔑 Ключові слова")) {
+
+    senderService.sendToChat(
+            chatId,
+            """
+            🔑 Ключові слова
+            
+            /keywords
+            /add_keyword
+            /remove_keyword
+            """
+    );
+
+    return;
+}
+
+if (text.equals("🚨 Тривога")) {
+
+    senderService.sendToChat(
+            chatId,
+            """
+            🚨 Меню тривог
+            
+            Скоро тут будуть кнопки:
+            • Тривога
+            • Підвищена небезпека
+            • Відбій
+            """
+    );
+
+    return;
+}
 
         senderService.sendToChat(
                 chatId,
