@@ -1,0 +1,59 @@
+package com.tgbot.shahedmonitorbot.telegram;
+
+import com.tgbot.shahedmonitorbot.admin.AdminCommandHandler;
+import com.tgbot.shahedmonitorbot.config.AppProperties;
+import jakarta.annotation.PostConstruct;
+import org.springframework.stereotype.Component;
+import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
+import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
+import org.telegram.telegrambots.meta.api.objects.Update;
+
+import java.util.List;
+
+@Component
+public class AdminTelegramBot implements LongPollingUpdateConsumer {
+
+    private final AdminCommandHandler adminCommandHandler;
+    private final AppProperties properties;
+
+    public AdminTelegramBot(
+            AdminCommandHandler adminCommandHandler,
+            AppProperties properties
+    ) {
+        this.adminCommandHandler = adminCommandHandler;
+        this.properties = properties;
+    }
+
+    @PostConstruct
+    public void registerBot() throws Exception {
+        TelegramBotsLongPollingApplication application =
+                new TelegramBotsLongPollingApplication();
+
+        application.registerBot(properties.telegram().botToken(), this);
+    }
+
+    @Override
+    public void consume(List<Update> updates) {
+        for (Update update : updates) {
+            handleUpdate(update);
+        }
+    }
+
+    private void handleUpdate(Update update) {
+        if (!update.hasMessage()) {
+            return;
+        }
+
+        if (!update.getMessage().hasText()) {
+            return;
+        }
+
+        Long userId = update.getMessage().getFrom().getId();
+        Long chatId = update.getMessage().getChatId();
+        String text = update.getMessage().getText();
+
+        System.out.println("NEW UPDATE FROM USER " + userId + " IN CHAT " + chatId + ": " + text);
+
+        adminCommandHandler.handle(userId, chatId.toString(), text);
+    }
+}
