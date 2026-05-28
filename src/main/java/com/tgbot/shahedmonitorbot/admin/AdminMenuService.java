@@ -128,4 +128,21 @@ public class AdminMenuService {
             .resizeKeyboard(true)
             .build();
 }
+
+public ReplyKeyboardMarkup keywordsReplyKeyboard() {
+    KeyboardRow row1 = new KeyboardRow();
+    row1.add("📋 Показати ключові слова");
+
+    KeyboardRow row2 = new KeyboardRow();
+    row2.add("➕ Додати ключове слово");
+    row2.add("➖ Видалити ключове слово");
+
+    KeyboardRow row3 = new KeyboardRow();
+    row3.add("⬅️ Назад");
+
+    return ReplyKeyboardMarkup.builder()
+            .keyboard(List.of(row1, row2, row3))
+            .resizeKeyboard(true)
+            .build();
+}
 }

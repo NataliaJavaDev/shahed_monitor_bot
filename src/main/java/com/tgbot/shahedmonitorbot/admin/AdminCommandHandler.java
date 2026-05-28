@@ -109,22 +109,6 @@ public class AdminCommandHandler {
             return;
         }
 
-        if (text.equals("🔑 Ключові слова")) {
-
-    senderService.sendToChat(
-            chatId,
-            """
-            🔑 Ключові слова
-            
-            /keywords
-            /add_keyword
-            /remove_keyword
-            """
-    );
-
-    return;
-}
-
 if (text.equals("🚨 Тривога")) {
 
     senderService.sendToChat(
@@ -139,6 +123,55 @@ if (text.equals("🚨 Тривога")) {
             """
     );
 
+    return;
+}
+
+if (text.equals("🔑 Ключові слова")) {
+    senderService.sendToChatWithReplyKeyboard(
+            chatId,
+            "🔑 Ключові слова\n\nОберіть дію:",
+            menuService.keywordsReplyKeyboard()
+    );
+    return;
+}
+
+if (text.equals("📋 Показати ключові слова")) {
+    sendKeywords(chatId);
+    return;
+}
+
+if (text.equals("➕ Додати ключове слово")) {
+    sessionService.setState(
+            userId,
+            AdminSessionState.WAITING_FOR_NEW_KEYWORD
+    );
+
+    senderService.sendToChat(
+            chatId,
+            "Надішліть ключове слово, яке потрібно додати."
+    );
+    return;
+}
+
+if (text.equals("➖ Видалити ключове слово")) {
+    sessionService.setState(
+            userId,
+            AdminSessionState.WAITING_FOR_REMOVE_KEYWORD
+    );
+
+    senderService.sendToChat(
+            chatId,
+            "Надішліть ключове слово, яке потрібно видалити."
+    );
+    return;
+}
+
+if (text.equals("⬅️ Назад")) {
+    senderService.sendToChatWithReplyKeyboard(
+            chatId,
+            menuService.mainMenuText(),
+            menuService.mainReplyKeyboard()
+    );
     return;
 }
 
