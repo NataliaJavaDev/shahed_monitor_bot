@@ -27,9 +27,13 @@ public class AdminCommandHandler {
         this.menuService = menuService;
     }
 
-    public void handle(Long userId, String text) {
+    public void handle(Long userId, String chatId, String text) {
+
         if (!accessService.isAdmin(userId)) {
-            senderService.send("У вас немає доступу до адмін-команд.");
+            senderService.sendToChat(
+                    chatId,
+                    "У вас немає доступу до адмін-команд."
+            );
             return;
         }
 
@@ -37,89 +41,138 @@ public class AdminCommandHandler {
             return;
         }
 
+        text = normalizeCommand(text);
+
         AdminSessionState state = sessionService.getState(userId);
 
         if (state == AdminSessionState.WAITING_FOR_NEW_KEYWORD) {
-            addKeyword(userId, text);
+            addKeyword(userId, chatId, text);
             return;
         }
 
         if (state == AdminSessionState.WAITING_FOR_REMOVE_KEYWORD) {
-            removeKeyword(userId, text);
+            removeKeyword(userId, chatId, text);
             return;
         }
 
         if (text.equals("/admin")) {
-            senderService.send(menuService.mainMenuText());
+            senderService.sendToChat(chatId, menuService.mainMenuText());
             return;
         }
 
         if (text.equals("/keywords")) {
-            sendKeywords();
+            sendKeywords(chatId);
             return;
         }
 
         if (text.equals("/add_keyword")) {
-            sessionService.setState(userId, AdminSessionState.WAITING_FOR_NEW_KEYWORD);
-            senderService.send("Надішліть ключове слово, яке потрібно додати.");
+            sessionService.setState(
+                    userId,
+                    AdminSessionState.WAITING_FOR_NEW_KEYWORD
+            );
+
+            senderService.sendToChat(
+                    chatId,
+                    "Надішліть ключове слово, яке потрібно додати."
+            );
+
             return;
         }
 
         if (text.startsWith("/add_keyword ")) {
             String keyword = text.replaceFirst("/add_keyword\\s+", "");
-            addKeyword(userId, keyword);
+            addKeyword(userId, chatId, keyword);
             return;
         }
 
         if (text.equals("/remove_keyword")) {
-            sessionService.setState(userId, AdminSessionState.WAITING_FOR_REMOVE_KEYWORD);
-            senderService.send("Надішліть ключове слово, яке потрібно видалити.");
+            sessionService.setState(
+                    userId,
+                    AdminSessionState.WAITING_FOR_REMOVE_KEYWORD
+            );
+
+            senderService.sendToChat(
+                    chatId,
+                    "Надішліть ключове слово, яке потрібно видалити."
+            );
+
             return;
         }
 
         if (text.startsWith("/remove_keyword ")) {
             String keyword = text.replaceFirst("/remove_keyword\\s+", "");
-            removeKeyword(userId, keyword);
+            removeKeyword(userId, chatId, keyword);
             return;
         }
 
-        senderService.send("Невідома команда. Напишіть /admin");
+        senderService.sendToChat(
+                chatId,
+                "Невідома команда. Напишіть /admin"
+        );
     }
 
-    private void sendKeywords() {
-        String keywords = String.join("\n", keywordAdminService.getKeywords());
+    private String normalizeCommand(String text) {
+        return text.replace("@bc_shahed_monitor_bot", "")
+                .trim();
+    }
+
+    private void sendKeywords(String chatId) {
+        String keywords = String.join(
+                "\n",
+                keywordAdminService.getKeywords()
+        );
 
         if (keywords.isBlank()) {
-            senderService.send("Список ключових слів порожній.");
+            senderService.sendToChat(
+                    chatId,
+                    "Список ключових слів порожній."
+            );
             return;
         }
 
-        senderService.send("""
+        senderService.sendToChat(
+                chatId,
+                """
                 Поточні ключові слова:
                 
                 %s
-                """.formatted(keywords));
+                """.formatted(keywords)
+        );
     }
 
-    private void addKeyword(Long userId, String keyword) {
+    private void addKeyword(Long userId, String chatId, String keyword) {
         boolean added = keywordAdminService.addKeyword(keyword);
+
         sessionService.reset(userId);
 
         if (added) {
-            senderService.send("Ключове слово додано: " + keyword);
+            senderService.sendToChat(
+                    chatId,
+                    "Ключове слово додано: " + keyword
+            );
         } else {
-            senderService.send("Не вдалося додати ключове слово. Можливо, воно вже існує.");
+            senderService.sendToChat(
+                    chatId,
+                    "Не вдалося додати ключове слово."
+            );
         }
     }
 
-    private void removeKeyword(Long userId, String keyword) {
+    private void removeKeyword(Long userId, String chatId, String keyword) {
         boolean removed = keywordAdminService.removeKeyword(keyword);
+
         sessionService.reset(userId);
 
         if (removed) {
-            senderService.send("Ключове слово видалено: " + keyword);
+            senderService.sendToChat(
+                    chatId,
+                    "Ключове слово видалено: " + keyword
+            );
         } else {
-            senderService.send("Ключове слово не знайдено: " + keyword);
+            senderService.sendToChat(
+                    chatId,
+                    "Ключове слово не знайдено."
+            );
         }
     }
 }

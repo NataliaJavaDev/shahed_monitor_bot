@@ -25,31 +25,31 @@
 //         System.out.println("TEST RUNNER FINISHED");
 //     }
 // }
-package com.tgbot.shahedmonitorbot;
+// package com.tgbot.shahedmonitorbot;
 
-import com.tgbot.shahedmonitorbot.admin.AdminCommandHandler;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
+// import com.tgbot.shahedmonitorbot.admin.AdminCommandHandler;
+// import org.springframework.boot.CommandLineRunner;
+// import org.springframework.stereotype.Component;
 
-@Component
-public class TestRunner implements CommandLineRunner {
+// @Component
+// public class TestRunner implements CommandLineRunner {
 
-    private final AdminCommandHandler adminCommandHandler;
+//     private final AdminCommandHandler adminCommandHandler;
 
-    public TestRunner(AdminCommandHandler adminCommandHandler) {
-        this.adminCommandHandler = adminCommandHandler;
-    }
+//     public TestRunner(AdminCommandHandler adminCommandHandler) {
+//         this.adminCommandHandler = adminCommandHandler;
+//     }
 
-    @Override
-    public void run(String... args) {
+//     @Override
+//     public void run(String... args) {
 
-        adminCommandHandler.handle(1L, "/admin");
-adminCommandHandler.handle(1L, "/keywords");
-adminCommandHandler.handle(1L, "/add_keyword");
-adminCommandHandler.handle(1L, "сквира");
-adminCommandHandler.handle(1L, "/keywords");
-adminCommandHandler.handle(1L, "/remove_keyword");
-adminCommandHandler.handle(1L, "сквира");
-adminCommandHandler.handle(1L, "/keywords");
-    }
-}
+//         adminCommandHandler.handle(1L, "/admin");
+// adminCommandHandler.handle(1L, "/keywords");
+// adminCommandHandler.handle(1L, "/add_keyword");
+// adminCommandHandler.handle(1L, "сквира");
+// adminCommandHandler.handle(1L, "/keywords");
+// adminCommandHandler.handle(1L, "/remove_keyword");
+// adminCommandHandler.handle(1L, "сквира");
+// adminCommandHandler.handle(1L, "/keywords");
+//     }
+// }

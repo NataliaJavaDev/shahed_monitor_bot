@@ -26,11 +26,26 @@ public class TelegramSenderService {
             .text(text)
             .build();
 
-    try {
-        telegramClient.execute(message);
-        System.out.println("MESSAGE SENT");
-    } catch (Exception e) {
-        System.err.println("TELEGRAM SEND ERROR:");
-        e.printStackTrace();
+        try {
+            telegramClient.execute(message);
+            System.out.println("MESSAGE SENT");
+        } catch (Exception e) {
+            System.err.println("TELEGRAM SEND ERROR:");
+            e.printStackTrace();
+        }
     }
-    }}
+
+    public void sendToChat(String chatId, String text) {
+    SendMessage message = SendMessage.builder()
+            .chatId(chatId)
+            .text(text)
+            .build();
+
+        try {
+            telegramClient.execute(message);
+        } catch (Exception e) {
+            System.err.println("TELEGRAM SEND ERROR:");
+            e.printStackTrace();
+        }
+    }
+}
