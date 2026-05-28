@@ -1,5 +1,5 @@
 package com.tgbot.shahedmonitorbot.admin;
 
-public class   AdminCommandHandler {
+public class AdminCallbackHandler {
     
 }
