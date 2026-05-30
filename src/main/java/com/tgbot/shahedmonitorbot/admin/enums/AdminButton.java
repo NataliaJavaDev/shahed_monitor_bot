@@ -30,4 +30,15 @@ public enum AdminButton {
     public boolean matches(String input) {
         return text.equals(input);
     }
+
+    public static AdminButton fromText(String text) {
+
+    for (AdminButton button : values()) {
+        if (button.text.equals(text)) {
+            return button;
+        }
+    }
+
+    return null;
+    }
 }

@@ -41,10 +41,12 @@ public class AdminCommandHandler {
 
     public void handle(Long userId, String chatId, String text) {
 
+        AdminButton button = AdminButton.fromText(text);
+
         if (!accessService.isAdmin(userId)) {
             senderService.sendToChat(
                     chatId,
-                    "У вас немає доступу до адмін-команд."
+                    AdminMessage.NO_ACCESS.text()
             );
             return;
         }
@@ -67,152 +69,174 @@ public class AdminCommandHandler {
             return;
         }
 
-        if (AdminCommand.ADMIN.matches(text)) {
-    senderService.sendToChatWithReplyKeyboard(
-            chatId,
-            menuService.mainMenuText(),
-            menuService.mainReplyKeyboard()
-    );
-    return;
-}
+        AdminCommand command = AdminCommand.fromText(text);
 
-        if (AdminCommand.KEYWORDS.matches(text)) {
-            sendKeywords(chatId);
-            return;
+        if (command != null) {
+
+            switch (command) {
+
+                case START:
+                    senderService.sendToChat(
+                        chatId,
+                        AdminMessage.WELCOME_MESSAGE.text()
+                    );
+                    return;
+
+                case ADMIN:
+                    senderService.sendToChatWithReplyKeyboard(
+                        chatId,
+                        menuService.mainMenuText(),
+                        menuService.mainReplyKeyboard()
+                    );
+                    return;
+
+                case KEYWORDS:
+                    sendKeywords(chatId);
+                    return;
+
+                case ADD_KEYWORD:
+                    if (AdminCommand.ADD_KEYWORD.startsWith(text)) {
+                        String keyword = text
+                        .replaceFirst("/add_keyword\\s+", "");
+                        addKeyword(userId, chatId, keyword);
+                        return;
+                    }
+
+                    sessionService.setState(
+                        userId,
+                        AdminSessionState.WAITING_FOR_NEW_KEYWORD
+                    );
+
+                    senderService.sendToChat(
+                        chatId,
+                        AdminMessage.ADD_KEYWORD_REQUEST.text()
+                    );
+                    return;
+
+                case REMOVE_KEYWORD:
+                    if (AdminCommand.REMOVE_KEYWORD.startsWith(text)) {
+                        String keyword = text.replaceFirst("/remove_keyword\\s+", "");
+                        removeKeyword(userId, chatId, keyword);
+                        return;
+                    }
+
+                    sessionService.setState(
+                        userId,
+                        AdminSessionState.WAITING_FOR_REMOVE_KEYWORD
+                    );
+
+                    senderService.sendToChat(
+                        chatId,
+                        AdminMessage.REMOVE_KEYWORD_REQUEST.text()
+                    );
+                    return;
+            }
         }
 
-        if (AdminCommand.ADD_KEYWORD.matches(text)) {
-            sessionService.setState(
-                    userId,
-                    AdminSessionState.WAITING_FOR_NEW_KEYWORD
-            );
 
-            senderService.sendToChat(
-                    chatId,
-                    "Надішліть ключове слово, яке потрібно додати."
-            );
 
-            return;
+        if (button != null) {
+
+            switch (button) {
+
+                case KEYWORDS:
+                    senderService.sendToChatWithReplyKeyboard(
+                        chatId,
+                        "🔑 Ключові слова\n\nОберіть дію:",
+                        menuService.keywordsReplyKeyboard()
+                    );
+                    return;
+
+                case SHOW_KEYWORDS:
+                    sendKeywords(chatId);
+                    return;
+
+                case ADD_KEYWORD:
+                    sessionService.setState(
+                        userId,
+                        AdminSessionState.WAITING_FOR_NEW_KEYWORD
+                    );
+
+                    senderService.sendToChat(
+                        chatId,
+                        AdminMessage.ADD_KEYWORD_REQUEST.text()
+                    );
+                    return;
+                
+                case REMOVE_KEYWORD:
+                    sessionService.setState(
+                        userId,
+                        AdminSessionState.WAITING_FOR_REMOVE_KEYWORD
+                    );
+
+                    senderService.sendToChat(
+                        chatId,
+                        AdminMessage.REMOVE_KEYWORD_REQUEST.text()
+                    );
+                    return;
+
+                case ALERTS:
+                    senderService.sendToChatWithReplyKeyboard(
+                        chatId,
+                        "🚨 Керування тривогами\n\nОберіть тип сповіщення:",
+                        menuService.alertReplyKeyboard()
+                    );
+                    return;
+
+                case ALERT:
+                    manualAlertService.sendAlert(ManualAlertType.ALERT);
+
+                    senderService.sendToChat(
+                        chatId,
+                        AdminMessage.ALERT_SENT.text()
+                    );
+                    return;
+
+                case HIGH_RISK:
+                    manualAlertService.sendAlert(ManualAlertType.HIGH_RISK);
+
+                    senderService.sendToChat(
+                        chatId,
+                        AdminMessage.HIGH_RISK_SENT.text()
+                    );
+                    return;
+
+                case ALL_CLEAR:
+                    manualAlertService.sendAlert(ManualAlertType.ALL_CLEAR);
+
+                    senderService.sendToChat(
+                        chatId,
+                        AdminMessage.ALL_CLEAR_SENT.text()
+                    );
+                    return;
+
+                case BACK:
+                    senderService.sendToChatWithReplyKeyboard(
+                        chatId,
+                        menuService.mainMenuText(),
+                        menuService.mainReplyKeyboard()
+                    );
+                    return;
+
+                case STATUS:
+                    senderService.sendToChat(
+                        chatId,
+                        AdminMessage.COMING_SOON.text()
+                    );
+                    return;
+
+                case SETTINGS:
+                    senderService.sendToChat(
+                        chatId,
+                        AdminMessage.COMING_SOON.text()
+                    );
+                    return;
+            }
         }
-
-        if (AdminCommand.ADD_KEYWORD.startsWith(text)) {
-            String keyword = text.replaceFirst("/add_keyword\\s+", "");
-            addKeyword(userId, chatId, keyword);
-            return;
-        }
-
-        if (AdminCommand.REMOVE_KEYWORD.matches(text)) {
-            sessionService.setState(
-                    userId,
-                    AdminSessionState.WAITING_FOR_REMOVE_KEYWORD
-            );
-
-            senderService.sendToChat(
-                    chatId,
-                    "Надішліть ключове слово, яке потрібно видалити."
-            );
-
-            return;
-        }
-
-        if (AdminCommand.REMOVE_KEYWORD.startsWith(text)) {
-            String keyword = text.replaceFirst("/remove_keyword\\s+", "");
-            removeKeyword(userId, chatId, keyword);
-            return;
-        }
-
-
-if (AdminButton.KEYWORDS.matches(text)) {
-    senderService.sendToChatWithReplyKeyboard(
-            chatId,
-            "🔑 Ключові слова\n\nОберіть дію:",
-            menuService.keywordsReplyKeyboard()
-    );
-    return;
-}
-
-if (AdminButton.SHOW_KEYWORDS.matches(text)) {
-    sendKeywords(chatId);
-    return;
-}
-
-if (AdminButton.ADD_KEYWORD.matches(text)) {
-    sessionService.setState(
-            userId,
-            AdminSessionState.WAITING_FOR_NEW_KEYWORD
-    );
-
-    senderService.sendToChat(
-            chatId,
-            "Надішліть ключове слово, яке потрібно додати."
-    );
-    return;
-}
-
-if (AdminButton.REMOVE_KEYWORD.matches(text)) {
-    sessionService.setState(
-            userId,
-            AdminSessionState.WAITING_FOR_REMOVE_KEYWORD
-    );
-
-    senderService.sendToChat(
-            chatId,
-            "Надішліть ключове слово, яке потрібно видалити."
-    );
-    return;
-}
-
-if (AdminButton.ALERTS.matches(text)) {
-    senderService.sendToChatWithReplyKeyboard(
-            chatId,
-            "🚨 Керування тривогами\n\nОберіть тип сповіщення:",
-            menuService.alertReplyKeyboard()
-    );
-    return;
-}
-
-if (AdminButton.ALERT.matches(text)) {
-    manualAlertService.sendAlert(ManualAlertType.ALERT);
-
-    senderService.sendToChat(
-            chatId,
-            "✅ Сповіщення про тривогу відправлено."
-    );
-    return;
-}
-
-if (AdminButton.HIGH_RISK.matches(text)) {
-    manualAlertService.sendAlert(ManualAlertType.HIGH_RISK);
-
-    senderService.sendToChat(
-            chatId,
-            "✅ Сповіщення про підвищену небезпеку відправлено."
-    );
-    return;
-}
-
-if (AdminButton.ALL_CLEAR.matches(text)) {
-    manualAlertService.sendAlert(ManualAlertType.ALL_CLEAR);
-
-    senderService.sendToChat(
-            chatId,
-            "✅ Сповіщення про відбій відправлено."
-    );
-    return;
-}
-
-if (AdminButton.BACK.matches(text)) {
-    senderService.sendToChatWithReplyKeyboard(
-            chatId,
-            menuService.mainMenuText(),
-            menuService.mainReplyKeyboard()
-    );
-    return;
-}
 
         senderService.sendToChat(
                 chatId,
-                "Невідома команда. Напишіть /admin"
+                AdminMessage.UNKNOWN_COMMAND.text()
         );
     }
 
@@ -230,7 +254,7 @@ if (AdminButton.BACK.matches(text)) {
         if (keywords.isBlank()) {
             senderService.sendToChat(
                     chatId,
-                    "Список ключових слів порожній."
+                    AdminMessage.EMPTY_KEYWORDS.text()
             );
             return;
         }

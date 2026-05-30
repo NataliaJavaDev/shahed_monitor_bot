@@ -1,6 +1,8 @@
 package com.tgbot.shahedmonitorbot.admin.enums;
 
 public enum AdminCommand {
+
+    START("/start"),
     ADMIN("/admin"),
     KEYWORDS("/keywords"),
     ADD_KEYWORD("/add_keyword"),
@@ -22,5 +24,14 @@ public enum AdminCommand {
 
     public boolean startsWith(String input) {
         return input.startsWith(value + " ");
+    }
+
+    public static AdminCommand fromText(String text) {
+        for (AdminCommand command : values()) {
+            if (command.matches(text) || command.startsWith(text)) {
+                return command;
+            }
+        }
+        return null;
     }
 }
