@@ -114,7 +114,7 @@ public class AdminMenuService {
 
     KeyboardRow row1 = new KeyboardRow();
     row1.add("🔑 Ключові слова");
-    row1.add("🚨 Тривога");
+    row1.add("🚨 Керування тривогами");
 
     KeyboardRow row2 = new KeyboardRow();
     row2.add("📊 Статус");
@@ -125,6 +125,25 @@ public class AdminMenuService {
                     row1,
                     row2
             ))
+            .resizeKeyboard(true)
+            .build();
+}
+
+public ReplyKeyboardMarkup alertReplyKeyboard() {
+    KeyboardRow row1 = new KeyboardRow();
+    row1.add("🚨 Тривога");
+
+    KeyboardRow row2 = new KeyboardRow();
+    row2.add("⚠️ Підвищена небезпека");
+
+    KeyboardRow row3 = new KeyboardRow();
+    row3.add("✅ Відбій");
+
+    KeyboardRow row4 = new KeyboardRow();
+    row4.add("⬅️ Назад");
+
+    return ReplyKeyboardMarkup.builder()
+            .keyboard(List.of(row1, row2, row3, row4))
             .resizeKeyboard(true)
             .build();
 }
