@@ -1,6 +1,6 @@
 package com.tgbot.shahedmonitorbot.filter;
 
-import com.tgbot.shahedmonitorbot.admin.KeywordAdminService;
+import com.tgbot.shahedmonitorbot.admin.service.KeywordAdminService;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;
 import org.springframework.stereotype.Service;
 

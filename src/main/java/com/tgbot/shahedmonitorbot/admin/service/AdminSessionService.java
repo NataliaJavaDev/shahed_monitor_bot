@@ -1,4 +1,4 @@
-package com.tgbot.shahedmonitorbot.admin;
+package com.tgbot.shahedmonitorbot.admin.service;
 
 import com.tgbot.shahedmonitorbot.model.admin.AdminSessionState;
 import org.springframework.stereotype.Service;

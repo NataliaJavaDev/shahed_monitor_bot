@@ -1,6 +1,6 @@
 package com.tgbot.shahedmonitorbot.telegram;
 
-import com.tgbot.shahedmonitorbot.admin.AdminCommandHandler;
+import com.tgbot.shahedmonitorbot.admin.command.AdminCommandHandler;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;

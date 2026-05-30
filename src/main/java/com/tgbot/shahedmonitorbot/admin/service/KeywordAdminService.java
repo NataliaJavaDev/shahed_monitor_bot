@@ -1,4 +1,4 @@
-package com.tgbot.shahedmonitorbot.admin;
+package com.tgbot.shahedmonitorbot.admin.service;
 
 import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;

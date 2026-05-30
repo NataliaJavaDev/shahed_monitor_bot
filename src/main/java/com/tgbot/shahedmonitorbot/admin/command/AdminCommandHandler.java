@@ -1,10 +1,17 @@
-package com.tgbot.shahedmonitorbot.admin;
+package com.tgbot.shahedmonitorbot.admin.command;
 
 import com.tgbot.shahedmonitorbot.model.admin.AdminSessionState;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import org.springframework.stereotype.Service;
+
+import com.tgbot.shahedmonitorbot.admin.menu.AdminMenuService;
+import com.tgbot.shahedmonitorbot.admin.service.AdminAccessService;
+import com.tgbot.shahedmonitorbot.admin.service.AdminSessionService;
+import com.tgbot.shahedmonitorbot.admin.service.KeywordAdminService;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertType;
+import com.tgbot.shahedmonitorbot.admin.enums.*;
+
 
 @Service
 public class AdminCommandHandler {
@@ -60,7 +67,7 @@ public class AdminCommandHandler {
             return;
         }
 
-        if (text.equals("/admin")) {
+        if (AdminCommand.ADMIN.matches(text)) {
     senderService.sendToChatWithReplyKeyboard(
             chatId,
             menuService.mainMenuText(),
@@ -69,12 +76,12 @@ public class AdminCommandHandler {
     return;
 }
 
-        if (text.equals("/keywords")) {
+        if (AdminCommand.KEYWORDS.matches(text)) {
             sendKeywords(chatId);
             return;
         }
 
-        if (text.equals("/add_keyword")) {
+        if (AdminCommand.ADD_KEYWORD.matches(text)) {
             sessionService.setState(
                     userId,
                     AdminSessionState.WAITING_FOR_NEW_KEYWORD
@@ -88,13 +95,13 @@ public class AdminCommandHandler {
             return;
         }
 
-        if (text.startsWith("/add_keyword ")) {
+        if (AdminCommand.ADD_KEYWORD.startsWith(text)) {
             String keyword = text.replaceFirst("/add_keyword\\s+", "");
             addKeyword(userId, chatId, keyword);
             return;
         }
 
-        if (text.equals("/remove_keyword")) {
+        if (AdminCommand.REMOVE_KEYWORD.matches(text)) {
             sessionService.setState(
                     userId,
                     AdminSessionState.WAITING_FOR_REMOVE_KEYWORD
@@ -108,14 +115,14 @@ public class AdminCommandHandler {
             return;
         }
 
-        if (text.startsWith("/remove_keyword ")) {
+        if (AdminCommand.REMOVE_KEYWORD.startsWith(text)) {
             String keyword = text.replaceFirst("/remove_keyword\\s+", "");
             removeKeyword(userId, chatId, keyword);
             return;
         }
 
 
-if (text.equals("🔑 Ключові слова")) {
+if (AdminButton.KEYWORDS.matches(text)) {
     senderService.sendToChatWithReplyKeyboard(
             chatId,
             "🔑 Ключові слова\n\nОберіть дію:",
@@ -124,12 +131,12 @@ if (text.equals("🔑 Ключові слова")) {
     return;
 }
 
-if (text.equals("📋 Показати ключові слова")) {
+if (AdminButton.SHOW_KEYWORDS.matches(text)) {
     sendKeywords(chatId);
     return;
 }
 
-if (text.equals("➕ Додати ключове слово")) {
+if (AdminButton.ADD_KEYWORD.matches(text)) {
     sessionService.setState(
             userId,
             AdminSessionState.WAITING_FOR_NEW_KEYWORD
@@ -142,7 +149,7 @@ if (text.equals("➕ Додати ключове слово")) {
     return;
 }
 
-if (text.equals("➖ Видалити ключове слово")) {
+if (AdminButton.REMOVE_KEYWORD.matches(text)) {
     sessionService.setState(
             userId,
             AdminSessionState.WAITING_FOR_REMOVE_KEYWORD
@@ -155,7 +162,7 @@ if (text.equals("➖ Видалити ключове слово")) {
     return;
 }
 
-if (text.equals("🚨 Керування тривогами")) {
+if (AdminButton.ALERTS.matches(text)) {
     senderService.sendToChatWithReplyKeyboard(
             chatId,
             "🚨 Керування тривогами\n\nОберіть тип сповіщення:",
@@ -164,7 +171,7 @@ if (text.equals("🚨 Керування тривогами")) {
     return;
 }
 
-if (text.equals("🚨 Тривога")) {
+if (AdminButton.ALERT.matches(text)) {
     manualAlertService.sendAlert(ManualAlertType.ALERT);
 
     senderService.sendToChat(
@@ -174,7 +181,7 @@ if (text.equals("🚨 Тривога")) {
     return;
 }
 
-if (text.equals("⚠️ Підвищена небезпека")) {
+if (AdminButton.HIGH_RISK.matches(text)) {
     manualAlertService.sendAlert(ManualAlertType.HIGH_RISK);
 
     senderService.sendToChat(
@@ -184,7 +191,7 @@ if (text.equals("⚠️ Підвищена небезпека")) {
     return;
 }
 
-if (text.equals("✅ Відбій")) {
+if (AdminButton.ALL_CLEAR.matches(text)) {
     manualAlertService.sendAlert(ManualAlertType.ALL_CLEAR);
 
     senderService.sendToChat(
@@ -194,7 +201,7 @@ if (text.equals("✅ Відбій")) {
     return;
 }
 
-if (text.equals("⬅️ Назад")) {
+if (AdminButton.BACK.matches(text)) {
     senderService.sendToChatWithReplyKeyboard(
             chatId,
             menuService.mainMenuText(),
