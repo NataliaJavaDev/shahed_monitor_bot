@@ -22,13 +22,9 @@ public enum AdminCommand {
         return value.equals(input);
     }
 
-    public boolean startsWith(String input) {
-        return input.startsWith(value + " ");
-    }
-
     public static AdminCommand fromText(String text) {
         for (AdminCommand command : values()) {
-            if (command.matches(text) || command.startsWith(text)) {
+            if (command.matches(text)) {
                 return command;
             }
         }

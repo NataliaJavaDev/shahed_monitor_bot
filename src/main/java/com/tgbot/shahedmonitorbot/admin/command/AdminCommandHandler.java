@@ -59,169 +59,12 @@ public class AdminCommandHandler {
             return;
         }
 
-        AdminCommand command = AdminCommand.fromText(text);
-
-        if (command != null) {
-
-            switch (command) {
-
-                case START:
-                    senderService.sendToChat(
-                        chatId,
-                        AdminMessage.WELCOME_MESSAGE.text()
-                    );
-                    return;
-
-                case ADMIN:
-                    senderService.sendToChatWithReplyKeyboard(
-                        chatId,
-                        menuService.mainMenuText(),
-                        menuService.mainReplyKeyboard()
-                    );
-                    return;
-
-                case KEYWORDS:
-                    sendKeywords(chatId);
-                    return;
-
-                case ADD_KEYWORD:
-                    if (AdminCommand.ADD_KEYWORD.startsWith(text)) {
-                        String keyword = text
-                        .replaceFirst("/add_keyword\\s+", "");
-                        addKeyword(userId, chatId, keyword);
-                        return;
-                    }
-
-                    sessionService.setState(
-                        userId,
-                        AdminSessionState.WAITING_FOR_NEW_KEYWORD
-                    );
-
-                    senderService.sendToChat(
-                        chatId,
-                        AdminMessage.ADD_KEYWORD_REQUEST.text()
-                    );
-                    return;
-
-                case REMOVE_KEYWORD:
-                    if (AdminCommand.REMOVE_KEYWORD.startsWith(text)) {
-                        String keyword = text.replaceFirst("/remove_keyword\\s+", "");
-                        removeKeyword(userId, chatId, keyword);
-                        return;
-                    }
-
-                    sessionService.setState(
-                        userId,
-                        AdminSessionState.WAITING_FOR_REMOVE_KEYWORD
-                    );
-
-                    senderService.sendToChat(
-                        chatId,
-                        AdminMessage.REMOVE_KEYWORD_REQUEST.text()
-                    );
-                    return;
-            }
+        if (handleCommand(userId, chatId, text)) {
+            return;
         }
 
-        AdminButton button = AdminButton.fromText(text);
-
-        if (button != null) {
-
-            switch (button) {
-
-                case KEYWORDS:
-                    senderService.sendToChatWithReplyKeyboard(
-                        chatId,
-                        AdminMessage.KEYWORDS_MENU_TITLE.text(),
-                        menuService.keywordsReplyKeyboard()
-                    );
-                    return;
-
-                case SHOW_KEYWORDS:
-                    sendKeywords(chatId);
-                    return;
-
-                case ADD_KEYWORD:
-                    sessionService.setState(
-                        userId,
-                        AdminSessionState.WAITING_FOR_NEW_KEYWORD
-                    );
-
-                    senderService.sendToChat(
-                        chatId,
-                        AdminMessage.ADD_KEYWORD_REQUEST.text()
-                    );
-                    return;
-                
-                case REMOVE_KEYWORD:
-                    sessionService.setState(
-                        userId,
-                        AdminSessionState.WAITING_FOR_REMOVE_KEYWORD
-                    );
-
-                    senderService.sendToChat(
-                        chatId,
-                        AdminMessage.REMOVE_KEYWORD_REQUEST.text()
-                    );
-                    return;
-
-                case ALERTS:
-                    senderService.sendToChatWithReplyKeyboard(
-                        chatId,
-                        AdminMessage.ALERT_MENU_TITLE.text(),
-                        menuService.alertReplyKeyboard()
-                    );
-                    return;
-
-                case ALERT:
-                    manualAlertService.sendAlert(ManualAlertType.ALERT);
-
-                    senderService.sendToChat(
-                        chatId,
-                        AdminMessage.ALERT_SENT.text()
-                    );
-                    return;
-
-                case HIGH_RISK:
-                    manualAlertService.sendAlert(ManualAlertType.HIGH_RISK);
-
-                    senderService.sendToChat(
-                        chatId,
-                        AdminMessage.HIGH_RISK_SENT.text()
-                    );
-                    return;
-
-                case ALL_CLEAR:
-                    manualAlertService.sendAlert(ManualAlertType.ALL_CLEAR);
-
-                    senderService.sendToChat(
-                        chatId,
-                        AdminMessage.ALL_CLEAR_SENT.text()
-                    );
-                    return;
-
-                case BACK:
-                    senderService.sendToChatWithReplyKeyboard(
-                        chatId,
-                        menuService.mainMenuText(),
-                        menuService.mainReplyKeyboard()
-                    );
-                    return;
-
-                case STATUS:
-                    senderService.sendToChat(
-                        chatId,
-                        AdminMessage.COMING_SOON.text()
-                    );
-                    return;
-
-                case SETTINGS:
-                    senderService.sendToChat(
-                        chatId,
-                        AdminMessage.COMING_SOON.text()
-                    );
-                    return;
-            }
+        if (handleButton(userId, chatId, text)) {
+            return;
         }
 
         senderService.sendToChat(
@@ -247,12 +90,162 @@ public class AdminCommandHandler {
         return false;
     }
 
+    private boolean handleCommand(Long userId, String chatId, String text) {
+
+        AdminCommand command = AdminCommand.fromText(text);
+
+        if (command == null) {
+            return false;
+        }
+
+        switch (command) {
+
+            case START:
+                senderService.sendToChat(
+                    chatId,
+                    AdminMessage.WELCOME_MESSAGE.text()
+                );
+                return true;
+
+            case ADMIN:
+                sendMainMenu(chatId);
+                return true;
+
+            case KEYWORDS:
+                sendKeywords(chatId);
+                return true;
+
+            case ADD_KEYWORD:
+                requestAddKeyword(userId, chatId);
+                return true;
+
+            case REMOVE_KEYWORD:
+                requestRemoveKeyword(userId, chatId);
+                return true;
+            }
+
+            return false;
+        }
+
+    private void requestKeyword(Long userId, String chatId, AdminSessionState state, AdminMessage message) {
+        
+        sessionService.setState(userId, state);
+        senderService.sendToChat(chatId, message.text());
+    }
+
+    private void requestAddKeyword(Long userId, String chatId) {
+
+        requestKeyword(
+            userId,
+            chatId,
+            AdminSessionState.WAITING_FOR_NEW_KEYWORD,
+            AdminMessage.ADD_KEYWORD_REQUEST
+        );
+    }
+
+    private void requestRemoveKeyword(Long userId, String chatId) {
+
+        requestKeyword(
+            userId,
+            chatId,
+            AdminSessionState.WAITING_FOR_REMOVE_KEYWORD,
+            AdminMessage.REMOVE_KEYWORD_REQUEST
+        );
+    }
+
+    private void sendManualAlert(String chatId, ManualAlertType type, AdminMessage successMessage) {
+        
+        manualAlertService.sendAlert(type);
+        senderService.sendToChat(chatId, successMessage.text());
+    }
+
+    private void sendMainMenu(String chatId) {
+        
+        senderService.sendToChatWithReplyKeyboard(
+            chatId,
+            menuService.mainMenuText(),
+            menuService.mainReplyKeyboard()
+        );
+    }
+
+    private void sendComingSoon(String chatId) {
+
+        senderService.sendToChat(
+            chatId,
+            AdminMessage.COMING_SOON.text()
+        );
+    }
+
+    private boolean handleButton(Long userId, String chatId, String text) {
+
+        AdminButton button = AdminButton.fromText(text);
+
+        if (button == null) {
+            return false;
+        }
+
+        switch (button) {
+
+            case KEYWORDS:
+                senderService.sendToChatWithReplyKeyboard(
+                    chatId,
+                    AdminMessage.KEYWORDS_MENU_TITLE.text(),
+                    menuService.keywordsReplyKeyboard()
+                );
+                return true;
+
+            case SHOW_KEYWORDS:
+                sendKeywords(chatId);
+                return true;
+
+            case ADD_KEYWORD:
+                requestAddKeyword(userId, chatId);
+                return true;
+                
+            case REMOVE_KEYWORD:
+                requestRemoveKeyword(userId, chatId);
+                return true;
+
+            case ALERTS:
+                senderService.sendToChatWithReplyKeyboard(
+                    chatId,
+                    AdminMessage.ALERT_MENU_TITLE.text(),
+                    menuService.alertReplyKeyboard()
+                );
+                return true;
+
+            case ALERT:
+                sendManualAlert(chatId, ManualAlertType.ALERT, AdminMessage.ALERT_SENT);
+                return true;
+
+            case HIGH_RISK:
+                sendManualAlert(chatId, ManualAlertType.HIGH_RISK, AdminMessage.HIGH_RISK_SENT);
+                return true;
+
+            case ALL_CLEAR:
+                sendManualAlert(chatId, ManualAlertType.ALL_CLEAR, AdminMessage.ALL_CLEAR_SENT);
+                return true;
+
+            case BACK:
+                sendMainMenu(chatId);
+                return true;
+
+            case STATUS:
+            case SETTINGS:
+                sendComingSoon(chatId);
+                return true;
+        }
+        return false;
+    }
+
     private String normalizeCommand(String text) {
+
         return text.replace("@bc_shahed_monitor_bot", "")
                 .trim();
     }
 
     private void sendKeywords(String chatId) {
+
         String keywords = String.join(
                 "\n",
                 keywordAdminService.getKeywords()
@@ -273,6 +266,7 @@ public class AdminCommandHandler {
     }
 
     private void addKeyword(Long userId, String chatId, String keyword) {
+
         boolean added = keywordAdminService.addKeyword(keyword);
 
         sessionService.reset(userId);
@@ -291,6 +285,7 @@ public class AdminCommandHandler {
     }
 
     private void removeKeyword(Long userId, String chatId, String keyword) {
+
         boolean removed = keywordAdminService.removeKeyword(keyword);
 
         sessionService.reset(userId);
