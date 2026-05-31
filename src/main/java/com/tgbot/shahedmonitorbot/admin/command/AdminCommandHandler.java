@@ -41,8 +41,6 @@ public class AdminCommandHandler {
 
     public void handle(Long userId, String chatId, String text) {
 
-        AdminButton button = AdminButton.fromText(text);
-
         if (!accessService.isAdmin(userId)) {
             senderService.sendToChat(
                     chatId,
@@ -57,15 +55,7 @@ public class AdminCommandHandler {
 
         text = normalizeCommand(text);
 
-        AdminSessionState state = sessionService.getState(userId);
-
-        if (state == AdminSessionState.WAITING_FOR_NEW_KEYWORD) {
-            addKeyword(userId, chatId, text);
-            return;
-        }
-
-        if (state == AdminSessionState.WAITING_FOR_REMOVE_KEYWORD) {
-            removeKeyword(userId, chatId, text);
+        if (handleSession(userId, chatId, text)) {
             return;
         }
 
@@ -133,7 +123,7 @@ public class AdminCommandHandler {
             }
         }
 
-
+        AdminButton button = AdminButton.fromText(text);
 
         if (button != null) {
 
@@ -238,6 +228,23 @@ public class AdminCommandHandler {
                 chatId,
                 AdminMessage.UNKNOWN_COMMAND.text()
         );
+    }
+
+    private boolean handleSession(Long userId, String chatId, String text) {
+
+        AdminSessionState state = sessionService.getState(userId);
+
+        if (state == AdminSessionState.WAITING_FOR_NEW_KEYWORD) {
+            addKeyword(userId, chatId, text);
+            return true;
+        }
+
+        if (state == AdminSessionState.WAITING_FOR_REMOVE_KEYWORD) {
+            removeKeyword(userId, chatId, text);
+            return true;
+        }
+
+        return false;
     }
 
     private String normalizeCommand(String text) {
