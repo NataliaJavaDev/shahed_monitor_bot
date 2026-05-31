@@ -142,7 +142,7 @@ public class AdminCommandHandler {
                 case KEYWORDS:
                     senderService.sendToChatWithReplyKeyboard(
                         chatId,
-                        "🔑 Ключові слова\n\nОберіть дію:",
+                        AdminMessage.KEYWORDS_MENU_TITLE.text(),
                         menuService.keywordsReplyKeyboard()
                     );
                     return;
@@ -178,7 +178,7 @@ public class AdminCommandHandler {
                 case ALERTS:
                     senderService.sendToChatWithReplyKeyboard(
                         chatId,
-                        "🚨 Керування тривогами\n\nОберіть тип сповіщення:",
+                        AdminMessage.ALERT_MENU_TITLE.text(),
                         menuService.alertReplyKeyboard()
                     );
                     return;
@@ -261,11 +261,7 @@ public class AdminCommandHandler {
 
         senderService.sendToChat(
                 chatId,
-                """
-                Поточні ключові слова:
-                
-                %s
-                """.formatted(keywords)
+                AdminMessage.SHOW_KEYWORDS.format(keywords)
         );
     }
 
@@ -277,12 +273,12 @@ public class AdminCommandHandler {
         if (added) {
             senderService.sendToChat(
                     chatId,
-                    "Ключове слово додано: " + keyword
+                    AdminMessage.KEYWORD_ADDED.format(keyword)
             );
         } else {
             senderService.sendToChat(
                     chatId,
-                    "Не вдалося додати ключове слово."
+                    AdminMessage.KEYWORD_ADD_FAILED.text()
             );
         }
     }
@@ -295,12 +291,12 @@ public class AdminCommandHandler {
         if (removed) {
             senderService.sendToChat(
                     chatId,
-                    "Ключове слово видалено: " + keyword
+                    AdminMessage.KEYWORD_REMOVED.format(keyword)
             );
         } else {
             senderService.sendToChat(
                     chatId,
-                    "Ключове слово не знайдено."
+                    AdminMessage.KEYWORD_NOT_FOUND.text()
             );
         }
     }

@@ -42,6 +42,19 @@ public enum AdminMessage {
     
     COMING_SOON(
         "Цей розділ ще знаходиться у стадії розробки, очікуйте його найближчим часом."
+    ),
+    KEYWORD_ADDED("Ключове слово додано: %s"),
+    KEYWORD_REMOVED("Ключове слово видалено: %s"),
+    KEYWORD_NOT_FOUND("Ключове слово не знайдено."),
+    KEYWORD_ADD_FAILED("Не вдалося додати ключове слово. Можливо, воно вже існує."),
+    SHOW_KEYWORDS(
+        "Поточні ключові слова: \n\n %s"
+    ),
+    ALERT_MENU_TITLE(
+        "🚨 Керування тривогами\n\nОберіть тип сповіщення:"
+    ),
+    KEYWORDS_MENU_TITLE(
+        "🔑 Ключові слова\n\nОберіть дію:"
     );
 
     private final String text;
@@ -52,5 +65,9 @@ public enum AdminMessage {
 
     public String text() {
         return text;
+    }
+
+    public String format(Object... args) {
+        return text.formatted(args);
     }
 }

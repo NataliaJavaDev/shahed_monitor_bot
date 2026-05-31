@@ -54,6 +54,11 @@ public class AdminTelegramBot implements LongPollingUpdateConsumer {
 
         System.out.println("NEW UPDATE FROM USER " + userId + " IN CHAT " + chatId + ": " + text);
 
+        if (chatId.toString().equals(properties.telegram().targetChannelId())) {
+            System.out.println("Ignored message from target channel/group: " + text);
+            return;
+        }
+        
         adminCommandHandler.handle(userId, chatId.toString(), text);
     }
 }
