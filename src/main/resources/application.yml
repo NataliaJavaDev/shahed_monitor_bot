@@ -13,3 +13,6 @@ app:
       - "фурси"
       - "узин"
       - "терезине"
+
+alert-api:
+  polling-delay-ms: 60000

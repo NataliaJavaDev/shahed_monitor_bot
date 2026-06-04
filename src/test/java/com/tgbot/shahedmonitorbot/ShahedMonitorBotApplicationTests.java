@@ -1,4 +1,4 @@
-package com.tgbot.shahed_monitor_bot;
+package com.tgbot.shahedmonitorbot;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
