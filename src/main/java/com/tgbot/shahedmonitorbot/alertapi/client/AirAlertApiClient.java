@@ -1,6 +1,8 @@
 package com.tgbot.shahedmonitorbot.alertapi.client;
 
 import org.springframework.stereotype.Component;
+
+import com.tgbot.shahedmonitorbot.alertapi.dto.RegionAlertDto;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -22,10 +24,10 @@ public class AirAlertApiClient {
                 .build();
     }
 
-    public String fetchAlerts() {
-        return restClient.get()
+    public RegionAlertDto[] fetchAlerts() {
+        return this.restClient.get()
                 .uri("/alerts")
                 .retrieve()
-                .body(String.class);
+                .body(RegionAlertDto[].class);
     }
 }
