@@ -1,7 +1,5 @@
 package com.tgbot.shahedmonitorbot.alertapi.client;
 
-import org.springframework.stereotype.Component;
-
 import com.tgbot.shahedmonitorbot.alertapi.dto.RegionAlertDto;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
 import org.springframework.stereotype.Component;
@@ -20,9 +18,16 @@ public class AirAlertApiClient {
         this.properties = properties;
         this.restClient = restClientBuilder
                 .baseUrl(properties.alertApi().baseUrl())
-                .defaultHeader("Authorization", properties.alertApi().apiKey())
+                .defaultHeader("Authorization",
+                properties.alertApi().apiKey())
                 .build();
+
+        System.out.println("API key exists: " + !properties.alertApi().apiKey().isBlank());
+System.out.println("API key length: " + properties.alertApi().apiKey().length());
+System.out.println("Base URL: " + properties.alertApi().baseUrl());
     }
+
+    
 
     public RegionAlertDto[] fetchAlerts() {
         return this.restClient.get()

@@ -3,6 +3,7 @@ package com.tgbot.shahedmonitorbot.alertapi.service;
 import com.tgbot.shahedmonitorbot.alertapi.client.AirAlertApiClient;
 import com.tgbot.shahedmonitorbot.alertapi.dto.RegionAlertDto;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
+import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertType;
 
 import java.util.Arrays;
@@ -14,13 +15,16 @@ public class AirAlertApiService {
 
     private final AirAlertApiClient client;
     private final AppProperties properties;
+    private final ManualAlertService manualAlertService;
 
     public AirAlertApiService(
         AirAlertApiClient client,
-        AppProperties properties
+        AppProperties properties,
+        ManualAlertService manualAlertService
     ) {
         this.client = client;
         this.properties = properties;
+        this.manualAlertService = manualAlertService;
     }
 
     private ManualAlertType previousAlertType = ManualAlertType.ALL_CLEAR;
@@ -36,10 +40,7 @@ public class AirAlertApiService {
             return;
         }
 
-        System.out.println(
-            "API alert type changed: " +
-            previousAlertType + " -> " + currentAlertType
-        );
+        manualAlertService.sendAlert(currentAlertType);
 
         previousAlertType = currentAlertType;
     }
