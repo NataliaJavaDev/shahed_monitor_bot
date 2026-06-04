@@ -23,13 +23,25 @@ public class AirAlertApiService {
         this.properties = properties;
     }
 
+    private ManualAlertType previousAlertType = ManualAlertType.ALL_CLEAR;
+
     public void checkAlerts() {
 
         RegionAlertDto[] alerts = client.fetchAlerts();
 
-        ManualAlertType type = detectAlertType(alerts);
+        ManualAlertType currentAlertType = detectAlertType(alerts);
 
-        System.out.println("API alert type: " + type);
+        if (currentAlertType == previousAlertType) {
+            System.out.println("API alert type unchanged: " + currentAlertType);
+            return;
+        }
+
+        System.out.println(
+            "API alert type changed: " +
+            previousAlertType + " -> " + currentAlertType
+        );
+
+        previousAlertType = currentAlertType;
     }
 
     private ManualAlertType detectAlertType(RegionAlertDto[] alerts) {
