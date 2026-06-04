@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class AirAlertApiClient {
 
-    public void fetchCurrentAlerts() {
-        // TODO: implement API request
+    public String fetchAlerts() {
+        return "API client works";
     }
 }

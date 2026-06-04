@@ -13,7 +13,7 @@ public class AirAlertPollingScheduler {
         this.service = service;
     }
 
-    @Scheduled(fixedDelayString = "${alert-api.polling-delay-ms}")
+    @Scheduled(fixedDelayString = "${app.alert-api.polling-delay-ms}")
     public void pollAlerts() {
         service.checkAlerts();
     }

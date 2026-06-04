@@ -13,6 +13,7 @@ public class AirAlertApiService {
     }
 
     public void checkAlerts() {
-        client.fetchCurrentAlerts();
+        String response = client.fetchAlerts();
+        System.out.println(response);
     }
 }
