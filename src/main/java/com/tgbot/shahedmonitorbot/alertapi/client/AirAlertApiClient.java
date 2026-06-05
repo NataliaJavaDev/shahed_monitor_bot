@@ -29,10 +29,22 @@ System.out.println("Base URL: " + properties.alertApi().baseUrl());
 
     
 
+//     public RegionAlertDto[] fetchAlerts() {
+//         return this.restClient.get()
+//                 .uri("/alerts")
+//                 .retrieve()
+//                 .body(RegionAlertDto[].class);
+//     }
+
     public RegionAlertDto[] fetchAlerts() {
+    try {
         return this.restClient.get()
                 .uri("/alerts")
                 .retrieve()
                 .body(RegionAlertDto[].class);
+    } catch (Exception e) {
+        System.out.println("Alert API request failed: " + e.getMessage());
+        throw e;
     }
+}
 }
