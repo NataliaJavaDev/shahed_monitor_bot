@@ -14,5 +14,9 @@ app:
       - "узин"
       - "терезине"
 
-alert-api:
-  polling-delay-ms: 60000
+  alert-api:
+    base-url: https://api.ukrainealarm.com/api/v3
+    api-key: ${UKRAINE_ALARM_API_KEY}
+    alarm-region-id: ${ALARM_REGION_ID}
+    danger-region-ids: ${DANGER_REGION_IDS}
+    polling-delay-ms: 60000
