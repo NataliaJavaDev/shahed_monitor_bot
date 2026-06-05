@@ -16,5 +16,6 @@ public class AirAlertPollingScheduler {
     @Scheduled(fixedDelayString = "${app.alert-api.polling-delay-ms}")
     public void pollAlerts() {
         service.checkAlerts();
+        log.info("Polling alerts...");
     }
 }
