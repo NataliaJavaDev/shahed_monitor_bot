@@ -30,19 +30,22 @@ public class AirAlertApiService {
     private ManualAlertType previousAlertType = ManualAlertType.ALL_CLEAR;
 
     public void checkAlerts() {
+        try {
+            RegionAlertDto[] alerts = client.fetchAlerts();
 
-        RegionAlertDto[] alerts = client.fetchAlerts();
+            ManualAlertType currentAlertType = detectAlertType(alerts);
 
-        ManualAlertType currentAlertType = detectAlertType(alerts);
+            if (currentAlertType == previousAlertType) {
+                System.out.println("API alert type unchanged: " + currentAlertType);
+                return;
+            }
 
-        if (currentAlertType == previousAlertType) {
-            System.out.println("API alert type unchanged: " + currentAlertType);
-            return;
+            manualAlertService.sendAlert(currentAlertType);
+            previousAlertType = currentAlertType;
+
+        } catch (Exception e) {
+            System.out.println("Alert API check failed: " + e.getMessage());
         }
-
-        manualAlertService.sendAlert(currentAlertType);
-
-        previousAlertType = currentAlertType;
     }
 
     private ManualAlertType detectAlertType(RegionAlertDto[] alerts) {
