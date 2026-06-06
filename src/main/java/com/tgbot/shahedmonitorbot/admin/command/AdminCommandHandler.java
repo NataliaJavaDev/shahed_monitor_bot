@@ -2,6 +2,8 @@ package com.tgbot.shahedmonitorbot.admin.command;
 
 import com.tgbot.shahedmonitorbot.model.admin.AdminSessionState;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
+import com.tgbot.shahedmonitorbot.alertapi.formatter.ApiAlertStatusFormatter;
+import com.tgbot.shahedmonitorbot.alertapi.service.AirAlertApiService;
 import org.springframework.stereotype.Service;
 
 import com.tgbot.shahedmonitorbot.admin.menu.AdminMenuService;
@@ -22,6 +24,8 @@ public class AdminCommandHandler {
     private final AdminAccessService accessService;
     private final AdminMenuService menuService;
     private final ManualAlertService manualAlertService;
+    private final AirAlertApiService airAlertApiService;
+    private final ApiAlertStatusFormatter apiAlertStatusFormatter;
 
     public AdminCommandHandler(
             KeywordAdminService keywordAdminService,
@@ -29,7 +33,9 @@ public class AdminCommandHandler {
             AdminSessionService sessionService,
             AdminAccessService accessService,
             AdminMenuService menuService,
-            ManualAlertService manualAlertService
+            ManualAlertService manualAlertService,
+            AirAlertApiService airAlertApiService,
+            ApiAlertStatusFormatter apiAlertStatusFormatter
     ) {
         this.keywordAdminService = keywordAdminService;
         this.senderService = senderService;
@@ -37,6 +43,8 @@ public class AdminCommandHandler {
         this.accessService = accessService;
         this.menuService = menuService;
         this.manualAlertService = manualAlertService;
+        this.airAlertApiService = airAlertApiService;
+        this.apiAlertStatusFormatter = apiAlertStatusFormatter;
     }
 
     public void handle(Long userId, String chatId, String text) {
@@ -231,6 +239,18 @@ public class AdminCommandHandler {
                 return true;
 
             case STATUS:
+                senderService.sendToChatWithReplyKeyboard(
+                    chatId,
+                    "📊 Статус\n\nОберіть дію:",
+                    menuService.statusReplyKeyboard()
+                );
+                return true;
+
+            case ALERT_STATUS:
+                sendAlertStatus(chatId);
+                return true;
+
+            case BOT_STATUS:
             case SETTINGS:
                 sendComingSoon(chatId);
                 return true;
@@ -301,5 +321,14 @@ public class AdminCommandHandler {
                     AdminMessage.KEYWORD_NOT_FOUND.text()
             );
         }
+    }
+
+    private void sendAlertStatus(String chatId) {
+        senderService.sendToChat(
+                chatId,
+                apiAlertStatusFormatter.format(
+                        airAlertApiService.getLastStatus()
+                )
+        );
     }
 }

@@ -7,6 +7,9 @@ public enum AdminButton {
     STATUS("📊 Статус"),
     SETTINGS("⚙️ Налаштування"),
 
+    BOT_STATUS("🤖 Статус бота"),
+    ALERT_STATUS("📡 Статус тривоги"),
+
     SHOW_KEYWORDS("📋 Показати ключові слова"),
     ADD_KEYWORD("➕ Додати ключове слово"),
     REMOVE_KEYWORD("➖ Видалити ключове слово"),
