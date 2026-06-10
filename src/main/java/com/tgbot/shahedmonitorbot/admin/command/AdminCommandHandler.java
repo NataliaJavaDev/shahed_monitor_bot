@@ -275,6 +275,21 @@ public class AdminCommandHandler {
                     + monitoringStateService.getApiControlStatus()
                 );
                 return true;
+
+            case SOURCES:
+                senderService.sendToChatWithReplyKeyboard(
+                    chatId,
+                "📡 Джерела моніторингу\n\nОберіть дію:",
+                menuService.sourcesReplyKeyboard()
+                );
+                return true;
+
+            case SHOW_SOURCES:
+            case ADD_SOURCE:
+            case REMOVE_SOURCE:
+                
+                sendComingSoon(chatId);
+                return true;
         }
         return false;
     }

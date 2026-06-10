@@ -5,8 +5,13 @@ public enum AdminButton {
     KEYWORDS("🔑 Ключові слова"),
     ALERTS("🚨 Керування тривогами"),
     STATUS("📊 Статус"),
+    
     SETTINGS("⚙️ Налаштування"),
     API_CONTROL("🔌 API-керування"),
+    SOURCES("📡 Джерела моніторингу"),
+    SHOW_SOURCES("📋 Показати джерела"),
+    ADD_SOURCE("➕ Додати джерело"),
+    REMOVE_SOURCE("➖ Видалити джерело"),
 
     BOT_STATUS("🤖 Статус бота"),
     ALERT_STATUS("📡 Статус тривоги"),

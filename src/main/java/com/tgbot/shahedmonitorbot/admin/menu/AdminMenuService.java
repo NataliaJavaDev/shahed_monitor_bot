@@ -19,6 +19,7 @@ public class AdminMenuService {
     }
 
     public InlineKeyboardMarkup mainMenuKeyboard() {
+
         InlineKeyboardButton keywordsButton = InlineKeyboardButton.builder()
                 .text(AdminButton.KEYWORDS.text())
                 .callbackData("KEYWORDS_MENU")
@@ -48,6 +49,7 @@ public class AdminMenuService {
     }
 
     public InlineKeyboardMarkup keywordsMenuKeyboard() {
+
         InlineKeyboardButton showButton = InlineKeyboardButton.builder()
                 .text(AdminButton.SHOW_KEYWORDS.text())
                 .callbackData("SHOW_KEYWORDS")
@@ -81,7 +83,25 @@ public class AdminMenuService {
         return "🚨 Ручне керування тривогою\n\nОберіть тип повідомлення:";
     }
 
+    public ReplyKeyboardMarkup sourcesReplyKeyboard() {
+    KeyboardRow row1 = new KeyboardRow();
+    row1.add(AdminButton.SHOW_SOURCES.text());
+
+    KeyboardRow row2 = new KeyboardRow();
+    row2.add(AdminButton.ADD_SOURCE.text());
+    row2.add(AdminButton.REMOVE_SOURCE.text());
+
+    KeyboardRow row3 = new KeyboardRow();
+    row3.add(AdminButton.BACK.text());
+
+    return ReplyKeyboardMarkup.builder()
+            .keyboard(List.of(row1, row2, row3))
+            .resizeKeyboard(true)
+            .build();
+    }
+
     public InlineKeyboardMarkup alertMenuKeyboard() {
+
         InlineKeyboardButton alertButton = InlineKeyboardButton.builder()
                 .text(AdminButton.ALERT.text())
                 .callbackData("MANUAL_ALERT")
@@ -114,84 +134,90 @@ public class AdminMenuService {
 
     public ReplyKeyboardMarkup mainReplyKeyboard() {
 
-    KeyboardRow row1 = new KeyboardRow();
-    row1.add(AdminButton.KEYWORDS.text());
-    row1.add(AdminButton.ALERTS.text());
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add(AdminButton.KEYWORDS.text());
+        row1.add(AdminButton.ALERTS.text());
 
-    KeyboardRow row2 = new KeyboardRow();
-    row2.add(AdminButton.STATUS.text());
-    row2.add(AdminButton.SETTINGS.text());
+        KeyboardRow row2 = new KeyboardRow();
+        row2.add(AdminButton.STATUS.text());
+        row2.add(AdminButton.SETTINGS.text());
 
-    return ReplyKeyboardMarkup.builder()
-            .keyboard(List.of(
-                    row1,
-                    row2
-            ))
-            .resizeKeyboard(true)
-            .build();
-}
+        return ReplyKeyboardMarkup.builder()
+                .keyboard(List.of(
+                        row1,
+                        row2
+                ))
+                .resizeKeyboard(true)
+                .build();
+        }
 
-public ReplyKeyboardMarkup alertReplyKeyboard() {
-    KeyboardRow row1 = new KeyboardRow();
-    row1.add(AdminButton.ALERT.text());
+    public ReplyKeyboardMarkup alertReplyKeyboard() {
 
-    KeyboardRow row2 = new KeyboardRow();
-    row2.add(AdminButton.HIGH_RISK.text());
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add(AdminButton.ALERT.text());
 
-    KeyboardRow row3 = new KeyboardRow();
-    row3.add(AdminButton.ALL_CLEAR.text());
+        KeyboardRow row2 = new KeyboardRow();
+        row2.add(AdminButton.HIGH_RISK.text());
 
-    KeyboardRow row4 = new KeyboardRow();
-    row4.add(AdminButton.BACK.text());
+        KeyboardRow row3 = new KeyboardRow();
+        row3.add(AdminButton.ALL_CLEAR.text());
 
-    return ReplyKeyboardMarkup.builder()
-            .keyboard(List.of(row1, row2, row3, row4))
-            .resizeKeyboard(true)
-            .build();
-}
+        KeyboardRow row4 = new KeyboardRow();
+        row4.add(AdminButton.BACK.text());
 
-public ReplyKeyboardMarkup keywordsReplyKeyboard() {
-    KeyboardRow row1 = new KeyboardRow();
-    row1.add(AdminButton.SHOW_KEYWORDS.text());
+        return ReplyKeyboardMarkup.builder()
+                .keyboard(List.of(row1, row2, row3, row4))
+                .resizeKeyboard(true)
+                .build();
+        }
 
-    KeyboardRow row2 = new KeyboardRow();
-    row2.add(AdminButton.ADD_KEYWORD.text());
-    row2.add(AdminButton.REMOVE_KEYWORD.text());
+    public ReplyKeyboardMarkup keywordsReplyKeyboard() {
 
-    KeyboardRow row3 = new KeyboardRow();
-    row3.add(AdminButton.BACK.text());
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add(AdminButton.SHOW_KEYWORDS.text());
 
-    return ReplyKeyboardMarkup.builder()
-            .keyboard(List.of(row1, row2, row3))
-            .resizeKeyboard(true)
-            .build();
-}
+        KeyboardRow row2 = new KeyboardRow();
+        row2.add(AdminButton.ADD_KEYWORD.text());
+        row2.add(AdminButton.REMOVE_KEYWORD.text());
 
-public ReplyKeyboardMarkup settingsReplyKeyboard() {
-    KeyboardRow row1 = new KeyboardRow();
-    row1.add(AdminButton.API_CONTROL.text());
+        KeyboardRow row3 = new KeyboardRow();
+        row3.add(AdminButton.BACK.text());
 
-    KeyboardRow row2 = new KeyboardRow();
-    row2.add(AdminButton.BACK.text());
+        return ReplyKeyboardMarkup.builder()
+                .keyboard(List.of(row1, row2, row3))
+                .resizeKeyboard(true)
+                .build();
+        }
 
-    return ReplyKeyboardMarkup.builder()
-            .keyboard(List.of(row1, row2))
-            .resizeKeyboard(true)
-            .build();
-}
+    public ReplyKeyboardMarkup settingsReplyKeyboard() {
 
-public ReplyKeyboardMarkup statusReplyKeyboard() {
-    KeyboardRow row1 = new KeyboardRow();
-    row1.add(AdminButton.BOT_STATUS.text());
-    row1.add(AdminButton.ALERT_STATUS.text());
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add(AdminButton.API_CONTROL.text());
 
-    KeyboardRow row2 = new KeyboardRow();
-    row2.add(AdminButton.BACK.text());
+        KeyboardRow row2 = new KeyboardRow();
+        row2.add(AdminButton.SOURCES.text());
 
-    return ReplyKeyboardMarkup.builder()
-            .keyboard(List.of(row1, row2))
-            .resizeKeyboard(true)
-            .build();
-}
+        KeyboardRow row3 = new KeyboardRow();
+        row3.add(AdminButton.BACK.text());
 
+        return ReplyKeyboardMarkup.builder()
+                .keyboard(List.of(row1, row2, row3))
+                .resizeKeyboard(true)
+                .build();
+        }
+
+    public ReplyKeyboardMarkup statusReplyKeyboard() {
+
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add(AdminButton.BOT_STATUS.text());
+        row1.add(AdminButton.ALERT_STATUS.text());
+
+        KeyboardRow row2 = new KeyboardRow();
+        row2.add(AdminButton.BACK.text());
+
+        return ReplyKeyboardMarkup.builder()
+                .keyboard(List.of(row1, row2))
+                .resizeKeyboard(true)
+                .build();
+        }
 }
