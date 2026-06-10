@@ -2,13 +2,16 @@ package com.tgbot.shahedmonitorbot.alertapi.service;
 
 import com.tgbot.shahedmonitorbot.alertapi.client.AirAlertApiClient;
 import com.tgbot.shahedmonitorbot.alertapi.dto.RegionAlertDto;
+import com.tgbot.shahedmonitorbot.alertapi.model.ApiAlertStatus;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertType;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.List;
+import java.time.ZoneId;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,9 +20,7 @@ public class AirAlertApiService {
     private final AirAlertApiClient client;
     private final AppProperties properties;
     private final ManualAlertService manualAlertService;
-
-    private static final Logger log =
-            LoggerFactory.getLogger(AirAlertApiService.class);
+    private static final ZoneId KYIV_ZONE = ZoneId.of("Europe/Kyiv");
 
     public AirAlertApiService(
         AirAlertApiClient client,
@@ -31,47 +32,68 @@ public class AirAlertApiService {
         this.manualAlertService = manualAlertService;
     }
 
-    private ManualAlertType previousAlertType = ManualAlertType.ALL_CLEAR;
-
     public void checkAlerts() {
-        
+
         try {
             RegionAlertDto[] alerts = client.fetchAlerts();
 
-            ManualAlertType currentAlertType = detectAlertType(alerts);
+            ApiAlertStatus currentStatus = detectAlertStatus(alerts);
 
-            if (currentAlertType == previousAlertType) {
-                log.info("API alert type unchanged: {}", currentAlertType);
+            if (currentStatus.type() == lastStatus.type()) {
+                System.out.println("API alert status unchanged: " + currentStatus);
+                lastStatus = currentStatus;
                 return;
             }
 
-            manualAlertService.sendAlert(currentAlertType);
-            previousAlertType = currentAlertType;
+            System.out.println("API alert status changed: " + lastStatus.type() + " -> " + currentStatus.type());
+
+            lastStatus = currentStatus;
 
         } catch (Exception e) {
-            log.error("Alert API check failed: {}", e);
+            System.out.println("Alert API check failed: " + e.getMessage());
         }
     }
 
-    private ManualAlertType detectAlertType(RegionAlertDto[] alerts) {
+    private ApiAlertStatus detectAlertStatus(RegionAlertDto[] alerts) {
 
-        boolean highRisk = Arrays.stream(alerts)
-                .anyMatch(alert -> properties.alertApi()
+        List<String> activeDangerRegions = Arrays.stream(alerts)
+                .filter(alert -> properties.alertApi()
                         .dangerRegionIds()
-                        .contains(alert.regionId()));
+                        .contains(alert.regionId()))
+                .map(RegionAlertDto::regionName)
+                .toList();
 
-        if (highRisk) {
-            return ManualAlertType.HIGH_RISK;
-        }
-
-        boolean districtAlert = Arrays.stream(alerts)
+        boolean districtAlertActive = Arrays.stream(alerts)
                 .anyMatch(alert -> properties.alertApi()
                         .alarmRegionId()
                         .equals(alert.regionId()));
 
-        if (districtAlert) {
-            return ManualAlertType.ALERT;
+        ManualAlertType type;
+
+        if (!activeDangerRegions.isEmpty()) {
+            type = ManualAlertType.HIGH_RISK;
+        } else if (districtAlertActive) {
+            type = ManualAlertType.ALERT;
+        } else {
+            type = ManualAlertType.ALL_CLEAR;
         }
-        return ManualAlertType.ALL_CLEAR;
+
+        return new ApiAlertStatus(
+                type,
+                districtAlertActive,
+                activeDangerRegions,
+                LocalDateTime.now(KYIV_ZONE)
+        );
     }
+
+    public ApiAlertStatus getLastStatus() {
+        return lastStatus;
+    }
+
+    private ApiAlertStatus lastStatus = new ApiAlertStatus(
+        ManualAlertType.ALL_CLEAR,
+        false,
+        List.of(),
+        LocalDateTime.now(KYIV_ZONE)
+    );
 }
