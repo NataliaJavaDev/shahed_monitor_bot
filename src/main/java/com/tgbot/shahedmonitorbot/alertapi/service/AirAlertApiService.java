@@ -6,6 +6,7 @@ import com.tgbot.shahedmonitorbot.alertapi.model.ApiAlertStatus;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertType;
+import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -20,16 +21,19 @@ public class AirAlertApiService {
     private final AirAlertApiClient client;
     private final AppProperties properties;
     private final ManualAlertService manualAlertService;
+    private final MonitoringStateService monitoringStateService;
     private static final ZoneId KYIV_ZONE = ZoneId.of("Europe/Kyiv");
 
     public AirAlertApiService(
         AirAlertApiClient client,
         AppProperties properties,
-        ManualAlertService manualAlertService
+        ManualAlertService manualAlertService,
+        MonitoringStateService monitoringStateService
     ) {
         this.client = client;
         this.properties = properties;
         this.manualAlertService = manualAlertService;
+        this.monitoringStateService = monitoringStateService;
     }
 
     public void checkAlerts() {
@@ -38,6 +42,7 @@ public class AirAlertApiService {
             RegionAlertDto[] alerts = client.fetchAlerts();
 
             ApiAlertStatus currentStatus = detectAlertStatus(alerts);
+            updateMonitoringFromApi(currentStatus.type());
 
             if (currentStatus.type() == lastStatus.type()) {
                 System.out.println("API alert status unchanged: " + currentStatus);
@@ -47,10 +52,27 @@ public class AirAlertApiService {
 
             System.out.println("API alert status changed: " + lastStatus.type() + " -> " + currentStatus.type());
 
+            manualAlertService.sendAlert(currentStatus.type());
+            
             lastStatus = currentStatus;
 
         } catch (Exception e) {
             System.out.println("Alert API check failed: " + e.getMessage());
+        }
+    }
+
+    private void updateMonitoringFromApi(ManualAlertType type) {
+
+        if (!monitoringStateService.isApiControlEnabled()) {
+            return;
+        }
+
+        if (type == ManualAlertType.ALERT) {
+            monitoringStateService.enableMonitoring();
+        }
+
+        if (type == ManualAlertType.ALL_CLEAR) {
+            monitoringStateService.disableMonitoring();
         }
     }
 

@@ -167,6 +167,19 @@ public ReplyKeyboardMarkup keywordsReplyKeyboard() {
             .build();
 }
 
+public ReplyKeyboardMarkup settingsReplyKeyboard() {
+    KeyboardRow row1 = new KeyboardRow();
+    row1.add(AdminButton.API_CONTROL.text());
+
+    KeyboardRow row2 = new KeyboardRow();
+    row2.add(AdminButton.BACK.text());
+
+    return ReplyKeyboardMarkup.builder()
+            .keyboard(List.of(row1, row2))
+            .resizeKeyboard(true)
+            .build();
+}
+
 public ReplyKeyboardMarkup statusReplyKeyboard() {
     KeyboardRow row1 = new KeyboardRow();
     row1.add(AdminButton.BOT_STATUS.text());

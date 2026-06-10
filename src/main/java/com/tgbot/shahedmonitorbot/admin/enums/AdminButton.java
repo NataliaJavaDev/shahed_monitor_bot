@@ -6,6 +6,7 @@ public enum AdminButton {
     ALERTS("🚨 Керування тривогами"),
     STATUS("📊 Статус"),
     SETTINGS("⚙️ Налаштування"),
+    API_CONTROL("🔌 API-керування"),
 
     BOT_STATUS("🤖 Статус бота"),
     ALERT_STATUS("📡 Статус тривоги"),

@@ -4,6 +4,7 @@ import com.tgbot.shahedmonitorbot.model.admin.AdminSessionState;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import com.tgbot.shahedmonitorbot.alertapi.formatter.ApiAlertStatusFormatter;
 import com.tgbot.shahedmonitorbot.alertapi.service.AirAlertApiService;
+import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
 import org.springframework.stereotype.Service;
 
 import com.tgbot.shahedmonitorbot.admin.menu.AdminMenuService;
@@ -26,6 +27,7 @@ public class AdminCommandHandler {
     private final ManualAlertService manualAlertService;
     private final AirAlertApiService airAlertApiService;
     private final ApiAlertStatusFormatter apiAlertStatusFormatter;
+    private final MonitoringStateService monitoringStateService;
 
     public AdminCommandHandler(
             KeywordAdminService keywordAdminService,
@@ -35,7 +37,8 @@ public class AdminCommandHandler {
             AdminMenuService menuService,
             ManualAlertService manualAlertService,
             AirAlertApiService airAlertApiService,
-            ApiAlertStatusFormatter apiAlertStatusFormatter
+            ApiAlertStatusFormatter apiAlertStatusFormatter,
+            MonitoringStateService monitoringStateService
     ) {
         this.keywordAdminService = keywordAdminService;
         this.senderService = senderService;
@@ -45,6 +48,7 @@ public class AdminCommandHandler {
         this.manualAlertService = manualAlertService;
         this.airAlertApiService = airAlertApiService;
         this.apiAlertStatusFormatter = apiAlertStatusFormatter;
+        this.monitoringStateService = monitoringStateService;
     }
 
     public void handle(Long userId, String chatId, String text) {
@@ -251,8 +255,25 @@ public class AdminCommandHandler {
                 return true;
 
             case BOT_STATUS:
+                sendBotStatus(chatId);
+                return true;
+
             case SETTINGS:
-                sendComingSoon(chatId);
+                senderService.sendToChatWithReplyKeyboard(
+                    chatId,
+                    "⚙️ Налаштування\n\nОберіть дію:",
+                    menuService.settingsReplyKeyboard()
+                );
+                return true;
+
+            case API_CONTROL:
+                monitoringStateService.toggleApiControl();
+
+                senderService.sendToChat(
+                    chatId,
+                    "🔌 API-керування: "
+                    + monitoringStateService.getApiControlStatus()
+                );
                 return true;
         }
         return false;
@@ -321,6 +342,21 @@ public class AdminCommandHandler {
                     AdminMessage.KEYWORD_NOT_FOUND.text()
             );
         }
+    }
+
+    private void sendBotStatus(String chatId) {
+
+        String message = """
+                🤖 Статус бота
+                
+                API-керування моніторингом: %s
+                Моніторинг повідомлень: %s
+                """.formatted(
+                monitoringStateService.isApiControlEnabled() ? "увімкнене" : "вимкнене",
+                monitoringStateService.isMonitoringEnabled() ? "увімкнений" : "вимкнений"
+        );
+
+        senderService.sendToChat(chatId, message);
     }
 
     private void sendAlertStatus(String chatId) {
