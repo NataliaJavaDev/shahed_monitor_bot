@@ -2,6 +2,9 @@ package com.tgbot.shahedmonitorbot.alertapi.client;
 
 import com.tgbot.shahedmonitorbot.alertapi.dto.RegionAlertDto;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -10,6 +13,9 @@ public class AirAlertApiClient {
 
     private final RestClient restClient;
     private final AppProperties properties;
+
+    private static final Logger log =
+            LoggerFactory.getLogger(AirAlertApiClient.class);
 
     public AirAlertApiClient(
             RestClient.Builder restClientBuilder,
@@ -22,29 +28,21 @@ public class AirAlertApiClient {
                 properties.alertApi().apiKey())
                 .build();
 
-        System.out.println("API key exists: " + !properties.alertApi().apiKey().isBlank());
-System.out.println("API key length: " + properties.alertApi().apiKey().length());
-System.out.println("Base URL: " + properties.alertApi().baseUrl());
+        log.info("Alert API client initialized. Base URL: {}, API key exists: {}", 
+                properties.alertApi().baseUrl(),
+                !properties.alertApi().apiKey().isBlank());
     }
-
-    
-
-//     public RegionAlertDto[] fetchAlerts() {
-//         return this.restClient.get()
-//                 .uri("/alerts")
-//                 .retrieve()
-//                 .body(RegionAlertDto[].class);
-//     }
 
     public RegionAlertDto[] fetchAlerts() {
-    try {
-        return this.restClient.get()
-                .uri("/alerts")
-                .retrieve()
-                .body(RegionAlertDto[].class);
-    } catch (Exception e) {
-        System.out.println("Alert API request failed: " + e.getMessage());
-        throw e;
+
+        try {
+            return this.restClient.get()
+                    .uri("/alerts")
+                    .retrieve()
+                    .body(RegionAlertDto[].class);
+        } catch (Exception e) {
+            log.error("Alert API request failed: ", e);
+            throw e;
+        }
     }
-}
 }

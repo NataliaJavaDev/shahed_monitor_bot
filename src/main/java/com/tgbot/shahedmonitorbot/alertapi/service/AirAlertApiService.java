@@ -7,7 +7,8 @@ import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertType;
 
 import java.util.Arrays;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,6 +17,9 @@ public class AirAlertApiService {
     private final AirAlertApiClient client;
     private final AppProperties properties;
     private final ManualAlertService manualAlertService;
+
+    private static final Logger log =
+            LoggerFactory.getLogger(AirAlertApiService.class);
 
     public AirAlertApiService(
         AirAlertApiClient client,
@@ -30,13 +34,14 @@ public class AirAlertApiService {
     private ManualAlertType previousAlertType = ManualAlertType.ALL_CLEAR;
 
     public void checkAlerts() {
+        
         try {
             RegionAlertDto[] alerts = client.fetchAlerts();
 
             ManualAlertType currentAlertType = detectAlertType(alerts);
 
             if (currentAlertType == previousAlertType) {
-                System.out.println("API alert type unchanged: " + currentAlertType);
+                log.info("API alert type unchanged: {}", currentAlertType);
                 return;
             }
 
@@ -44,30 +49,29 @@ public class AirAlertApiService {
             previousAlertType = currentAlertType;
 
         } catch (Exception e) {
-            System.out.println("Alert API check failed: " + e.getMessage());
+            log.error("Alert API check failed: {}", e);
         }
     }
 
     private ManualAlertType detectAlertType(RegionAlertDto[] alerts) {
 
-    boolean highRisk = Arrays.stream(alerts)
-            .anyMatch(alert -> properties.alertApi()
-                    .dangerRegionIds()
-                    .contains(alert.regionId()));
+        boolean highRisk = Arrays.stream(alerts)
+                .anyMatch(alert -> properties.alertApi()
+                        .dangerRegionIds()
+                        .contains(alert.regionId()));
 
-    if (highRisk) {
-        return ManualAlertType.HIGH_RISK;
+        if (highRisk) {
+            return ManualAlertType.HIGH_RISK;
+        }
+
+        boolean districtAlert = Arrays.stream(alerts)
+                .anyMatch(alert -> properties.alertApi()
+                        .alarmRegionId()
+                        .equals(alert.regionId()));
+
+        if (districtAlert) {
+            return ManualAlertType.ALERT;
+        }
+        return ManualAlertType.ALL_CLEAR;
     }
-
-    boolean districtAlert = Arrays.stream(alerts)
-            .anyMatch(alert -> properties.alertApi()
-                    .alarmRegionId()
-                    .equals(alert.regionId()));
-
-    if (districtAlert) {
-        return ManualAlertType.ALERT;
-    }
-
-    return ManualAlertType.ALL_CLEAR;
-}
 }
