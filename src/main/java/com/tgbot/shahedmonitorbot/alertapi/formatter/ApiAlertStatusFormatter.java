@@ -2,9 +2,13 @@ package com.tgbot.shahedmonitorbot.alertapi.formatter;
 
 import com.tgbot.shahedmonitorbot.alertapi.model.ApiAlertStatus;
 import org.springframework.stereotype.Component;
+import java.time.format.DateTimeFormatter;
 
 @Component
 public class ApiAlertStatusFormatter {
+
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
+        DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     public String format(ApiAlertStatus status) {
         StringBuilder builder = new StringBuilder();
@@ -28,7 +32,7 @@ public class ApiAlertStatusFormatter {
         }
 
         builder.append("\nОстання перевірка API: ")
-                .append(status.checkedAt());
+                .append(status.checkedAt().format(DATE_TIME_FORMATTER));
 
         return builder.toString();
     }

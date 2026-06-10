@@ -10,6 +10,7 @@ import com.tgbot.shahedmonitorbot.manualalert.ManualAlertType;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.time.ZoneId;
 
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,7 @@ public class AirAlertApiService {
     private final AirAlertApiClient client;
     private final AppProperties properties;
     private final ManualAlertService manualAlertService;
+    private static final ZoneId KYIV_ZONE = ZoneId.of("Europe/Kyiv");
 
     public AirAlertApiService(
         AirAlertApiClient client,
@@ -80,7 +82,7 @@ public class AirAlertApiService {
                 type,
                 districtAlertActive,
                 activeDangerRegions,
-                LocalDateTime.now()
+                LocalDateTime.now(KYIV_ZONE)
         );
     }
 
@@ -92,6 +94,6 @@ public class AirAlertApiService {
         ManualAlertType.ALL_CLEAR,
         false,
         List.of(),
-        LocalDateTime.now()
+        LocalDateTime.now(KYIV_ZONE)
     );
 }
