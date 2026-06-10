@@ -1,5 +1,8 @@
 package com.tgbot.shahedmonitorbot.sender;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.tgbot.shahedmonitorbot.config.AppProperties;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -12,6 +15,9 @@ public class TelegramSenderService {
 
     private final TelegramClient telegramClient;
     private final AppProperties properties;
+
+    private static final Logger log =
+            LoggerFactory.getLogger(TelegramSenderService.class);
 
     public TelegramSenderService(
             TelegramClient telegramClient,
@@ -49,12 +55,12 @@ public class TelegramSenderService {
     }
 
     private void execute(SendMessage message) {
+
         try {
             telegramClient.execute(message);
-            System.out.println("MESSAGE SENT");
+            log.info("Telegram message sent to chat {}", message.getChatId());
         } catch (Exception e) {
-            System.err.println("TELEGRAM SEND ERROR:");
-            e.printStackTrace();
+            log.error("Telegram send error", e);
         }
     }
 
