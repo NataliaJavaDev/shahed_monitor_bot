@@ -23,7 +23,7 @@ public class ManualAlertService {
     }
 
     private void updateMonitoringFromManual(ManualAlertType type) {
-        
+
         if (monitoringStateService.isApiControlEnabled()) {
             return;
         }
@@ -35,5 +35,10 @@ public class ManualAlertService {
         if (type == ManualAlertType.ALL_CLEAR) {
             monitoringStateService.disableMonitoring();
         }
+    }
+
+    public void sendAlert(ManualAlertType type) {
+        updateMonitoringFromManual(type);
+        alertDeliveryService.send(formatter.format(type));
     }
 }
