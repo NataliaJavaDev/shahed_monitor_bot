@@ -3,6 +3,7 @@ package com.tgbot.shahedmonitorbot.admin.command;
 import com.tgbot.shahedmonitorbot.model.admin.AdminSessionState;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import com.tgbot.shahedmonitorbot.alertapi.formatter.ApiAlertStatusFormatter;
+import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
 import com.tgbot.shahedmonitorbot.alertapi.service.AirAlertApiService;
 import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ public class AdminCommandHandler {
     private final AirAlertApiService airAlertApiService;
     private final ApiAlertStatusFormatter apiAlertStatusFormatter;
     private final MonitoringStateService monitoringStateService;
+    private final MonitoredSourceService monitoredSourceService;
 
     public AdminCommandHandler(
             KeywordAdminService keywordAdminService,
@@ -38,7 +40,8 @@ public class AdminCommandHandler {
             ManualAlertService manualAlertService,
             AirAlertApiService airAlertApiService,
             ApiAlertStatusFormatter apiAlertStatusFormatter,
-            MonitoringStateService monitoringStateService
+            MonitoringStateService monitoringStateService,
+            MonitoredSourceService monitoredSourceService
     ) {
         this.keywordAdminService = keywordAdminService;
         this.senderService = senderService;
@@ -49,6 +52,7 @@ public class AdminCommandHandler {
         this.airAlertApiService = airAlertApiService;
         this.apiAlertStatusFormatter = apiAlertStatusFormatter;
         this.monitoringStateService = monitoringStateService;
+        this.monitoredSourceService = monitoredSourceService;
     }
 
     public void handle(Long userId, String chatId, String text) {
@@ -67,7 +71,10 @@ public class AdminCommandHandler {
 
         text = normalizeCommand(text);
 
-        if (handleSession(userId, chatId, text)) {
+        boolean isCommand = AdminCommand.fromText(text) != null;
+        boolean isButton = AdminButton.fromText(text) != null;
+
+        if (!isCommand && !isButton && handleSession(userId, chatId, text)) {
             return;
         }
 
@@ -285,9 +292,11 @@ public class AdminCommandHandler {
                 return true;
 
             case SHOW_SOURCES:
+                sendSources(chatId);
+                return true;
+
             case ADD_SOURCE:
             case REMOVE_SOURCE:
-                
                 sendComingSoon(chatId);
                 return true;
         }
@@ -382,4 +391,32 @@ public class AdminCommandHandler {
                 )
         );
     }
+
+    private void sendSources(String chatId) {
+
+        var sources = monitoredSourceService.getAllSources();
+
+        if (sources.isEmpty()) {
+            senderService.sendToChat(
+                    chatId,
+                    "Список джерел моніторингу порожній."
+            );
+            return;
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("📡 Джерела моніторингу:\n\n");
+
+        for (var source : sources) {
+            builder.append(source.active() ? "✅ " : "⛔ ")
+                    .append(source.title())
+                    .append("\n")
+                    .append("ID: ")
+                    .append(source.chatId())
+                    .append("\n\n");
+        }
+
+        senderService.sendToChat(chatId, builder.toString());
+    }
+
 }
