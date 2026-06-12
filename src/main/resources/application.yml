@@ -20,3 +20,10 @@ app:
     alarm-region-id: ${ALARM_REGION_ID}
     danger-region-ids: ${DANGER_REGION_IDS}
     polling-delay-ms: 60000
+
+    tdlib:
+    api-id: ${TDLIB_API_ID}
+    api-hash: ${TDLIB_API_HASH}
+    phone-number: ${TDLIB_PHONE_NUMBER}
+    database-directory: tdlib-db
+    files-directory: tdlib-files

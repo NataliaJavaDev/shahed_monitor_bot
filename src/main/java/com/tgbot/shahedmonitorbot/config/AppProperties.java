@@ -8,7 +8,8 @@ import java.util.List;
 public record AppProperties(
         Telegram telegram,
         Monitor monitor,
-        AlertApi alertApi
+        AlertApi alertApi,
+        Tdlib tdlib
 ) {
 
     public record Telegram(
@@ -20,11 +21,19 @@ public record AppProperties(
             List<String> keywords
     ) {}
 
-public record AlertApi(
+    public record AlertApi(
         String baseUrl,
         String apiKey,
         String alarmRegionId,
         List<String> dangerRegionIds,
         Long pollingDelayMs
-) {}
+    ) {}
+
+    public record Tdlib(
+            Integer apiId,
+            String apiHash,
+            String phoneNumber,
+            String databaseDirectory,
+            String filesDirectory
+    ) {}
 }
