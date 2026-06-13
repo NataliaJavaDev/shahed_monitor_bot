@@ -8,18 +8,32 @@ import com.sun.jna.Pointer;
 @Service
 public class TdLibClientService {
 
-    private Pointer clientId;
+    private final int clientId;
 
-    @PostConstruct
-    public void start() {
-        clientId = TdJsonLibrary.INSTANCE.td_create_client_id();
-
+    public TdLibClientService() {
+        this.clientId = TdJsonLibrary.INSTANCE.td_create_client_id();
         System.out.println("TDLib client created: " + clientId);
 
-        String response = TdJsonLibrary.INSTANCE.td_execute(
-                "{\"@type\":\"getTextEntities\",\"text\":\"TDLib test\"}"
-        );
+        send("""
+                {
+                  "@type": "getAuthorizationState"
+                }
+                """);
+    }
 
-        System.out.println("TDLib test response: " + response);
+    public int getClientId() {
+        return clientId;
+    }
+
+    public void send(String request) {
+        TdJsonLibrary.INSTANCE.td_send(clientId, request);
+    }
+
+    public String receive(double timeoutSeconds) {
+        return TdJsonLibrary.INSTANCE.td_receive(timeoutSeconds);
+    }
+
+    public String execute(String request) {
+        return TdJsonLibrary.INSTANCE.td_execute(request);
     }
 }

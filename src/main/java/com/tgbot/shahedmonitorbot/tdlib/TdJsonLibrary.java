@@ -11,9 +11,9 @@ public interface TdJsonLibrary extends Library {
         TdJsonLibrary.class
     );
 
-    Pointer td_create_client_id();
+    int td_create_client_id();
 
-    void td_send(Pointer clientId, String request);
+    void td_send(int clientId, String request);
 
     String td_receive(double timeout);
 
