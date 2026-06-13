@@ -1,9 +1,6 @@
 package com.tgbot.shahedmonitorbot.tdlib;
 
-import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
-
-import com.sun.jna.Pointer;
 
 @Service
 public class TdLibClientService {

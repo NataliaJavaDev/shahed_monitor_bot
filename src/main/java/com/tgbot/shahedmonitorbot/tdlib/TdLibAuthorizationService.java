@@ -5,23 +5,22 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
 import java.util.Scanner;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 
 @Service
 public class TdLibAuthorizationService {
 
     private final TdLibClientService tdLibClientService;
     private final AppProperties appProperties;
+    private final TdLibUpdateHandler tdLibUpdateHandler;
 
     public TdLibAuthorizationService(
             TdLibClientService tdLibClientService,
-            AppProperties appProperties
+            AppProperties appProperties,
+            TdLibUpdateHandler tdLibUpdateHandler
     ) {
         this.tdLibClientService = tdLibClientService;
         this.appProperties = appProperties;
+        this.tdLibUpdateHandler = tdLibUpdateHandler;
     }
 
     @PostConstruct
@@ -48,13 +47,15 @@ public class TdLibAuthorizationService {
 
         Scanner scanner = new Scanner(System.in);
 
-       while (true) {
+        while (true) {
 
             String update = tdLibClientService.receive(1.0);
 
             if (update == null) {
                 continue;
             }
+
+            tdLibUpdateHandler.handle(update);
 
             if (update.contains("\"@type\":\"error\"")) {
                 System.out.println("TDLIB ERROR:");
@@ -68,29 +69,6 @@ public class TdLibAuthorizationService {
             if (update.contains("\"@type\":\"chats\"")) {
                 System.out.println("TDLIB_CHATS_LIST received");
                 requestChatDetails(update);
-            }
-
-            if (update.contains("\"@type\":\"chat\"")
-                    && (update.contains("\"chatTypeBasicGroup\"")
-                    || update.contains("\"chatTypeSupergroup\""))) {
-
-                writeChatToFile(update);
-                System.out.println("GROUP_OR_CHANNEL saved to tdlib-chats.log");
-
-                if (update.contains("Дитяче")
-                        || update.contains("дитяче")
-                        || update.contains("Тест БЦ")
-                        || update.contains("тест")
-                        || update.contains("бот")) {
-
-                    System.out.println("FOUND_TARGET_CHAT:");
-                    System.out.println(update);
-                }
-            }
-
-            if (update.contains("\"@type\":\"updateNewMessage\"")) {
-                System.out.println("NEW MESSAGE:");
-                System.out.println(update);
             }
 
             if (update.contains("\"authorizationStateWaitTdlibParameters\"")) {
@@ -163,35 +141,6 @@ public class TdLibAuthorizationService {
                   "phone_number": "%s"
                 }
                 """.formatted(tdlib.phoneNumber()));
-    }
-
-    // private void requestChats() {
-
-    //     System.out.println("Requesting chats...");
-
-    //     tdLibClientService.send("""
-    //             {
-    //             "@type": "getChats",
-    //             "chat_list": {
-    //                 "@type": "chatListMain"
-    //             },
-    //             "limit": 100
-    //             }
-    //             """);
-    // }
-
-    private void writeChatToFile(String update) {
-
-        try {
-            Files.writeString(
-                    Path.of("tdlib-chats.log"),
-                    update + System.lineSeparator(),
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.APPEND
-            );
-        } catch (IOException e) {
-            System.out.println("Failed to write chat to file: " + e.getMessage());
-        }
     }
 
     private void requestChats() {

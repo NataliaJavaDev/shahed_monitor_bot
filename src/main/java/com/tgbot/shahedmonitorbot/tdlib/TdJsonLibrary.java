@@ -2,7 +2,6 @@ package com.tgbot.shahedmonitorbot.tdlib;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
-import com.sun.jna.Pointer;
 
 public interface TdJsonLibrary extends Library {
 

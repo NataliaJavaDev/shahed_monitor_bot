@@ -10,8 +10,30 @@ public class MonitoredSourceService {
 
     private final List<MonitoredSource> sources = new ArrayList<>();
 
+    public MonitoredSourceService() {
+
+        sources.add(new MonitoredSource(
+                "-5519048152",
+                "Тест джерело моніторингу",
+                true
+        ));
+
+        sources.add(new MonitoredSource(
+                "-5539045370",
+                "Тест БЦ новини",
+                true
+        ));
+    }
+
     public List<MonitoredSource> getAllSources() {
         return List.copyOf(sources);
+    }
+
+    public boolean isMonitored(String chatId) {
+        return sources.stream()
+                .anyMatch(source ->
+                        source.active()
+                        && source.chatId().equals(chatId));
     }
 
     public boolean addSource(String chatId, String title) {
