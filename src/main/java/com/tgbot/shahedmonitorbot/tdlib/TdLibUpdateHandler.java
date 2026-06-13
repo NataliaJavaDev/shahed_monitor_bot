@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgbot.shahedmonitorbot.admin.service.KeywordAdminService;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
+import com.tgbot.shahedmonitorbot.processing.DuplicateMessageService;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import org.springframework.stereotype.Service;
 
@@ -16,19 +17,22 @@ public class TdLibUpdateHandler {
     private final KeywordAdminService keywordAdminService;
     private final TelegramSenderService telegramSenderService;
     private final AppProperties appProperties;
+    private final DuplicateMessageService duplicateMessageService;
 
     public TdLibUpdateHandler(
             MonitoredSourceService monitoredSourceService,
             ObjectMapper objectMapper,
             KeywordAdminService keywordAdminService,
             TelegramSenderService telegramSenderService,
-            AppProperties appProperties
+            AppProperties appProperties,
+            DuplicateMessageService duplicateMessageService
     ) {
         this.monitoredSourceService = monitoredSourceService;
         this.objectMapper = objectMapper;
         this.keywordAdminService = keywordAdminService;
         this.telegramSenderService = telegramSenderService;
         this.appProperties = appProperties;
+        this.duplicateMessageService = duplicateMessageService;
     }
 
     public void handle(String update) {
@@ -51,6 +55,8 @@ public class TdLibUpdateHandler {
                 return;
             }
 
+            var source = monitoredSourceService.findByChatId(chatId);
+
             String text = extractText(message);
 
             System.out.println("NEW MESSAGE FROM MONITORED SOURCE");
@@ -63,6 +69,12 @@ public class TdLibUpdateHandler {
                 return;
             }
 
+            if (duplicateMessageService.isDuplicate(text)) {
+                System.out.println("DUPLICATE MESSAGE SKIPPED");
+                System.out.println("TEXT: " + text);
+                return;
+            }
+
             String messageToSend = """
                     🚨 Знайдено повідомлення
 
@@ -70,6 +82,7 @@ public class TdLibUpdateHandler {
                     """.formatted(text);
 
             System.out.println("MATCHED KEYWORD: " + matchedKeyword);
+            System.out.println("SOURCE: " + source.title());
             System.out.println("SOURCE CHAT_ID: " + chatId);
             System.out.println("TEXT: " + text);
 

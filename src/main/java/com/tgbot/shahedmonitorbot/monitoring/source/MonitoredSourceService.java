@@ -29,6 +29,13 @@ public class MonitoredSourceService {
         return List.copyOf(sources);
     }
 
+    public MonitoredSource findByChatId(String chatId) {
+        return sources.stream()
+                .filter(source -> source.chatId().equals(chatId))
+                .findFirst()
+                .orElse(null);
+    }
+
     public boolean isMonitored(String chatId) {
         return sources.stream()
                 .anyMatch(source ->
