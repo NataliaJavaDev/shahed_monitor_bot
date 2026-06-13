@@ -35,4 +35,21 @@ public class KeywordAdminService {
         String normalized = TextNormalizer.normalize(keyword);
         return keywords.remove(normalized);
     }
+
+    public String findMatchedKeyword(String text) {
+        
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+
+        String normalizedText = TextNormalizer.normalize(text);
+
+        for (String keyword : keywords) {
+            if (normalizedText.contains(keyword)) {
+                return keyword;
+            }
+        }
+
+        return null;
+    }
 }

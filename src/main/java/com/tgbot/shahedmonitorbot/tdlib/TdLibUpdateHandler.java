@@ -1,5 +1,8 @@
 package com.tgbot.shahedmonitorbot.tdlib;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tgbot.shahedmonitorbot.admin.service.KeywordAdminService;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
 import org.springframework.stereotype.Service;
 
@@ -7,54 +10,71 @@ import org.springframework.stereotype.Service;
 public class TdLibUpdateHandler {
 
     private final MonitoredSourceService monitoredSourceService;
+    private final ObjectMapper objectMapper;
+    private final KeywordAdminService keywordAdminService;
 
-    public TdLibUpdateHandler(MonitoredSourceService monitoredSourceService) {
+    public TdLibUpdateHandler(
+            MonitoredSourceService monitoredSourceService,
+            ObjectMapper objectMapper,
+            KeywordAdminService keywordAdminService
+    ) {
         this.monitoredSourceService = monitoredSourceService;
+        this.objectMapper = objectMapper;
+        this.keywordAdminService = keywordAdminService;
     }
 
     public void handle(String update) {
+        
+        try {
+            JsonNode root = objectMapper.readTree(update);
 
-        if (!update.contains("\"@type\":\"updateNewMessage\"")) {
-            return;
+            String type = root.path("@type").asText();
+
+            if (!"updateNewMessage".equals(type)) {
+                return;
+            }
+
+            JsonNode message = root.path("message");
+
+            String chatId = message.path("chat_id").asText();
+
+            if (!monitoredSourceService.isMonitored(chatId)) {
+                System.out.println("Ignored message from chat: " + chatId);
+                return;
+            }
+
+            String text = extractText(message);
+
+            System.out.println("NEW MESSAGE FROM MONITORED SOURCE");
+            System.out.println("CHAT_ID: " + chatId);
+            System.out.println("TEXT: " + text);
+
+            String matchedKeyword = keywordAdminService.findMatchedKeyword(text);
+
+            if (matchedKeyword == null) {
+                return;
+            }
+
+            System.out.println("MATCHED KEYWORD: " + matchedKeyword);
+            System.out.println("TEXT: " + text);
+
+        } catch (Exception e) {
+            System.out.println("Failed to handle TDLib update: " + e.getMessage());
         }
-
-        String chatId = extractChatId(update);
-
-        if (chatId == null) {
-            System.out.println("NEW MESSAGE without chat_id:");
-            System.out.println(update);
-            return;
-        }
-
-        if (!monitoredSourceService.isMonitored(chatId)) {
-            System.out.println("Ignored message from chat: " + chatId);
-            return;
-        }
-
-        System.out.println("NEW MESSAGE FROM MONITORED SOURCE:");
-        System.out.println(update);
     }
 
-    private String extractChatId(String update) {
-        String marker = "\"chat_id\":";
-        int start = update.indexOf(marker);
+    private String extractText(JsonNode message) {
+        JsonNode content = message.path("content");
 
-        if (start == -1) {
-            return null;
+        String contentType = content.path("@type").asText();
+
+        if (!"messageText".equals(contentType)) {
+            return "[unsupported message type: " + contentType + "]";
         }
 
-        start += marker.length();
-
-        int end = update.indexOf(",", start);
-
-        if (end == -1) {
-            end = update.indexOf("}", start);
-        }
-
-        if (end == -1) {
-            return null;
-        }
-
-        return update.substring(start, end).trim();
+        return content
+                .path("text")
+                .path("text")
+                .asText("");
     }
 }
