@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgbot.shahedmonitorbot.admin.service.KeywordAdminService;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
+import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,19 +13,22 @@ public class TdLibUpdateHandler {
     private final MonitoredSourceService monitoredSourceService;
     private final ObjectMapper objectMapper;
     private final KeywordAdminService keywordAdminService;
+    private final TelegramSenderService telegramSenderService;
 
     public TdLibUpdateHandler(
             MonitoredSourceService monitoredSourceService,
             ObjectMapper objectMapper,
-            KeywordAdminService keywordAdminService
+            KeywordAdminService keywordAdminService,
+            TelegramSenderService telegramSenderService
     ) {
         this.monitoredSourceService = monitoredSourceService;
         this.objectMapper = objectMapper;
         this.keywordAdminService = keywordAdminService;
+        this.telegramSenderService = telegramSenderService;
     }
 
     public void handle(String update) {
-        
+
         try {
             JsonNode root = objectMapper.readTree(update);
 
@@ -57,6 +61,17 @@ public class TdLibUpdateHandler {
 
             System.out.println("MATCHED KEYWORD: " + matchedKeyword);
             System.out.println("TEXT: " + text);
+
+            String messageToSend = """
+                    🚨 Знайдено повідомлення за ключовим словом
+
+                    🔑 Ключове слово: %s
+
+                    💬 Повідомлення:
+                    %s
+                    """.formatted(matchedKeyword, text);
+
+            telegramSenderService.sendToChat("-1003977205477", messageToSend);
 
         } catch (Exception e) {
             System.out.println("Failed to handle TDLib update: " + e.getMessage());
