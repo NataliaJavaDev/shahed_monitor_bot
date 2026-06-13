@@ -3,6 +3,7 @@ package com.tgbot.shahedmonitorbot.tdlib;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgbot.shahedmonitorbot.admin.service.KeywordAdminService;
+import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import org.springframework.stereotype.Service;
@@ -14,17 +15,20 @@ public class TdLibUpdateHandler {
     private final ObjectMapper objectMapper;
     private final KeywordAdminService keywordAdminService;
     private final TelegramSenderService telegramSenderService;
+    private final AppProperties appProperties;
 
     public TdLibUpdateHandler(
             MonitoredSourceService monitoredSourceService,
             ObjectMapper objectMapper,
             KeywordAdminService keywordAdminService,
-            TelegramSenderService telegramSenderService
+            TelegramSenderService telegramSenderService,
+            AppProperties appProperties
     ) {
         this.monitoredSourceService = monitoredSourceService;
         this.objectMapper = objectMapper;
         this.keywordAdminService = keywordAdminService;
         this.telegramSenderService = telegramSenderService;
+        this.appProperties = appProperties;
     }
 
     public void handle(String update) {
@@ -59,19 +63,20 @@ public class TdLibUpdateHandler {
                 return;
             }
 
+            String messageToSend = """
+                    🚨 Знайдено повідомлення
+
+                    💬 %s
+                    """.formatted(text);
+
             System.out.println("MATCHED KEYWORD: " + matchedKeyword);
+            System.out.println("SOURCE CHAT_ID: " + chatId);
             System.out.println("TEXT: " + text);
 
-            String messageToSend = """
-                    🚨 Знайдено повідомлення за ключовим словом
-
-                    🔑 Ключове слово: %s
-
-                    💬 Повідомлення:
-                    %s
-                    """.formatted(matchedKeyword, text);
-
-            telegramSenderService.sendToChat("-1003977205477", messageToSend);
+            telegramSenderService.sendToChat(
+                    appProperties.telegram().targetChannelId(),
+                    messageToSend
+            );
 
         } catch (Exception e) {
             System.out.println("Failed to handle TDLib update: " + e.getMessage());
