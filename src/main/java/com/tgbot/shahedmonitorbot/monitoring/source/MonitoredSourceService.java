@@ -1,5 +1,6 @@
 package com.tgbot.shahedmonitorbot.monitoring.source;
 
+import com.tgbot.shahedmonitorbot.config.AppProperties;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -10,19 +11,20 @@ public class MonitoredSourceService {
 
     private final List<MonitoredSource> sources = new ArrayList<>();
 
-    public MonitoredSourceService() {
+    public MonitoredSourceService(AppProperties appProperties) {
+        var configuredSources = appProperties.monitor().sources();
 
-        sources.add(new MonitoredSource(
-                "-5519048152",
-                "Тест джерело моніторингу",
-                true
-        ));
+        if (configuredSources == null) {
+            return;
+        }
 
-        sources.add(new MonitoredSource(
-                "-5539045370",
-                "Тест БЦ новини",
-                true
-        ));
+        configuredSources.forEach(source ->
+                sources.add(new MonitoredSource(
+                        source.chatId(),
+                        source.title(),
+                        Boolean.TRUE.equals(source.active())
+                ))
+        );
     }
 
     public List<MonitoredSource> getAllSources() {
@@ -40,7 +42,7 @@ public class MonitoredSourceService {
         return sources.stream()
                 .anyMatch(source ->
                         source.active()
-                        && source.chatId().equals(chatId));
+                                && source.chatId().equals(chatId));
     }
 
     public boolean addSource(String chatId, String title) {

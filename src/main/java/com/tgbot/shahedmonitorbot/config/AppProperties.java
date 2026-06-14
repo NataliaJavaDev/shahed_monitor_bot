@@ -13,12 +13,19 @@ public record AppProperties(
 ) {
 
     public record Telegram(
-            String botToken,
-            String targetChannelId
+        String botToken,
+        String targetChannelId
     ) {}
 
     public record Monitor(
-            List<String> keywords
+        List<String> keywords,
+        List<Source> sources
+    ) {}
+
+    public record Source(
+        String chatId,
+        String title,
+        Boolean active
     ) {}
 
     public record AlertApi(
