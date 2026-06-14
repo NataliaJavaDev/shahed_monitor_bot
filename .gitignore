@@ -28,6 +28,5 @@ tdlib-files/
 *.env
 secret.env
 application-local.yml
-application.yml
 
 tdlib-db/
