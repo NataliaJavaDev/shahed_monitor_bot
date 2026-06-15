@@ -106,6 +106,21 @@ public class AdminCommandHandler {
             return true;
         }
 
+        if (state == AdminSessionState.WAITING_FOR_NEW_SOURCE_ID) {
+            saveSourceId(userId, chatId, text);
+            return true;
+        }
+
+        if (state == AdminSessionState.WAITING_FOR_NEW_SOURCE_TITLE) {
+            addSource(userId, chatId, text);
+            return true;
+        }
+
+        if (state == AdminSessionState.WAITING_FOR_REMOVE_SOURCE) {
+            removeSource(userId, chatId, text);
+            return true;
+        }
+
         return false;
     }
 
@@ -296,8 +311,11 @@ public class AdminCommandHandler {
                 return true;
 
             case ADD_SOURCE:
+                requestAddSource(userId, chatId);
+                return true;
+
             case REMOVE_SOURCE:
-                sendComingSoon(chatId);
+                requestRemoveSource(userId, chatId);
                 return true;
         }
         return false;
@@ -417,6 +435,89 @@ public class AdminCommandHandler {
         }
 
         senderService.sendToChat(chatId, builder.toString());
+    }
+
+    private void requestAddSource(Long userId, String chatId) {
+
+        sessionService.setState(
+                userId,
+                AdminSessionState.WAITING_FOR_NEW_SOURCE_ID
+        );
+
+        senderService.sendToChat(
+                chatId,
+                "Введіть chat_id джерела моніторингу:"
+        );
+    }
+
+    private void requestRemoveSource(Long userId, String chatId) {
+
+        sessionService.setState(
+                userId,
+                AdminSessionState.WAITING_FOR_REMOVE_SOURCE
+        );
+
+        senderService.sendToChat(
+                chatId,
+                "Введіть chat_id джерела, яке треба видалити:"
+        );
+    }
+
+    private void saveSourceId(Long userId, String chatId, String sourceId) {
+
+        sessionService.setPendingSourceId(userId, sourceId);
+        sessionService.setState(
+                userId,
+                AdminSessionState.WAITING_FOR_NEW_SOURCE_TITLE
+        );
+
+        senderService.sendToChat(
+                chatId,
+                "Тепер введіть назву джерела:"
+        );
+    }
+
+    private void addSource(Long userId, String chatId, String title) {
+
+        String sourceId = sessionService.getPendingSourceId(userId);
+
+        boolean added = monitoredSourceService.addSource(sourceId, title);
+
+        sessionService.reset(userId);
+
+        if (added) {
+            senderService.sendToChat(
+                    chatId,
+                    "✅ Джерело додано:\n\n"
+                            + title
+                            + "\nID: "
+                            + sourceId
+            );
+        } else {
+            senderService.sendToChat(
+                    chatId,
+                    "⚠️ Джерело з таким ID уже існує."
+            );
+        }
+    }
+
+    private void removeSource(Long userId, String chatId, String sourceId) {
+
+        boolean removed = monitoredSourceService.removeSource(sourceId);
+
+        sessionService.reset(userId);
+
+        if (removed) {
+            senderService.sendToChat(
+                    chatId,
+                    "✅ Джерело видалено:\n\nID: " + sourceId
+            );
+        } else {
+            senderService.sendToChat(
+                    chatId,
+                    "⚠️ Джерело з таким ID не знайдено."
+            );
+        }
     }
 
 }

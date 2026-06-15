@@ -48,18 +48,33 @@ public class TdLibUpdateHandler {
 
             JsonNode message = root.path("message");
 
+            // String chatId = message.path("chat_id").asText();
+
+            // if (!monitoredSourceService.isMonitored(chatId)) {
+            //     System.out.println("Ignored message from chat: " + chatId);
+            //     return;
+            // }
+
+            // var source = monitoredSourceService.findByChatId(chatId);
+
+            // String text = extractText(message);
+
             String chatId = message.path("chat_id").asText();
+            String text = extractText(message);
 
             if (!monitoredSourceService.isMonitored(chatId)) {
-                System.out.println("Ignored message from chat: " + chatId);
+                System.out.println("""
+                        UNKNOWN CHAT DETECTED
+                        CHAT_ID: %s
+                        TEXT: %s
+                        """.formatted(chatId, text));
                 return;
             }
 
             var source = monitoredSourceService.findByChatId(chatId);
 
-            String text = extractText(message);
-
             System.out.println("NEW MESSAGE FROM MONITORED SOURCE");
+            System.out.println("SOURCE: " + source.title());
             System.out.println("CHAT_ID: " + chatId);
             System.out.println("TEXT: " + text);
 
@@ -101,13 +116,20 @@ public class TdLibUpdateHandler {
 
         String contentType = content.path("@type").asText();
 
-        if (!"messageText".equals(contentType)) {
-            return "[unsupported message type: " + contentType + "]";
+        if ("messageText".equals(contentType)) {
+            return content
+                    .path("text")
+                    .path("text")
+                    .asText("");
         }
 
-        return content
-                .path("text")
-                .path("text")
-                .asText("");
+        if ("messagePhoto".equals(contentType)) {
+            return content
+                    .path("caption")
+                    .path("text")
+                    .asText("");
+        }
+
+        return "[unsupported message type: " + contentType + "]";
     }
 }
