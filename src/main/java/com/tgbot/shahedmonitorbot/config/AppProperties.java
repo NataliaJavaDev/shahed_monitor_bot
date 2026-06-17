@@ -19,7 +19,8 @@ public record AppProperties(
 
     public record Monitor(
         List<String> keywords,
-        List<Source> sources
+        List<Source> sources,
+        List<String> ignoredChatIds
     ) {}
 
     public record Source(

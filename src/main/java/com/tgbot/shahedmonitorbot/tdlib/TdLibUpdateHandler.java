@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgbot.shahedmonitorbot.admin.service.KeywordAdminService;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
+import com.tgbot.shahedmonitorbot.monitoring.source.ChatInfoService;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
+import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateService;
 import com.tgbot.shahedmonitorbot.processing.DuplicateMessageService;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,8 @@ public class TdLibUpdateHandler {
     private final TelegramSenderService telegramSenderService;
     private final AppProperties appProperties;
     private final DuplicateMessageService duplicateMessageService;
+    private final UnknownSourceCandidateService unknownSourceCandidateService;
+    private final ChatInfoService chatInfoService;
 
     public TdLibUpdateHandler(
             MonitoredSourceService monitoredSourceService,
@@ -25,7 +29,9 @@ public class TdLibUpdateHandler {
             KeywordAdminService keywordAdminService,
             TelegramSenderService telegramSenderService,
             AppProperties appProperties,
-            DuplicateMessageService duplicateMessageService
+            DuplicateMessageService duplicateMessageService,
+            UnknownSourceCandidateService unknownSourceCandidateService,
+            ChatInfoService chatInfoService
     ) {
         this.monitoredSourceService = monitoredSourceService;
         this.objectMapper = objectMapper;
@@ -33,6 +39,8 @@ public class TdLibUpdateHandler {
         this.telegramSenderService = telegramSenderService;
         this.appProperties = appProperties;
         this.duplicateMessageService = duplicateMessageService;
+        this.unknownSourceCandidateService = unknownSourceCandidateService;
+        this.chatInfoService = chatInfoService;
     }
 
     public void handle(String update) {
@@ -42,34 +50,64 @@ public class TdLibUpdateHandler {
 
             String type = root.path("@type").asText();
 
+            if ("updateNewChat".equals(type)) {
+                JsonNode chat = root.path("chat");
+
+                chatInfoService.saveTitle(
+                        chat.path("id").asText(),
+                        chat.path("title").asText()
+                );
+
+                return;
+            }
+
+            if ("updateChatTitle".equals(type)) {
+                chatInfoService.saveTitle(
+                        root.path("chat_id").asText(),
+                        root.path("title").asText()
+                );
+
+                return;
+            }
+
             if (!"updateNewMessage".equals(type)) {
                 return;
             }
 
             JsonNode message = root.path("message");
 
-            // String chatId = message.path("chat_id").asText();
-
-            // if (!monitoredSourceService.isMonitored(chatId)) {
-            //     System.out.println("Ignored message from chat: " + chatId);
-            //     return;
-            // }
-
-            // var source = monitoredSourceService.findByChatId(chatId);
-
-            // String text = extractText(message);
-
             String chatId = message.path("chat_id").asText();
             String text = extractText(message);
 
-            if (!monitoredSourceService.isMonitored(chatId)) {
-                System.out.println("""
-                        UNKNOWN CHAT DETECTED
-                        CHAT_ID: %s
-                        TEXT: %s
-                        """.formatted(chatId, text));
-                return;
-            }
+            if (monitoredSourceService.isMonitored(chatId)) {
+
+    unknownSourceCandidateService.remove(chatId);
+
+} else {
+
+    if (chatId.equals(appProperties.telegram().targetChannelId())) {
+        return;
+    }
+
+    if (appProperties.monitor().ignoredChatIds() != null
+            && appProperties.monitor().ignoredChatIds().contains(chatId)) {
+        return;
+    }
+
+    unknownSourceCandidateService.register(
+            chatId,
+            chatInfoService.getTitle(chatId),
+            text
+    );
+
+    System.out.println("""
+            UNKNOWN CHAT DETECTED
+            CHAT_ID: %s
+            TEXT: %s
+            """.formatted(chatId, text));
+
+    return;
+}
 
             var source = monitoredSourceService.findByChatId(chatId);
 

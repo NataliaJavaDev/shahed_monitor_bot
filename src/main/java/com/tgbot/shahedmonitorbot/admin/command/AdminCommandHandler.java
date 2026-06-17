@@ -4,6 +4,7 @@ import com.tgbot.shahedmonitorbot.model.admin.AdminSessionState;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import com.tgbot.shahedmonitorbot.alertapi.formatter.ApiAlertStatusFormatter;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
+import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateService;
 import com.tgbot.shahedmonitorbot.alertapi.service.AirAlertApiService;
 import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,7 @@ public class AdminCommandHandler {
     private final ApiAlertStatusFormatter apiAlertStatusFormatter;
     private final MonitoringStateService monitoringStateService;
     private final MonitoredSourceService monitoredSourceService;
+    private final UnknownSourceCandidateService unknownSourceCandidateService;
 
     public AdminCommandHandler(
             KeywordAdminService keywordAdminService,
@@ -41,7 +43,8 @@ public class AdminCommandHandler {
             AirAlertApiService airAlertApiService,
             ApiAlertStatusFormatter apiAlertStatusFormatter,
             MonitoringStateService monitoringStateService,
-            MonitoredSourceService monitoredSourceService
+            MonitoredSourceService monitoredSourceService,
+            UnknownSourceCandidateService unknownSourceCandidateService
     ) {
         this.keywordAdminService = keywordAdminService;
         this.senderService = senderService;
@@ -53,6 +56,7 @@ public class AdminCommandHandler {
         this.apiAlertStatusFormatter = apiAlertStatusFormatter;
         this.monitoringStateService = monitoringStateService;
         this.monitoredSourceService = monitoredSourceService;
+        this.unknownSourceCandidateService = unknownSourceCandidateService;
     }
 
     public void handle(Long userId, String chatId, String text) {
@@ -311,7 +315,7 @@ public class AdminCommandHandler {
                 return true;
 
             case ADD_SOURCE:
-                requestAddSource(userId, chatId);
+                sendUnknownSources(chatId);
                 return true;
 
             case REMOVE_SOURCE:
@@ -520,4 +524,33 @@ public class AdminCommandHandler {
         }
     }
 
+    private void sendUnknownSources(String chatId) {
+
+        var candidates = unknownSourceCandidateService.getAll();
+
+        if (candidates.isEmpty()) {
+            senderService.sendToChat(
+                    chatId,
+                    "Поки що немає знайдених невідомих джерел."
+            );
+            return;
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("🕵️ Знайдені невідомі джерела:\n\n");
+
+        for (var candidate : candidates) {
+            builder.append("📌 ")
+                    .append(candidate.title())
+                    .append("\n")
+                    .append("ID: ")
+                    .append(candidate.chatId())
+                    .append("\n")
+                    .append("Останній текст:\n")
+                    .append(candidate.lastText())
+                    .append("\n\n");
+        }
+
+        senderService.sendToChat(chatId, builder.toString());
+    }
 }
