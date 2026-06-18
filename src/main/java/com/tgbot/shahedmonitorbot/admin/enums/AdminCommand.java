@@ -4,9 +4,12 @@ public enum AdminCommand {
 
     START("/start"),
     ADMIN("/admin"),
-    KEYWORDS("/keywords"),
-    ADD_KEYWORD("/add_keyword"),
-    REMOVE_KEYWORD("/remove_keyword");
+    TARGETS("/targets"),
+    ADD_TARGET("/add_target"),
+    REMOVE_TARGET("/remove_target"),
+    LOCATIONS("/locations"),
+    ADD_LOCATION("/add_location"),
+    REMOVE_LOCATION("/remove_location");
 
     private final String value;
 

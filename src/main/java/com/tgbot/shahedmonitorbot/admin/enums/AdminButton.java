@@ -2,8 +2,21 @@ package com.tgbot.shahedmonitorbot.admin.enums;
 
 public enum AdminButton {
 
+    TARGETS("🎯 Цілі"),
+    SHOW_TARGETS("📋 Показати цілі"),
+    ADD_TARGET("➕ Додати ціль"),
+    REMOVE_TARGET("➖ Видалити ціль"),
+
     KEYWORDS("🔑 Ключові слова"),
+    LOCATIONS("📍 Локації"),
+    SHOW_LOCATIONS("📋 Показати локації"),
+    ADD_LOCATION("➕ Додати локацію"),
+    REMOVE_LOCATION("➖ Видалити локацію"),
+
     ALERTS("🚨 Керування тривогами"),
+    ALERT("🚨 Тривога"),
+    HIGH_RISK("⚠️ Підвищена небезпека"),
+    ALL_CLEAR("✅ Відбій"),
 
     STATUS("📊 Статус"),
     BOT_STATUS("🤖 Статус бота"),
@@ -16,14 +29,6 @@ public enum AdminButton {
     SHOW_SOURCES("📋 Показати джерела"),
     ADD_SOURCE("➕ Додати джерело"),
     REMOVE_SOURCE("➖ Видалити джерело"),
-
-    SHOW_KEYWORDS("📋 Показати ключові слова"),
-    ADD_KEYWORD("➕ Додати ключове слово"),
-    REMOVE_KEYWORD("➖ Видалити ключове слово"),
-
-    ALERT("🚨 Тривога"),
-    HIGH_RISK("⚠️ Підвищена небезпека"),
-    ALL_CLEAR("✅ Відбій"),
 
     BACK("⬅️ Назад");
 

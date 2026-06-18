@@ -12,7 +12,8 @@ import org.springframework.stereotype.Service;
 import com.tgbot.shahedmonitorbot.admin.menu.AdminMenuService;
 import com.tgbot.shahedmonitorbot.admin.service.AdminAccessService;
 import com.tgbot.shahedmonitorbot.admin.service.AdminSessionService;
-import com.tgbot.shahedmonitorbot.admin.service.KeywordAdminService;
+import com.tgbot.shahedmonitorbot.admin.service.LocationAdminService;
+import com.tgbot.shahedmonitorbot.admin.service.TargetAdminService;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertType;
 import com.tgbot.shahedmonitorbot.admin.enums.*;
@@ -21,7 +22,8 @@ import com.tgbot.shahedmonitorbot.admin.enums.*;
 @Service
 public class AdminCommandHandler {
 
-    private final KeywordAdminService keywordAdminService;
+    private final TargetAdminService targetAdminService;
+    private final LocationAdminService locationAdminService;
     private final TelegramSenderService senderService;
     private final AdminSessionService sessionService;
     private final AdminAccessService accessService;
@@ -34,7 +36,8 @@ public class AdminCommandHandler {
     private final UnknownSourceCandidateService unknownSourceCandidateService;
 
     public AdminCommandHandler(
-            KeywordAdminService keywordAdminService,
+            TargetAdminService targetAdminService,
+            LocationAdminService locationAdminService,
             TelegramSenderService senderService,
             AdminSessionService sessionService,
             AdminAccessService accessService,
@@ -46,7 +49,8 @@ public class AdminCommandHandler {
             MonitoredSourceService monitoredSourceService,
             UnknownSourceCandidateService unknownSourceCandidateService
     ) {
-        this.keywordAdminService = keywordAdminService;
+        this.targetAdminService = targetAdminService;
+        this.locationAdminService = locationAdminService;
         this.senderService = senderService;
         this.sessionService = sessionService;
         this.accessService = accessService;
@@ -100,13 +104,23 @@ public class AdminCommandHandler {
 
         AdminSessionState state = sessionService.getState(userId);
 
-        if (state == AdminSessionState.WAITING_FOR_NEW_KEYWORD) {
-            addKeyword(userId, chatId, text);
+        if (state == AdminSessionState.WAITING_FOR_NEW_TARGET) {
+            addTarget(userId, chatId, text);
             return true;
         }
 
-        if (state == AdminSessionState.WAITING_FOR_REMOVE_KEYWORD) {
-            removeKeyword(userId, chatId, text);
+        if (state == AdminSessionState.WAITING_FOR_REMOVE_TARGET) {
+            removeTarget(userId, chatId, text);
+            return true;
+        }
+
+        if (state == AdminSessionState.WAITING_FOR_NEW_LOCATION) {
+            addLocation(userId, chatId, text);
+            return true;
+        }
+
+        if (state == AdminSessionState.WAITING_FOR_REMOVE_LOCATION) {
+            removeLocation(userId, chatId, text);
             return true;
         }
 
@@ -148,70 +162,9 @@ public class AdminCommandHandler {
             case ADMIN:
                 sendMainMenu(chatId);
                 return true;
-
-            case KEYWORDS:
-                sendKeywords(chatId);
-                return true;
-
-            case ADD_KEYWORD:
-                requestAddKeyword(userId, chatId);
-                return true;
-
-            case REMOVE_KEYWORD:
-                requestRemoveKeyword(userId, chatId);
-                return true;
-            }
-
-            return false;
         }
 
-    private void requestKeyword(Long userId, String chatId, AdminSessionState state, AdminMessage message) {
-        
-        sessionService.setState(userId, state);
-        senderService.sendToChat(chatId, message.text());
-    }
-
-    private void requestAddKeyword(Long userId, String chatId) {
-
-        requestKeyword(
-            userId,
-            chatId,
-            AdminSessionState.WAITING_FOR_NEW_KEYWORD,
-            AdminMessage.ADD_KEYWORD_REQUEST
-        );
-    }
-
-    private void requestRemoveKeyword(Long userId, String chatId) {
-
-        requestKeyword(
-            userId,
-            chatId,
-            AdminSessionState.WAITING_FOR_REMOVE_KEYWORD,
-            AdminMessage.REMOVE_KEYWORD_REQUEST
-        );
-    }
-
-    private void sendManualAlert(String chatId, ManualAlertType type, AdminMessage successMessage) {
-        
-        manualAlertService.sendAlert(type);
-        senderService.sendToChat(chatId, successMessage.text());
-    }
-
-    private void sendMainMenu(String chatId) {
-        
-        senderService.sendToChatWithReplyKeyboard(
-            chatId,
-            menuService.mainMenuText(),
-            menuService.mainReplyKeyboard()
-        );
-    }
-
-    private void sendComingSoon(String chatId) {
-
-        senderService.sendToChat(
-            chatId,
-            AdminMessage.COMING_SOON.text()
-        );
+        return false;
     }
 
     private boolean handleButton(Long userId, String chatId, String text) {
@@ -226,22 +179,50 @@ public class AdminCommandHandler {
 
             case KEYWORDS:
                 senderService.sendToChatWithReplyKeyboard(
-                    chatId,
-                    AdminMessage.KEYWORDS_MENU_TITLE.text(),
-                    menuService.keywordsReplyKeyboard()
+                        chatId,
+                        "🔑 Ключові слова\n\nОберіть розділ:",
+                        menuService.keywordsReplyKeyboard()
                 );
                 return true;
 
-            case SHOW_KEYWORDS:
-                sendKeywords(chatId);
+            case TARGETS:
+                senderService.sendToChatWithReplyKeyboard(
+                        chatId,
+                        AdminMessage.TARGETS_MENU_TITLE.text(),
+                        menuService.targetsReplyKeyboard()
+                );
                 return true;
 
-            case ADD_KEYWORD:
-                requestAddKeyword(userId, chatId);
+            case SHOW_TARGETS:
+                sendTargets(chatId);
                 return true;
-                
-            case REMOVE_KEYWORD:
-                requestRemoveKeyword(userId, chatId);
+
+            case ADD_TARGET:
+                requestAddTarget(userId, chatId);
+                return true;
+
+            case REMOVE_TARGET:
+                requestRemoveTarget(userId, chatId);
+                return true;
+
+            case LOCATIONS:
+                senderService.sendToChatWithReplyKeyboard(
+                        chatId,
+                        AdminMessage.LOCATIONS_MENU_TITLE.text(),
+                        menuService.locationsReplyKeyboard()
+                );
+                return true;
+
+            case SHOW_LOCATIONS:
+                sendLocations(chatId);
+                return true;
+
+            case ADD_LOCATION:
+                requestAddLocation(userId, chatId);
+                return true;
+
+            case REMOVE_LOCATION:
+                requestRemoveLocation(userId, chatId);
                 return true;
 
             case ALERTS:
@@ -325,69 +306,142 @@ public class AdminCommandHandler {
         return false;
     }
 
-    private String normalizeCommand(String text) {
-
-        return text.replace("@bc_shahed_monitor_bot", "")
-                .trim();
+    private void requestKeyword(Long userId, String chatId, AdminSessionState state, AdminMessage message) {
+        
+        sessionService.setState(userId, state);
+        senderService.sendToChat(chatId, message.text());
     }
 
-    private void sendKeywords(String chatId) {
+    private void sendTargets(String chatId) {
 
-        String keywords = String.join(
+        String targets = String.join(
                 "\n",
-                keywordAdminService.getKeywords()
+                targetAdminService.getTargets()
         );
 
-        if (keywords.isBlank()) {
-            senderService.sendToChat(
-                    chatId,
-                    AdminMessage.EMPTY_KEYWORDS.text()
-            );
+        if (targets.isBlank()) {
+            senderService.sendToChat(chatId, "Список цілей порожній.");
             return;
         }
 
         senderService.sendToChat(
                 chatId,
-                AdminMessage.SHOW_KEYWORDS.format(keywords)
+                "🎯 Цілі моніторингу:\n\n" + targets
         );
     }
 
-    private void addKeyword(Long userId, String chatId, String keyword) {
+    private void sendLocations(String chatId) {
+        String locations = String.join(
+                "\n",
+                locationAdminService.getLocations()
+        );
 
-        boolean added = keywordAdminService.addKeyword(keyword);
+        if (locations.isBlank()) {
+            senderService.sendToChat(chatId, "Список локацій порожній.");
+            return;
+        }
+
+        senderService.sendToChat(
+                chatId,
+                "📍 Локації моніторингу:\n\n" + locations
+        );
+    }
+
+    private void addTarget(Long userId, String chatId, String target) {
+        boolean added = targetAdminService.addTarget(target);
 
         sessionService.reset(userId);
 
         if (added) {
-            senderService.sendToChat(
-                    chatId,
-                    AdminMessage.KEYWORD_ADDED.format(keyword)
-            );
+            senderService.sendToChat(chatId, "✅ Ціль додано: " + target);
         } else {
-            senderService.sendToChat(
-                    chatId,
-                    AdminMessage.KEYWORD_ADD_FAILED.text()
-            );
+            senderService.sendToChat(chatId, "⚠️ Таку ціль уже додано або значення порожнє.");
         }
     }
 
-    private void removeKeyword(Long userId, String chatId, String keyword) {
-
-        boolean removed = keywordAdminService.removeKeyword(keyword);
+    private void removeTarget(Long userId, String chatId, String target) {
+        boolean removed = targetAdminService.removeTarget(target);
 
         sessionService.reset(userId);
 
         if (removed) {
-            senderService.sendToChat(
-                    chatId,
-                    AdminMessage.KEYWORD_REMOVED.format(keyword)
-            );
+            senderService.sendToChat(chatId, "✅ Ціль видалено: " + target);
         } else {
-            senderService.sendToChat(
-                    chatId,
-                    AdminMessage.KEYWORD_NOT_FOUND.text()
-            );
+            senderService.sendToChat(chatId, "⚠️ Таку ціль не знайдено.");
         }
+    }
+
+    private void addLocation(Long userId, String chatId, String location) {
+        boolean added = locationAdminService.addLocation(location);
+
+        sessionService.reset(userId);
+
+        if (added) {
+            senderService.sendToChat(chatId, "✅ Локацію додано: " + location);
+        } else {
+            senderService.sendToChat(chatId, "⚠️ Таку локацію вже додано або значення порожнє.");
+        }
+    }
+
+    private void removeLocation(Long userId, String chatId, String location) {
+        boolean removed = locationAdminService.removeLocation(location);
+
+        sessionService.reset(userId);
+
+        if (removed) {
+            senderService.sendToChat(chatId, "✅ Локацію видалено: " + location);
+        } else {
+            senderService.sendToChat(chatId, "⚠️ Таку локацію не знайдено.");
+        }
+    }
+
+    private void requestAddTarget(Long userId, String chatId) {
+        sessionService.setState(userId, AdminSessionState.WAITING_FOR_NEW_TARGET);
+        senderService.sendToChat(chatId, "Введіть ціль для моніторингу:");
+    }
+
+    private void requestRemoveTarget(Long userId, String chatId) {
+        sessionService.setState(userId, AdminSessionState.WAITING_FOR_REMOVE_TARGET);
+        senderService.sendToChat(chatId, "Введіть ціль, яку треба видалити:");
+    }
+
+    private void requestAddLocation(Long userId, String chatId) {
+        sessionService.setState(userId, AdminSessionState.WAITING_FOR_NEW_LOCATION);
+        senderService.sendToChat(chatId, "Введіть локацію для моніторингу:");
+    }
+
+    private void requestRemoveLocation(Long userId, String chatId) {
+        sessionService.setState(userId, AdminSessionState.WAITING_FOR_REMOVE_LOCATION);
+        senderService.sendToChat(chatId, "Введіть локацію, яку треба видалити:");
+    }
+
+    private void sendManualAlert(String chatId, ManualAlertType type, AdminMessage successMessage) {
+        
+        manualAlertService.sendAlert(type);
+        senderService.sendToChat(chatId, successMessage.text());
+    }
+
+    private void sendMainMenu(String chatId) {
+        
+        senderService.sendToChatWithReplyKeyboard(
+            chatId,
+            menuService.mainMenuText(),
+            menuService.mainReplyKeyboard()
+        );
+    }
+
+    private void sendComingSoon(String chatId) {
+
+        senderService.sendToChat(
+            chatId,
+            AdminMessage.COMING_SOON.text()
+        );
+    }
+
+    private String normalizeCommand(String text) {
+
+        return text.replace("@bc_shahed_monitor_bot", "")
+                .trim();
     }
 
     private void sendBotStatus(String chatId) {
@@ -395,11 +449,12 @@ public class AdminCommandHandler {
         String message = """
                 🤖 Статус бота
                 
+                TDLib-моніторинг каналів: увімкнений
                 API-керування моніторингом: %s
-                Моніторинг повідомлень: %s
+                API-режим активного моніторингу: %s
                 """.formatted(
                 monitoringStateService.isApiControlEnabled() ? "увімкнене" : "вимкнене",
-                monitoringStateService.isMonitoringEnabled() ? "увімкнений" : "вимкнений"
+                monitoringStateService.isMonitoringEnabled() ? "активний" : "неактивний"
         );
 
         senderService.sendToChat(chatId, message);

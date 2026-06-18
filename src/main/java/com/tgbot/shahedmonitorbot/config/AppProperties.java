@@ -18,10 +18,12 @@ public record AppProperties(
     ) {}
 
     public record Monitor(
-        List<String> keywords,
-        List<Source> sources,
-        List<String> ignoredChatIds
-    ) {}
+            List<String> targets,
+            List<String> locations,
+            List<Source> sources,
+            List<String> ignoredChatIds
+    ) {
+    }
 
     public record Source(
         String chatId,

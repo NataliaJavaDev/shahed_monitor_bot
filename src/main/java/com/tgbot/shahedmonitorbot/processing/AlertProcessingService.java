@@ -1,25 +1,24 @@
 package com.tgbot.shahedmonitorbot.processing;
 
 import com.tgbot.shahedmonitorbot.deduplication.DeduplicationService;
-import com.tgbot.shahedmonitorbot.filter.KeywordMatcherService;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AlertProcessingService {
 
-    private final KeywordMatcherService keywordMatcherService;
+    private final MonitorFilterService monitorFilterService;
     private final DeduplicationService deduplicationService;
     private final AlertMessageFormatter formatter;
     private final TelegramSenderService senderService;
 
     public AlertProcessingService(
-            KeywordMatcherService keywordMatcherService,
+            MonitorFilterService monitorFilterService,
             DeduplicationService deduplicationService,
             AlertMessageFormatter formatter,
             TelegramSenderService senderService
     ) {
-        this.keywordMatcherService = keywordMatcherService;
+        this.monitorFilterService = monitorFilterService;
         this.deduplicationService = deduplicationService;
         this.formatter = formatter;
         this.senderService = senderService;
@@ -44,30 +43,30 @@ public class AlertProcessingService {
 
 
     public void process(String sourceName, String text) {
-    System.out.println("PROCESSING TEXT: " + text);
+        System.out.println("PROCESSING TEXT: " + text);
 
-    if (text == null || text.isBlank()) {
-        System.out.println("TEXT IS EMPTY");
-        return;
+        if (text == null || text.isBlank()) {
+            System.out.println("TEXT IS EMPTY");
+            return;
+        }
+
+        var match = monitorFilterService.findMatch(text);
+        System.out.println("IS RELEVANT: " + match.isPresent());
+
+        if (match.isEmpty()) {
+            return;
+        }
+
+        boolean duplicate = deduplicationService.isDuplicate(text);
+        System.out.println("IS DUPLICATE: " + duplicate);
+
+        if (duplicate) {
+            return;
+        }
+
+        String message = formatter.format(sourceName, text);
+        System.out.println("FORMATTED MESSAGE: " + message);
+
+        senderService.send(message);
     }
-
-    boolean relevant = keywordMatcherService.isRelevant(text);
-    System.out.println("IS RELEVANT: " + relevant);
-
-    if (!relevant) {
-        return;
-    }
-
-    boolean duplicate = deduplicationService.isDuplicate(text);
-    System.out.println("IS DUPLICATE: " + duplicate);
-
-    if (duplicate) {
-        return;
-    }
-
-    String message = formatter.format(sourceName, text);
-    System.out.println("FORMATTED MESSAGE: " + message);
-
-    senderService.send(message);
-}
 }
