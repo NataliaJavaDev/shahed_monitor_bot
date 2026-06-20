@@ -39,15 +39,22 @@ public class MonitorFilterService {
                 locationAdminService.getLocations()
         );
 
-        if (matchedTarget == null || matchedLocation == null) {
-            return Optional.empty();
+        if (matchedTarget != null && matchedLocation != null) {
+            return Optional.of(new MonitorMatch(matchedTarget, matchedLocation));
         }
 
-        return Optional.of(new MonitorMatch(matchedTarget, matchedLocation));
+        if (matchedLocation != null && isOnlyLocation(normalizedText, matchedLocation)) {
+            return Optional.of(new MonitorMatch(null, matchedLocation));
+        }
+
+        return Optional.empty();
+    }
+
+    private boolean isOnlyLocation(String normalizedText, String matchedLocation) {
+        return normalizedText.equals(TextNormalizer.normalize(matchedLocation));
     }
 
     private String findFirstMatch(String normalizedText, List<String> values) {
-        
         if (values == null || values.isEmpty()) {
             return null;
         }
