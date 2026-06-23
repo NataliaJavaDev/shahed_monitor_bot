@@ -94,7 +94,7 @@ app:
     api-key: ${UKRAINE_ALARM_API_KEY}
     alarm-region-id: ${ALARM_REGION_ID}
     danger-region-ids: ${DANGER_REGION_IDS}
-    polling-delay-ms: 60000
+    polling-delay-ms: 30000
 
   tdlib:
     api-id: ${TDLIB_API_ID}
