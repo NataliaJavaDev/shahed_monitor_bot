@@ -48,6 +48,7 @@ public record AppProperties(
             String apiHash,
             String phoneNumber,
             String databaseDirectory,
-            String filesDirectory
+            String filesDirectory,
+            String libraryPath
     ) {}
 }
