@@ -1,14 +1,14 @@
 package com.tgbot.shahedmonitorbot.tdlib;
 
 import com.sun.jna.Library;
-import com.sun.jna.Native;
+//import com.sun.jna.Native;
 
 public interface TdJsonLibrary extends Library {
 
-    TdJsonLibrary INSTANCE = Native.load(
-        "/home/natta/tdlib-build/td/build/libtdjson.so",
-        TdJsonLibrary.class
-    );
+    // TdJsonLibrary INSTANCE = Native.load(
+    //     "/home/natta/tdlib-build/td/build/libtdjson.so",
+    //     TdJsonLibrary.class
+    // );
 
     int td_create_client_id();
 
