@@ -102,3 +102,4 @@ app:
     phone-number: ${TDLIB_PHONE_NUMBER}
     database-directory: tdlib-db
     files-directory: tdlib-files
+    library-path: ${TDLIB_LIBRARY_PATH}
