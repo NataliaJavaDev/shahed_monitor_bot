@@ -4,7 +4,6 @@ import com.tgbot.shahedmonitorbot.config.AppProperties;
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
-import java.util.Scanner;
 
 @Service
 public class TdLibAuthorizationService {
@@ -44,8 +43,6 @@ public class TdLibAuthorizationService {
     }
 
     private void authorizationLoop() {
-
-        Scanner scanner = new Scanner(System.in);
 
         while (true) {
 
@@ -89,8 +86,12 @@ public class TdLibAuthorizationService {
             }
 
             if (update.contains("\"authorizationStateWaitCode\"")) {
-                System.out.print("Enter Telegram code: ");
-                String code = scanner.nextLine();
+                String code = appProperties.tdlib().authCode();
+
+                if (code == null || code.isBlank()) {
+                    System.out.println("TDLib waits for auth code, but TDLIB_AUTH_CODE is empty.");
+                    continue;
+                }
 
                 tdLibClientService.send("""
                         {

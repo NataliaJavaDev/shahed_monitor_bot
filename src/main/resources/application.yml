@@ -103,3 +103,4 @@ app:
     database-directory: tdlib-db
     files-directory: tdlib-files
     library-path: ${TDLIB_LIBRARY_PATH}
+    auth-code: ${TDLIB_AUTH_CODE:}

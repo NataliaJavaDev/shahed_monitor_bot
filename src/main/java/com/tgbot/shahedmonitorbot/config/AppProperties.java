@@ -49,6 +49,7 @@ public record AppProperties(
             String phoneNumber,
             String databaseDirectory,
             String filesDirectory,
-            String libraryPath
+            String libraryPath,
+            String authCode
     ) {}
 }
