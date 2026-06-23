@@ -139,12 +139,14 @@ public class TdLibUpdateHandler {
                     📡 Джерело: %s
 
                     🎯 Ціль: %s
+                    🧭 Напрямок: %s
                     📍 Локація: %s
 
                     💬 %s
                     """.formatted(
                     source.title(),
-                    monitorMatch.target(),
+                    formatNullable(monitorMatch.target()),
+                    formatNullable(monitorMatch.direction()),
                     monitorMatch.location(),
                     text
             );
@@ -163,6 +165,15 @@ public class TdLibUpdateHandler {
         } catch (Exception e) {
             System.out.println("Failed to handle TDLib update: " + e.getMessage());
         }
+    }
+
+    private String formatNullable(String value) {
+        
+        if (value == null || value.isBlank()) {
+            return "-";
+        }
+
+        return value;
     }
 
     private String extractText(JsonNode message) {

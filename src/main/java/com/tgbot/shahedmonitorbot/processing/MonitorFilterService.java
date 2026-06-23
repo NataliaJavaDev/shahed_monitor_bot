@@ -1,7 +1,6 @@
 package com.tgbot.shahedmonitorbot.processing;
 
-import com.tgbot.shahedmonitorbot.admin.service.LocationAdminService;
-import com.tgbot.shahedmonitorbot.admin.service.TargetAdminService;
+import com.tgbot.shahedmonitorbot.admin.service.*;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;
 import org.springframework.stereotype.Service;
 
@@ -13,13 +12,16 @@ public class MonitorFilterService {
 
     private final TargetAdminService targetAdminService;
     private final LocationAdminService locationAdminService;
+    private final DirectionAdminService directionAdminService;
 
     public MonitorFilterService(
             TargetAdminService targetAdminService,
-            LocationAdminService locationAdminService
+            LocationAdminService locationAdminService,
+            DirectionAdminService directionAdminService
     ) {
         this.targetAdminService = targetAdminService;
         this.locationAdminService = locationAdminService;
+        this.directionAdminService = directionAdminService;
     }
 
     public Optional<MonitorMatch> findMatch(String text) {
@@ -40,11 +42,17 @@ public class MonitorFilterService {
         );
 
         if (matchedTarget != null && matchedLocation != null) {
-            return Optional.of(new MonitorMatch(matchedTarget, matchedLocation));
+            return Optional.of(new MonitorMatch(matchedTarget, null, matchedLocation));
         }
 
         if (matchedLocation != null && isOnlyLocation(normalizedText, matchedLocation)) {
-            return Optional.of(new MonitorMatch(null, matchedLocation));
+            return Optional.of(new MonitorMatch(null, null, matchedLocation));
+        }
+
+        String matchedDirection = findDirectionToLocation(normalizedText, matchedLocation);
+
+        if (matchedDirection != null && matchedLocation != null) {
+            return Optional.of(new MonitorMatch(null, matchedDirection, matchedLocation));
         }
 
         return Optional.empty();
@@ -52,6 +60,22 @@ public class MonitorFilterService {
 
     private boolean isOnlyLocation(String normalizedText, String matchedLocation) {
         return normalizedText.equals(TextNormalizer.normalize(matchedLocation));
+    }
+
+    private String findDirectionToLocation(String normalizedText, String matchedLocation) {
+        if (matchedLocation == null) {
+            return null;
+        }
+
+        String normalizedLocation = TextNormalizer.normalize(matchedLocation);
+
+        return directionAdminService.getDirections()
+                .stream()
+                .filter(direction ->
+                        normalizedText.equals(direction + " " + normalizedLocation)
+                )
+                .findFirst()
+                .orElse(null);
     }
 
     private String findFirstMatch(String normalizedText, List<String> values) {

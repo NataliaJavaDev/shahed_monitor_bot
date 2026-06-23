@@ -2,6 +2,9 @@ package com.tgbot.shahedmonitorbot.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import com.tgbot.shahedmonitorbot.config.AppProperties.AlertApi;
+import com.tgbot.shahedmonitorbot.config.AppProperties.Tdlib;
+
 import java.util.List;
 
 @ConfigurationProperties(prefix = "app")
@@ -19,6 +22,7 @@ public record AppProperties(
 
     public record Monitor(
             List<String> targets,
+            List<String> directions,
             List<String> locations,
             List<Source> sources,
             List<String> ignoredChatIds
