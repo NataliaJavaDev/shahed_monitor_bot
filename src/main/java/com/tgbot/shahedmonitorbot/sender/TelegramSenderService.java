@@ -68,14 +68,14 @@ public class TelegramSenderService {
         String chatId,
         String text,
         ReplyKeyboardMarkup keyboard
-) {
+    ) {
 
-    SendMessage message = SendMessage.builder()
-            .chatId(chatId)
-            .text(text)
-            .replyMarkup(keyboard)
-            .build();
+        SendMessage message = SendMessage.builder()
+                .chatId(chatId)
+                .text(text)
+                .replyMarkup(keyboard)
+                .build();
 
-    execute(message);
-}
+        execute(message);
+    }
 }
