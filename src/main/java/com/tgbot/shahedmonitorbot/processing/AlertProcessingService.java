@@ -24,24 +24,6 @@ public class AlertProcessingService {
         this.senderService = senderService;
     }
 
-    // public void process(String sourceName, String text) {
-    //     if (text == null || text.isBlank()) {
-    //         return;
-    //     }
-
-    //     if (!keywordMatcherService.isRelevant(text)) {
-    //         return;
-    //     }
-
-    //     if (deduplicationService.isDuplicate(text)) {
-    //         return;
-    //     }
-
-    //     String message = formatter.format(sourceName, text);
-    //     senderService.send(message);
-    // }
-
-
     public void process(String sourceName, String text) {
         System.out.println("PROCESSING TEXT: " + text);
 
@@ -57,7 +39,7 @@ public class AlertProcessingService {
             return;
         }
 
-        boolean duplicate = deduplicationService.isDuplicate(text);
+        boolean duplicate = deduplicationService.isDuplicate(match.get());
         System.out.println("IS DUPLICATE: " + duplicate);
 
         if (duplicate) {

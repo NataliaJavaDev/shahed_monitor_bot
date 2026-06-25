@@ -6,7 +6,6 @@ import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.monitoring.source.ChatInfoService;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
 import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateService;
-import com.tgbot.shahedmonitorbot.processing.DuplicateMessageService;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import org.springframework.stereotype.Service;
 import com.tgbot.shahedmonitorbot.processing.MonitorFilterService;
@@ -21,7 +20,6 @@ public class TdLibUpdateHandler {
     private final ObjectMapper objectMapper;
     private final TelegramSenderService telegramSenderService;
     private final AppProperties appProperties;
-    private final DuplicateMessageService duplicateMessageService;
     private final UnknownSourceCandidateService unknownSourceCandidateService;
     private final MonitorFilterService monitorFilterService;
     private final ChatInfoService chatInfoService;
@@ -31,7 +29,6 @@ public class TdLibUpdateHandler {
             ObjectMapper objectMapper,
             TelegramSenderService telegramSenderService,
             AppProperties appProperties,
-            DuplicateMessageService duplicateMessageService,
             UnknownSourceCandidateService unknownSourceCandidateService,
             MonitorFilterService monitorFilterService,
             ChatInfoService chatInfoService
@@ -41,7 +38,6 @@ public class TdLibUpdateHandler {
         this.monitorFilterService = monitorFilterService;
         this.telegramSenderService = telegramSenderService;
         this.appProperties = appProperties;
-        this.duplicateMessageService = duplicateMessageService;
         this.unknownSourceCandidateService = unknownSourceCandidateService;
         this.chatInfoService = chatInfoService;
     }
@@ -126,12 +122,6 @@ public class TdLibUpdateHandler {
             }
 
             MonitorMatch monitorMatch = match.get();
-
-            if (duplicateMessageService.isDuplicate(text)) {
-                System.out.println("DUPLICATE MESSAGE SKIPPED");
-                System.out.println("TEXT: " + text);
-                return;
-            }
 
             String messageToSend = """
                     🚨 Знайдено повідомлення
