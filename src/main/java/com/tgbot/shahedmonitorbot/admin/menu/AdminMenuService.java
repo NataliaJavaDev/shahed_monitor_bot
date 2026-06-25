@@ -37,10 +37,13 @@ public class AdminMenuService {
         row1.add(AdminButton.LOCATIONS.text());
 
         KeyboardRow row2 = new KeyboardRow();
+        row2.add(AdminButton.DIRECTIONS.text());
+
+        KeyboardRow row3 = new KeyboardRow();
         row2.add(AdminButton.BACK.text());
 
         return ReplyKeyboardMarkup.builder()
-                .keyboard(List.of(row1, row2))
+                .keyboard(List.of(row1, row2, row3))
                 .resizeKeyboard(true)
                 .build();
     }
@@ -71,6 +74,24 @@ public class AdminMenuService {
         KeyboardRow row2 = new KeyboardRow();
         row2.add(AdminButton.ADD_LOCATION.text());
         row2.add(AdminButton.REMOVE_LOCATION.text());
+
+        KeyboardRow row3 = new KeyboardRow();
+        row3.add(AdminButton.BACK.text());
+
+        return ReplyKeyboardMarkup.builder()
+                .keyboard(List.of(row1, row2, row3))
+                .resizeKeyboard(true)
+                .build();
+    }
+
+    public ReplyKeyboardMarkup directionsReplyKeyboard() {
+
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add(AdminButton.SHOW_DIRECTIONS.text());
+
+        KeyboardRow row2 = new KeyboardRow();
+        row2.add(AdminButton.ADD_DIRECTION.text());
+        row2.add(AdminButton.REMOVE_DIRECTION.text());
 
         KeyboardRow row3 = new KeyboardRow();
         row3.add(AdminButton.BACK.text());

@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import com.tgbot.shahedmonitorbot.admin.menu.AdminMenuService;
 import com.tgbot.shahedmonitorbot.admin.service.AdminAccessService;
 import com.tgbot.shahedmonitorbot.admin.service.AdminSessionService;
+import com.tgbot.shahedmonitorbot.admin.service.DirectionAdminService;
 import com.tgbot.shahedmonitorbot.admin.service.LocationAdminService;
 import com.tgbot.shahedmonitorbot.admin.service.TargetAdminService;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
@@ -24,6 +25,7 @@ public class AdminCommandHandler {
 
     private final TargetAdminService targetAdminService;
     private final LocationAdminService locationAdminService;
+    private final DirectionAdminService directionAdminService;
     private final TelegramSenderService senderService;
     private final AdminSessionService sessionService;
     private final AdminAccessService accessService;
@@ -38,6 +40,7 @@ public class AdminCommandHandler {
     public AdminCommandHandler(
             TargetAdminService targetAdminService,
             LocationAdminService locationAdminService,
+            DirectionAdminService directionAdminService,
             TelegramSenderService senderService,
             AdminSessionService sessionService,
             AdminAccessService accessService,
@@ -51,6 +54,7 @@ public class AdminCommandHandler {
     ) {
         this.targetAdminService = targetAdminService;
         this.locationAdminService = locationAdminService;
+        this.directionAdminService = directionAdminService;
         this.senderService = senderService;
         this.sessionService = sessionService;
         this.accessService = accessService;
@@ -121,6 +125,16 @@ public class AdminCommandHandler {
 
         if (state == AdminSessionState.WAITING_FOR_REMOVE_LOCATION) {
             removeLocation(userId, chatId, text);
+            return true;
+        }
+
+        if (state == AdminSessionState.WAITING_FOR_NEW_DIRECTION) {
+            addDirection(userId, chatId, text);
+            return true;
+        }
+
+        if (state == AdminSessionState.WAITING_FOR_REMOVE_DIRECTION) {
+            removeDirection(userId, chatId, text);
             return true;
         }
 
@@ -223,6 +237,26 @@ public class AdminCommandHandler {
 
             case REMOVE_LOCATION:
                 requestRemoveLocation(userId, chatId);
+                return true;
+
+            case DIRECTIONS:
+                senderService.sendToChatWithReplyKeyboard(
+                        chatId,
+                        "🧭 Напрямки\n\nОберіть дію:",
+                        menuService.directionsReplyKeyboard()
+                );
+                return true;
+
+            case SHOW_DIRECTIONS:
+                sendDirections(chatId);
+                return true;
+
+            case ADD_DIRECTION:
+                requestAddDirection(userId, chatId);
+                return true;
+
+            case REMOVE_DIRECTION:
+                requestRemoveDirection(userId, chatId);
                 return true;
 
             case ALERTS:
@@ -436,6 +470,57 @@ public class AdminCommandHandler {
             chatId,
             AdminMessage.COMING_SOON.text()
         );
+    }
+
+    private void sendDirections(String chatId) {
+        String directions = String.join(
+                "\n",
+                directionAdminService.getDirections()
+        );
+
+        if (directions.isBlank()) {
+            senderService.sendToChat(chatId, "Список напрямків порожній.");
+            return;
+        }
+
+        senderService.sendToChat(
+                chatId,
+                "🧭 Напрямки моніторингу:\n\n" + directions
+        );
+    }
+
+    private void addDirection(Long userId, String chatId, String direction) {
+        boolean added = directionAdminService.addDirection(direction);
+
+        sessionService.reset(userId);
+
+        if (added) {
+            senderService.sendToChat(chatId, "✅ Напрямок додано: " + direction);
+        } else {
+            senderService.sendToChat(chatId, "⚠️ Такий напрямок уже додано або значення порожнє.");
+        }
+    }
+
+    private void removeDirection(Long userId, String chatId, String direction) {
+        boolean removed = directionAdminService.removeDirection(direction);
+
+        sessionService.reset(userId);
+
+        if (removed) {
+            senderService.sendToChat(chatId, "✅ Напрямок видалено: " + direction);
+        } else {
+            senderService.sendToChat(chatId, "⚠️ Такий напрямок не знайдено.");
+        }
+    }
+
+    private void requestAddDirection(Long userId, String chatId) {
+        sessionService.setState(userId, AdminSessionState.WAITING_FOR_NEW_DIRECTION);
+        senderService.sendToChat(chatId, "Введіть напрямок для моніторингу:");
+    }
+
+    private void requestRemoveDirection(Long userId, String chatId) {
+        sessionService.setState(userId, AdminSessionState.WAITING_FOR_REMOVE_DIRECTION);
+        senderService.sendToChat(chatId, "Введіть напрямок, який треба видалити:");
     }
 
     private String normalizeCommand(String text) {

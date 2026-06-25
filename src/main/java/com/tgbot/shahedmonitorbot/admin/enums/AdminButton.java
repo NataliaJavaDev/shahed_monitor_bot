@@ -13,6 +13,11 @@ public enum AdminButton {
     ADD_LOCATION("➕ Додати локацію"),
     REMOVE_LOCATION("➖ Видалити локацію"),
 
+    DIRECTIONS("🧭 Напрямки"),
+    SHOW_DIRECTIONS("📋 Показати напрямки"),
+    ADD_DIRECTION("➕ Додати напрямок"),
+    REMOVE_DIRECTION("➖ Видалити напрямок"),
+
     ALERTS("🚨 Керування тривогами"),
     ALERT("🚨 Тривога"),
     HIGH_RISK("⚠️ Підвищена небезпека"),
