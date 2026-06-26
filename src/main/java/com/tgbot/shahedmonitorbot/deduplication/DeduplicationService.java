@@ -35,7 +35,7 @@ public class DeduplicationService {
 
     private String buildKey(MonitorMatch match) {
         String targetCategory = normalizeOrFallback(match.targetCategory(), "NO_TARGET");
-        String location = normalizeOrFallback(match.location(), "NO_LOCATION");
+        String location = normalizeOrFallback(match.locationCategory(), "NO_LOCATION");
 
         return targetCategory + "::" + location;
     }

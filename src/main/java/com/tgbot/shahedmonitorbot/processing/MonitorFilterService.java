@@ -46,18 +46,34 @@ public class MonitorFilterService {
                     matchedTarget,
                     targetAdminService.getCategory(matchedTarget),
                     null,
-                    matchedLocation
+                    matchedLocation,
+                    locationAdminService.getCategory(matchedLocation),
+                    MatchType.TARGET_AND_LOCATION
             ));
         }
 
         if (matchedLocation != null && isOnlyLocation(normalizedText, matchedLocation)) {
-            return Optional.of(new MonitorMatch(null, null, null, matchedLocation));
+            return Optional.of(new MonitorMatch(
+                    null,
+                    null,
+                    null,
+                    matchedLocation,
+                    locationAdminService.getCategory(matchedLocation),
+                    MatchType.LOCATION_ONLY
+            ));
         }
 
         String matchedDirection = findDirectionToLocation(normalizedText, matchedLocation);
 
         if (matchedDirection != null && matchedLocation != null) {
-            return Optional.of(new MonitorMatch(null, null, matchedDirection, matchedLocation));
+            return Optional.of(new MonitorMatch(
+                    null,
+                    null,
+                    matchedDirection,
+                    matchedLocation,
+                    locationAdminService.getCategory(matchedLocation),
+                    MatchType.DIRECTION_AND_LOCATION
+            ));
         }
 
         return Optional.empty();

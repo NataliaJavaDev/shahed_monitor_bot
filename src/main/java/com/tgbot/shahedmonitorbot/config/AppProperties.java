@@ -21,13 +21,23 @@ public record AppProperties(
     ) {}
 
     public record Monitor(
-            List<String> targets,
-            List<String> directions,
-            List<String> locations,
-            List<Source> sources,
-            List<String> ignoredChatIds
+        List<TargetCategory> targetCategories,
+        List<String> directions,
+        List<LocationCategory> locationCategories,
+        List<Source> sources,
+        List<String> ignoredChatIds
     ) {
     }
+
+    public record TargetCategory(
+        String category,
+        List<String> aliases
+    ) {}
+
+    public record LocationCategory(
+        String category,
+        List<String> aliases
+    ) {}
 
     public record Source(
         String chatId,

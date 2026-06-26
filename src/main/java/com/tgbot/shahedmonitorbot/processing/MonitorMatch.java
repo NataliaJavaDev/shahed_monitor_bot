@@ -1,9 +1,11 @@
 package com.tgbot.shahedmonitorbot.processing;
 
 public record MonitorMatch(
-        String target,
+        String matchedTarget,
         String targetCategory,
         String direction,
-        String location
+        String matchedLocation,
+        String locationCategory,
+        MatchType matchType
 ) {
 }

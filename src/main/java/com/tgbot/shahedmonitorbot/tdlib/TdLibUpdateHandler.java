@@ -6,6 +6,7 @@ import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.monitoring.source.ChatInfoService;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
 import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateService;
+import com.tgbot.shahedmonitorbot.deduplication.DeduplicationService;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import org.springframework.stereotype.Service;
 import com.tgbot.shahedmonitorbot.processing.MonitorFilterService;
@@ -21,6 +22,7 @@ public class TdLibUpdateHandler {
     private final TelegramSenderService telegramSenderService;
     private final AppProperties appProperties;
     private final UnknownSourceCandidateService unknownSourceCandidateService;
+    private final DeduplicationService deduplicationService;
     private final MonitorFilterService monitorFilterService;
     private final ChatInfoService chatInfoService;
 
@@ -30,6 +32,7 @@ public class TdLibUpdateHandler {
             TelegramSenderService telegramSenderService,
             AppProperties appProperties,
             UnknownSourceCandidateService unknownSourceCandidateService,
+            DeduplicationService deduplicationService,
             MonitorFilterService monitorFilterService,
             ChatInfoService chatInfoService
     ) {
@@ -37,6 +40,7 @@ public class TdLibUpdateHandler {
         this.objectMapper = objectMapper;
         this.monitorFilterService = monitorFilterService;
         this.telegramSenderService = telegramSenderService;
+        this.deduplicationService = deduplicationService;
         this.appProperties = appProperties;
         this.unknownSourceCandidateService = unknownSourceCandidateService;
         this.chatInfoService = chatInfoService;
@@ -110,11 +114,6 @@ public class TdLibUpdateHandler {
 
             var source = monitoredSourceService.findByChatId(chatId);
 
-            System.out.println("NEW MESSAGE FROM MONITORED SOURCE");
-            System.out.println("SOURCE: " + source.title());
-            System.out.println("CHAT_ID: " + chatId);
-            System.out.println("TEXT: " + text);
-
             Optional<MonitorMatch> match = monitorFilterService.findMatch(text);
 
             if (match.isEmpty()) {
@@ -123,29 +122,53 @@ public class TdLibUpdateHandler {
 
             MonitorMatch monitorMatch = match.get();
 
+                if (deduplicationService.isDuplicate(monitorMatch)) {
+                    return;
+                }
+
             String messageToSend = """
-                    🚨 Знайдено повідомлення
+                🧠 Аналіз повідомлення
 
-                    📡 Джерело: %s
+                📡 Джерело: %s
+                🆔 Chat ID: %s
 
-                    🎯 Ціль: %s
-                    🧭 Напрямок: %s
-                    📍 Локація: %s
+                📂 Тип збігу:
+                %s
 
-                    💬 %s
-                    """.formatted(
-                    source.title(),
-                    formatNullable(monitorMatch.target()),
-                    formatNullable(monitorMatch.direction()),
-                    monitorMatch.location(),
-                    text
+                🎯 Знайдена ціль:
+                %s
+
+                🧩 Категорія цілі:
+                %s
+
+                🧭 Напрямок:
+                %s
+
+                📍 Знайдена локація:
+                %s
+
+                🧩 Категорія локації:
+                %s
+
+                🔑 Ключ антидубля:
+                %s::%s
+
+                💬 Оригінальне повідомлення:
+
+                %s
+                """.formatted(
+                source.title(),
+                chatId,
+                monitorMatch.matchType().displayName(),
+                formatNullable(monitorMatch.matchedTarget()),
+                formatNullable(monitorMatch.targetCategory()),
+                formatNullable(monitorMatch.direction()),
+                formatNullable(monitorMatch.matchedLocation()),
+                formatNullable(monitorMatch.locationCategory()),
+                formatNullable(monitorMatch.targetCategory()),
+                formatNullable(monitorMatch.locationCategory()),
+                text
             );
-
-            System.out.println("MATCHED TARGET: " + monitorMatch.target());
-            System.out.println("MATCHED LOCATION: " + monitorMatch.location());
-            System.out.println("SOURCE: " + source.title());
-            System.out.println("SOURCE CHAT_ID: " + chatId);
-            System.out.println("TEXT: " + text);
 
             telegramSenderService.sendToChat(
                     appProperties.telegram().targetChannelId(),

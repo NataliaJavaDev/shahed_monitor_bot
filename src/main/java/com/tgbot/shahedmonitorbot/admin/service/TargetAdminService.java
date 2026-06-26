@@ -4,6 +4,7 @@ import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,28 +12,43 @@ import java.util.Map;
 @Service
 public class TargetAdminService {
 
-    private final Map<String, String> targets = new LinkedHashMap<>();
+    private final Map<String, String> aliasToCategory = new LinkedHashMap<>();
+    private final Map<String, List<String>> categoryToAliases = new LinkedHashMap<>();
 
     public TargetAdminService(AppProperties properties) {
-        properties.monitor().targets().forEach(target ->
-                addTarget(target, target)
-        );
+        properties.monitor().targetCategories().forEach(category -> {
+            String categoryName = category.category();
+
+            if (category.aliases() == null || category.aliases().isEmpty()) {
+                addTarget(categoryName, categoryName);
+                return;
+            }
+
+            category.aliases().forEach(alias ->
+                    addTarget(alias, categoryName)
+            );
+        });
     }
 
     public List<String> getTargets() {
-        return List.copyOf(targets.keySet());
+        return List.copyOf(aliasToCategory.keySet());
     }
 
     public List<String> getCategories() {
-        return targets.values()
-                .stream()
-                .distinct()
-                .toList();
+        return List.copyOf(categoryToAliases.keySet());
+    }
+
+    public List<String> getAliasesByCategory(String category) {
+        String normalizedCategory = TextNormalizer.normalize(category);
+
+        return List.copyOf(
+                categoryToAliases.getOrDefault(normalizedCategory, List.of())
+        );
     }
 
     public String getCategory(String target) {
-        String normalized = TextNormalizer.normalize(target);
-        return targets.getOrDefault(normalized, normalized);
+        String normalizedTarget = TextNormalizer.normalize(target);
+        return aliasToCategory.getOrDefault(normalizedTarget, normalizedTarget);
     }
 
     public boolean addTarget(String target) {
@@ -46,17 +62,39 @@ public class TargetAdminService {
         if (
                 normalizedTarget.isBlank()
                         || normalizedCategory.isBlank()
-                        || targets.containsKey(normalizedTarget)
+                        || aliasToCategory.containsKey(normalizedTarget)
         ) {
             return false;
         }
 
-        targets.put(normalizedTarget, normalizedCategory);
+        aliasToCategory.put(normalizedTarget, normalizedCategory);
+
+        categoryToAliases
+                .computeIfAbsent(normalizedCategory, key -> new ArrayList<>())
+                .add(normalizedTarget);
+
         return true;
     }
 
     public boolean removeTarget(String target) {
-        String normalized = TextNormalizer.normalize(target);
-        return targets.remove(normalized) != null;
+        String normalizedTarget = TextNormalizer.normalize(target);
+
+        String category = aliasToCategory.remove(normalizedTarget);
+
+        if (category == null) {
+            return false;
+        }
+
+        List<String> aliases = categoryToAliases.get(category);
+
+        if (aliases != null) {
+            aliases.remove(normalizedTarget);
+
+            if (aliases.isEmpty()) {
+                categoryToAliases.remove(category);
+            }
+        }
+
+        return true;
     }
 }
