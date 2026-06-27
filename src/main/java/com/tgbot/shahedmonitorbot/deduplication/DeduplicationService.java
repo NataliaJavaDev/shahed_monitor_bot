@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class DeduplicationService {
 
-    private static final Duration TTL = Duration.ofHours(1);
+    private static final Duration TTL = Duration.ofMinutes(15);
 
     private final Map<String, Instant> seenEvents = new ConcurrentHashMap<>();
 
