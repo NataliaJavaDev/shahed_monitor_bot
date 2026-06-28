@@ -127,48 +127,24 @@ public class TdLibUpdateHandler {
                 }
 
             String messageToSend = """
-                🧠 Аналіз повідомлення
+                🚨 Моніторинг
 
                 📡 Джерело: %s
-                🆔 Chat ID: %s
 
-                📂 Тип збігу:
-                %s
+                🎯 Ціль: %s
+                🧭 Напрямок: %s
+                📍 Локація: %s
 
-                🎯 Знайдена ціль:
-                %s
-
-                🧩 Категорія цілі:
-                %s
-
-                🧭 Напрямок:
-                %s
-
-                📍 Знайдена локація:
-                %s
-
-                🧩 Категорія локації:
-                %s
-
-                🔑 Ключ антидубля:
-                %s::%s
-
-                💬 Оригінальне повідомлення:
+                ------------------------
 
                 %s
                 """.formatted(
                 source.title(),
-                chatId,
-                monitorMatch.matchType().displayName(),
                 formatNullable(monitorMatch.matchedTarget()),
-                formatNullable(monitorMatch.targetCategory()),
                 formatNullable(monitorMatch.direction()),
-                formatNullable(monitorMatch.matchedLocation()),
-                formatNullable(monitorMatch.locationCategory()),
-                formatNullable(monitorMatch.targetCategory()),
                 formatNullable(monitorMatch.locationCategory()),
                 text
-            );
+        );
 
             telegramSenderService.sendToChat(
                     appProperties.telegram().targetChannelId(),
