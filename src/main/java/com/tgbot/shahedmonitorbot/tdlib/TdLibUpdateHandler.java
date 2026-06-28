@@ -135,6 +135,8 @@ public class TdLibUpdateHandler {
                 🧭 Напрямок: %s
                 📍 Локація: %s
 
+                💬 Оригінальне повідомлення:
+
                 %s
                 """.formatted(
                 source.title(),
