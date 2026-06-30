@@ -6,14 +6,12 @@ import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.monitoring.source.ChatInfoService;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
 import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateService;
-import com.tgbot.shahedmonitorbot.deduplication.DeduplicationService;
+import com.tgbot.shahedmonitorbot.sender.AnalysisMessageFormatter;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
-import com.tgbot.shahedmonitorbot.context.EventContextService;
-import org.springframework.stereotype.Service;
-import com.tgbot.shahedmonitorbot.processing.MonitorFilterService;
-import com.tgbot.shahedmonitorbot.processing.MonitorMatch;
+import com.tgbot.shahedmonitorbot.processing.MessageAnalysisService;
+import com.tgbot.shahedmonitorbot.processing.MessageAnalysis;
 
-import java.util.Optional;
+import org.springframework.stereotype.Service;
 
 @Service
 public class TdLibUpdateHandler {
@@ -23,10 +21,9 @@ public class TdLibUpdateHandler {
     private final ChatInfoService chatInfoService;
     private final MonitoredSourceService monitoredSourceService;
     private final UnknownSourceCandidateService unknownSourceCandidateService;
-    private final DeduplicationService deduplicationService;
+    private final AnalysisMessageFormatter analysisMessageFormatter;
     private final TelegramSenderService telegramSenderService;
-    private final EventContextService eventContextService;
-    private final MonitorFilterService monitorFilterService;
+    private final MessageAnalysisService messageAnalysisService;
 
     public TdLibUpdateHandler(
             ObjectMapper objectMapper,
@@ -34,10 +31,9 @@ public class TdLibUpdateHandler {
             ChatInfoService chatInfoService,
             MonitoredSourceService monitoredSourceService,
             UnknownSourceCandidateService unknownSourceCandidateService,
-            DeduplicationService deduplicationService,
+            AnalysisMessageFormatter analysisMessageFormatter,
             TelegramSenderService telegramSenderService,
-            EventContextService eventContextService,
-            MonitorFilterService monitorFilterService
+            MessageAnalysisService messageAnalysisService
             
     ) {
         this.objectMapper = objectMapper;
@@ -45,10 +41,9 @@ public class TdLibUpdateHandler {
         this.chatInfoService = chatInfoService;
         this.monitoredSourceService = monitoredSourceService;
         this.unknownSourceCandidateService = unknownSourceCandidateService;
-        this.deduplicationService = deduplicationService;
+        this.analysisMessageFormatter = analysisMessageFormatter;
         this.telegramSenderService = telegramSenderService;
-        this.eventContextService = eventContextService;
-        this.monitorFilterService = monitorFilterService;
+        this.messageAnalysisService = messageAnalysisService;
     }
 
     public void handle(String update) {
@@ -119,94 +114,29 @@ public class TdLibUpdateHandler {
 
             var source = monitoredSourceService.findByChatId(chatId);
 
-            Optional<MonitorMatch> match = monitorFilterService.findMatch(text);
+            MessageAnalysis analysis = messageAnalysisService.analyze(text);
 
-            if (match.isEmpty()) {
+            if (analysis == null) {
                 return;
             }
 
-            MonitorMatch monitorMatch = match.get();
-
-            if (deduplicationService.isDuplicate(monitorMatch)) {
+            if (analysis.duplicate()) {
                 return;
             }
-
-            eventContextService.save(monitorMatch);
-
-            var currentContext = eventContextService.getLastEvent();
-
-            String contextInfo = currentContext
-                    .map(context -> "%s::%s".formatted(
-                            formatNullable(context.targetCategory()),
-                            formatNullable(context.locationCategory())
-                    ))
-                    .orElse("-");
-
-            String messageToSend = """
-                🧠 Аналіз повідомлення
-
-                📡 Джерело: %s
-                🆔 Chat ID: %s
-
-                📂 Тип збігу:
-                %s
-
-                🎯 Знайдена ціль:
-                %s
-
-                🧩 Категорія цілі:
-                %s
-
-                🧭 Напрямок:
-                %s
-
-                📍 Знайдена локація:
-                %s
-
-                🧩 Категорія локації:
-                %s
-
-                🔑 Ключ антидубля:
-                %s::%s
-
-                🧠 Поточний контекст:
-                %s
-
-                💬 Оригінальне повідомлення:
-
-                %s
-                """.formatted(
-                source.title(),
-                chatId,
-                monitorMatch.matchType().displayName(),
-                formatNullable(monitorMatch.matchedTarget()),
-                formatNullable(monitorMatch.targetCategory()),
-                formatNullable(monitorMatch.direction()),
-                formatNullable(monitorMatch.matchedLocation()),
-                formatNullable(monitorMatch.locationCategory()),
-                formatNullable(monitorMatch.targetCategory()),
-                formatNullable(monitorMatch.locationCategory()),
-                contextInfo,
-                text
-            );
 
             telegramSenderService.sendToChat(
-                    appProperties.telegram().targetChannelId(),
-                    messageToSend
+                appProperties.telegram().targetChannelId(),
+                analysisMessageFormatter.format(
+                        analysis,
+                        source.title(),
+                        chatId,
+                        text
+                )
             );
 
         } catch (Exception e) {
             System.out.println("Failed to handle TDLib update: " + e.getMessage());
         }
-    }
-
-    private String formatNullable(String value) {
-        
-        if (value == null || value.isBlank()) {
-            return "-";
-        }
-
-        return value;
     }
 
     private String extractText(JsonNode message) {
