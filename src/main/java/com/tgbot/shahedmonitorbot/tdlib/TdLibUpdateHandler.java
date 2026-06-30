@@ -8,6 +8,7 @@ import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
 import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateService;
 import com.tgbot.shahedmonitorbot.deduplication.DeduplicationService;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
+import com.tgbot.shahedmonitorbot.context.EventContextService;
 import org.springframework.stereotype.Service;
 import com.tgbot.shahedmonitorbot.processing.MonitorFilterService;
 import com.tgbot.shahedmonitorbot.processing.MonitorMatch;
@@ -17,33 +18,37 @@ import java.util.Optional;
 @Service
 public class TdLibUpdateHandler {
 
-    private final MonitoredSourceService monitoredSourceService;
     private final ObjectMapper objectMapper;
-    private final TelegramSenderService telegramSenderService;
     private final AppProperties appProperties;
+    private final ChatInfoService chatInfoService;
+    private final MonitoredSourceService monitoredSourceService;
     private final UnknownSourceCandidateService unknownSourceCandidateService;
     private final DeduplicationService deduplicationService;
+    private final TelegramSenderService telegramSenderService;
+    private final EventContextService eventContextService;
     private final MonitorFilterService monitorFilterService;
-    private final ChatInfoService chatInfoService;
 
     public TdLibUpdateHandler(
-            MonitoredSourceService monitoredSourceService,
             ObjectMapper objectMapper,
-            TelegramSenderService telegramSenderService,
             AppProperties appProperties,
+            ChatInfoService chatInfoService,
+            MonitoredSourceService monitoredSourceService,
             UnknownSourceCandidateService unknownSourceCandidateService,
             DeduplicationService deduplicationService,
-            MonitorFilterService monitorFilterService,
-            ChatInfoService chatInfoService
+            TelegramSenderService telegramSenderService,
+            EventContextService eventContextService,
+            MonitorFilterService monitorFilterService
+            
     ) {
-        this.monitoredSourceService = monitoredSourceService;
         this.objectMapper = objectMapper;
-        this.monitorFilterService = monitorFilterService;
-        this.telegramSenderService = telegramSenderService;
-        this.deduplicationService = deduplicationService;
         this.appProperties = appProperties;
-        this.unknownSourceCandidateService = unknownSourceCandidateService;
         this.chatInfoService = chatInfoService;
+        this.monitoredSourceService = monitoredSourceService;
+        this.unknownSourceCandidateService = unknownSourceCandidateService;
+        this.deduplicationService = deduplicationService;
+        this.telegramSenderService = telegramSenderService;
+        this.eventContextService = eventContextService;
+        this.monitorFilterService = monitorFilterService;
     }
 
     public void handle(String update) {
@@ -122,9 +127,20 @@ public class TdLibUpdateHandler {
 
             MonitorMatch monitorMatch = match.get();
 
-                if (deduplicationService.isDuplicate(monitorMatch)) {
-                    return;
-                }
+            if (deduplicationService.isDuplicate(monitorMatch)) {
+                return;
+            }
+
+            eventContextService.save(monitorMatch);
+
+            var currentContext = eventContextService.getLastEvent();
+
+            String contextInfo = currentContext
+                    .map(context -> "%s::%s".formatted(
+                            formatNullable(context.targetCategory()),
+                            formatNullable(context.locationCategory())
+                    ))
+                    .orElse("-");
 
             String messageToSend = """
                 🧠 Аналіз повідомлення
@@ -153,6 +169,9 @@ public class TdLibUpdateHandler {
                 🔑 Ключ антидубля:
                 %s::%s
 
+                🧠 Поточний контекст:
+                %s
+
                 💬 Оригінальне повідомлення:
 
                 %s
@@ -167,6 +186,7 @@ public class TdLibUpdateHandler {
                 formatNullable(monitorMatch.locationCategory()),
                 formatNullable(monitorMatch.targetCategory()),
                 formatNullable(monitorMatch.locationCategory()),
+                contextInfo,
                 text
             );
 
