@@ -11,26 +11,31 @@ public class MessageAnalysisService {
     private final ContextResolverService contextResolverService;
     private final DeduplicationService deduplicationService;
     private final EventContextService eventContextService;
+    private final MessageIntentDetectorService messageIntentDetectorService;
 
     public MessageAnalysisService(
             MonitorFilterService monitorFilterService,
             ContextResolverService contextResolverService,
             DeduplicationService deduplicationService,
-            EventContextService eventContextService
+            EventContextService eventContextService,
+            MessageIntentDetectorService messageIntentDetectorService
     ) {
         this.monitorFilterService = monitorFilterService;
         this.contextResolverService = contextResolverService;
         this.deduplicationService = deduplicationService;
         this.eventContextService = eventContextService;
+        this.messageIntentDetectorService = messageIntentDetectorService;
     }
 
     public MessageAnalysis analyze(String text) {
+        MessageIntent intent = messageIntentDetectorService.detect(text);
+
         return monitorFilterService.findMatch(text)
-                .map(this::analyzeMatch)
+                .map(match -> analyzeMatch(match, intent))
                 .orElse(null);
     }
 
-    private MessageAnalysis analyzeMatch(MonitorMatch initialMatch) {
+    private MessageAnalysis analyzeMatch(MonitorMatch initialMatch, MessageIntent intent) {
         ContextResolution resolution =
                 contextResolverService.resolve(initialMatch);
 
@@ -48,6 +53,7 @@ public class MessageAnalysisService {
 
         return new MessageAnalysis(
                 finalMatch,
+                intent,
                 duplicate,
                 resolution.contextUsed(),
                 deduplicationKey
