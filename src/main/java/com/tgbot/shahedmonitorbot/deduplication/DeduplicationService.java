@@ -17,7 +17,7 @@ public class DeduplicationService {
     private final Map<String, Instant> seenEvents = new ConcurrentHashMap<>();
 
     public boolean isDuplicate(MonitorMatch match) {
-        String key = buildKey(match);
+        String key = buildDeduplicationKey(match);
 
         if (key.isBlank()) {
             return true;
@@ -33,7 +33,7 @@ public class DeduplicationService {
         return false;
     }
 
-    private String buildKey(MonitorMatch match) {
+    public String buildDeduplicationKey(MonitorMatch match) {
         String targetCategory = normalizeOrFallback(match.targetCategory(), "NO_TARGET");
         String location = normalizeOrFallback(match.locationCategory(), "NO_LOCATION");
 

@@ -6,44 +6,45 @@ import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.monitoring.source.ChatInfoService;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
 import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateService;
-import com.tgbot.shahedmonitorbot.deduplication.DeduplicationService;
+import com.tgbot.shahedmonitorbot.sender.AnalysisMessageFormatter;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
-import org.springframework.stereotype.Service;
-import com.tgbot.shahedmonitorbot.processing.MonitorFilterService;
-import com.tgbot.shahedmonitorbot.processing.MonitorMatch;
+import com.tgbot.shahedmonitorbot.processing.MessageAnalysisService;
+import com.tgbot.shahedmonitorbot.processing.MessageIntent;
+import com.tgbot.shahedmonitorbot.processing.MessageAnalysis;
 
-import java.util.Optional;
+import org.springframework.stereotype.Service;
 
 @Service
 public class TdLibUpdateHandler {
 
-    private final MonitoredSourceService monitoredSourceService;
     private final ObjectMapper objectMapper;
-    private final TelegramSenderService telegramSenderService;
     private final AppProperties appProperties;
-    private final UnknownSourceCandidateService unknownSourceCandidateService;
-    private final DeduplicationService deduplicationService;
-    private final MonitorFilterService monitorFilterService;
     private final ChatInfoService chatInfoService;
+    private final MonitoredSourceService monitoredSourceService;
+    private final UnknownSourceCandidateService unknownSourceCandidateService;
+    private final AnalysisMessageFormatter analysisMessageFormatter;
+    private final TelegramSenderService telegramSenderService;
+    private final MessageAnalysisService messageAnalysisService;
 
     public TdLibUpdateHandler(
-            MonitoredSourceService monitoredSourceService,
             ObjectMapper objectMapper,
-            TelegramSenderService telegramSenderService,
             AppProperties appProperties,
+            ChatInfoService chatInfoService,
+            MonitoredSourceService monitoredSourceService,
             UnknownSourceCandidateService unknownSourceCandidateService,
-            DeduplicationService deduplicationService,
-            MonitorFilterService monitorFilterService,
-            ChatInfoService chatInfoService
+            AnalysisMessageFormatter analysisMessageFormatter,
+            TelegramSenderService telegramSenderService,
+            MessageAnalysisService messageAnalysisService
+            
     ) {
-        this.monitoredSourceService = monitoredSourceService;
         this.objectMapper = objectMapper;
-        this.monitorFilterService = monitorFilterService;
-        this.telegramSenderService = telegramSenderService;
-        this.deduplicationService = deduplicationService;
         this.appProperties = appProperties;
-        this.unknownSourceCandidateService = unknownSourceCandidateService;
         this.chatInfoService = chatInfoService;
+        this.monitoredSourceService = monitoredSourceService;
+        this.unknownSourceCandidateService = unknownSourceCandidateService;
+        this.analysisMessageFormatter = analysisMessageFormatter;
+        this.telegramSenderService = telegramSenderService;
+        this.messageAnalysisService = messageAnalysisService;
     }
 
     public void handle(String update) {
@@ -114,41 +115,24 @@ public class TdLibUpdateHandler {
 
             var source = monitoredSourceService.findByChatId(chatId);
 
-            Optional<MonitorMatch> match = monitorFilterService.findMatch(text);
+            MessageAnalysis analysis = messageAnalysisService.analyze(text);
 
-            if (match.isEmpty()) {
+            if (analysis == null) {
+                return;
+            }
+            
+            if (analysis.duplicate() && !canSendDuplicateUpdate(analysis.intent())) {
                 return;
             }
 
-            MonitorMatch monitorMatch = match.get();
-
-                if (deduplicationService.isDuplicate(monitorMatch)) {
-                    return;
-                }
-
-            String messageToSend = """
-                🚨 Моніторинг
-
-                📡 Джерело: %s
-
-                🎯 Ціль: %s
-                🧭 Напрямок: %s
-                📍 Локація: %s
-
-                💬 Оригінальне повідомлення:
-
-                %s
-                """.formatted(
-                source.title(),
-                formatNullable(monitorMatch.matchedTarget()),
-                formatNullable(monitorMatch.direction()),
-                formatNullable(monitorMatch.locationCategory()),
-                text
-        );
-
             telegramSenderService.sendToChat(
-                    appProperties.telegram().targetChannelId(),
-                    messageToSend
+                appProperties.telegram().targetChannelId(),
+                analysisMessageFormatter.format(
+                        analysis,
+                        source.title(),
+                        chatId,
+                        text
+                )
             );
 
         } catch (Exception e) {
@@ -156,13 +140,13 @@ public class TdLibUpdateHandler {
         }
     }
 
-    private String formatNullable(String value) {
-        
-        if (value == null || value.isBlank()) {
-            return "-";
-        }
-
-        return value;
+    private boolean canSendDuplicateUpdate(MessageIntent intent) {
+        return switch (intent) {
+            case COUNT_UPDATE,
+                ROUTE_UPDATE,
+                ATTENTION -> true;
+            default -> false;
+        };
     }
 
     private String extractText(JsonNode message) {

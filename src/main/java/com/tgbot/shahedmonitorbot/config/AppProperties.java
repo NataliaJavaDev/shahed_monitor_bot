@@ -24,6 +24,8 @@ public record AppProperties(
         List<TargetCategory> targetCategories,
         List<String> directions,
         List<LocationCategory> locationCategories,
+        List<MessageIntentConfig> messageIntents,
+        List<AttentionWordConfig> attentionWords,
         List<Source> sources,
         List<String> ignoredChatIds
     ) {
@@ -35,6 +37,16 @@ public record AppProperties(
     ) {}
 
     public record LocationCategory(
+        String category,
+        List<String> aliases
+    ) {}
+
+    public record MessageIntentConfig(
+        String intent,
+        List<String> aliases
+    ) {}
+
+    public record AttentionWordConfig(
         String category,
         List<String> aliases
     ) {}

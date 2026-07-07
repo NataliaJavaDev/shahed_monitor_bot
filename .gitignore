@@ -30,3 +30,4 @@ secret.env
 application-local.yml
 
 tdlib-db/
+exports/
