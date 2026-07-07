@@ -13,15 +13,18 @@ public class MonitorFilterService {
     private final TargetAdminService targetAdminService;
     private final LocationAdminService locationAdminService;
     private final DirectionAdminService directionAdminService;
+    private final AttentionWordAdminService attentionWordAdminService;
 
     public MonitorFilterService(
             TargetAdminService targetAdminService,
             LocationAdminService locationAdminService,
-            DirectionAdminService directionAdminService
+            DirectionAdminService directionAdminService,
+            AttentionWordAdminService attentionWordAdminService
     ) {
         this.targetAdminService = targetAdminService;
         this.locationAdminService = locationAdminService;
         this.directionAdminService = directionAdminService;
+        this.attentionWordAdminService = attentionWordAdminService;
     }
 
     public Optional<MonitorMatch> findMatch(String text) {
@@ -41,6 +44,9 @@ public class MonitorFilterService {
                 locationAdminService.getLocations()
         );
 
+        boolean hasAttentionWord =
+                attentionWordAdminService.findAttentionWord(text) != null;
+
         if (matchedTarget != null && matchedLocation != null) {
             return Optional.of(new MonitorMatch(
                     matchedTarget,
@@ -52,7 +58,8 @@ public class MonitorFilterService {
             ));
         }
 
-        if (matchedLocation != null && isOnlyLocation(normalizedText, matchedLocation)) {
+        if (matchedLocation != null
+                && (isOnlyLocation(normalizedText, matchedLocation) || hasAttentionWord)) {
             return Optional.of(new MonitorMatch(
                     null,
                     null,

@@ -120,10 +120,6 @@ public class TdLibUpdateHandler {
             if (analysis == null) {
                 return;
             }
-
-            if (analysis.duplicate() && analysis.intent() != MessageIntent.COUNT_UPDATE) {
-                return;
-            }
             
             if (analysis.duplicate() && !canSendDuplicateUpdate(analysis.intent())) {
                 return;
@@ -147,7 +143,8 @@ public class TdLibUpdateHandler {
     private boolean canSendDuplicateUpdate(MessageIntent intent) {
         return switch (intent) {
             case COUNT_UPDATE,
-                ROUTE_UPDATE -> true;
+                ROUTE_UPDATE,
+                ATTENTION -> true;
             default -> false;
         };
     }
