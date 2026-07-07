@@ -17,53 +17,22 @@ public class AnalysisMessageFormatter {
         MonitorMatch match = analysis.monitorMatch();
 
         return """
-                🧠 Аналіз повідомлення
+                🚨 Моніторинг
 
                 📡 Джерело: %s
-                🆔 Chat ID: %s
 
-                📂 Тип збігу:
-                %s
-
-                🎯 Знайдена ціль:
-                %s
-
-                🧩 Категорія цілі:
-                %s
-
-                🧭 Напрямок:
-                %s
-
-                📍 Знайдена локація:
-                %s
-
-                🧩 Категорія локації:
-                %s
-
-                🔑 Ключ антидубля:
-                %s
-
-                🔄 Контекст використано:
-                %s
-
-                🧠 Intent:
-                %s
+                🎯 Ціль: %s
+                🧭 Напрямок: %s
+                📍 Локація: %s
 
                 💬 Оригінальне повідомлення:
 
                 %s
                 """.formatted(
                 sourceTitle,
-                chatId,
-                match.matchType().displayName(),
-                formatNullable(match.matchedTarget()),
                 formatNullable(match.targetCategory()),
                 formatNullable(match.direction()),
-                formatNullable(match.matchedLocation()),
                 formatNullable(match.locationCategory()),
-                formatNullable(analysis.deduplicationKey()),
-                analysis.contextUsed() ? "Так" : "Ні",
-                analysis.intent(),
                 originalText
         );
     }
