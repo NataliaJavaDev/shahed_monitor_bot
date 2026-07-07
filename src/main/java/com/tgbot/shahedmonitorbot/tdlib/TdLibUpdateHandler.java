@@ -9,6 +9,7 @@ import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateServic
 import com.tgbot.shahedmonitorbot.sender.AnalysisMessageFormatter;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import com.tgbot.shahedmonitorbot.processing.MessageAnalysisService;
+import com.tgbot.shahedmonitorbot.processing.MessageIntent;
 import com.tgbot.shahedmonitorbot.processing.MessageAnalysis;
 
 import org.springframework.stereotype.Service;
@@ -120,7 +121,11 @@ public class TdLibUpdateHandler {
                 return;
             }
 
-            if (analysis.duplicate()) {
+            if (analysis.duplicate() && analysis.intent() != MessageIntent.COUNT_UPDATE) {
+                return;
+            }
+            
+            if (analysis.duplicate() && !canSendDuplicateUpdate(analysis.intent())) {
                 return;
             }
 
@@ -137,6 +142,14 @@ public class TdLibUpdateHandler {
         } catch (Exception e) {
             System.out.println("Failed to handle TDLib update: " + e.getMessage());
         }
+    }
+
+    private boolean canSendDuplicateUpdate(MessageIntent intent) {
+        return switch (intent) {
+            case COUNT_UPDATE,
+                ROUTE_UPDATE -> true;
+            default -> false;
+        };
     }
 
     private String extractText(JsonNode message) {

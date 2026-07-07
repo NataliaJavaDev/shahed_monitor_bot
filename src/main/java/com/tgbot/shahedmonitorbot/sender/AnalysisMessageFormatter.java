@@ -43,7 +43,10 @@ public class AnalysisMessageFormatter {
                 🔑 Ключ антидубля:
                 %s
 
-                🧠 Контекст використано:
+                🔄 Контекст використано:
+                %s
+
+                🧠 Intent:
                 %s
 
                 💬 Оригінальне повідомлення:
@@ -60,6 +63,7 @@ public class AnalysisMessageFormatter {
                 formatNullable(match.locationCategory()),
                 formatNullable(analysis.deduplicationKey()),
                 analysis.contextUsed() ? "Так" : "Ні",
+                analysis.intent(),
                 originalText
         );
     }

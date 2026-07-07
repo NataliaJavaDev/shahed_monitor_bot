@@ -1,5 +1,6 @@
 package com.tgbot.shahedmonitorbot.processing;
 
+import com.tgbot.shahedmonitorbot.admin.service.AttentionWordAdminService;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;
 import org.springframework.stereotype.Service;
@@ -8,14 +9,23 @@ import org.springframework.stereotype.Service;
 public class MessageIntentDetectorService {
 
     private final AppProperties appProperties;
+    private final AttentionWordAdminService attentionWordAdminService;
 
-    public MessageIntentDetectorService(AppProperties appProperties) {
+    public MessageIntentDetectorService(
+            AppProperties appProperties,
+            AttentionWordAdminService attentionWordAdminService
+    ) {
         this.appProperties = appProperties;
+        this.attentionWordAdminService = attentionWordAdminService;
     }
 
     public MessageIntent detect(String text) {
         if (text == null || text.isBlank()) {
             return MessageIntent.UNKNOWN;
+        }
+
+        if (attentionWordAdminService.findAttentionWord(text) != null) {
+            return MessageIntent.ATTENTION;
         }
 
         String normalizedText = TextNormalizer.normalize(text);

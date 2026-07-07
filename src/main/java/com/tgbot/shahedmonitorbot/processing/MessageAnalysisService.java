@@ -4,6 +4,8 @@ import com.tgbot.shahedmonitorbot.context.EventContextService;
 import com.tgbot.shahedmonitorbot.deduplication.DeduplicationService;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class MessageAnalysisService {
 
@@ -30,12 +32,35 @@ public class MessageAnalysisService {
     public MessageAnalysis analyze(String text) {
         MessageIntent intent = messageIntentDetectorService.detect(text);
 
-        return monitorFilterService.findMatch(text)
-                .map(match -> analyzeMatch(match, intent))
+        Optional<MonitorMatch> match = monitorFilterService.findMatch(text);
+
+        boolean contextRestored = false;
+
+        if (match.isEmpty() && requiresContext(intent)) {
+            match = eventContextService.getLastEvent();
+            contextRestored = match.isPresent();
+        }
+
+        boolean finalContextRestored = contextRestored;
+        MessageIntent finalIntent = intent;
+
+        return match
+                .map(currentMatch -> analyzeMatch(
+                        currentMatch,
+                        finalIntent,
+                        finalContextRestored
+                ))
                 .orElse(null);
     }
 
-    private MessageAnalysis analyzeMatch(MonitorMatch initialMatch, MessageIntent intent) {
+    private MessageAnalysis analyzeMatch(
+            MonitorMatch initialMatch,
+            MessageIntent intent,
+            boolean contextRestored
+    ) {
+        MessageIntent finalIntent =
+                resolveFinalIntent(intent, initialMatch, contextRestored);
+
         ContextResolution resolution =
                 contextResolverService.resolve(initialMatch);
 
@@ -53,10 +78,34 @@ public class MessageAnalysisService {
 
         return new MessageAnalysis(
                 finalMatch,
-                intent,
+                finalIntent,
                 duplicate,
-                resolution.contextUsed(),
+                resolution.contextUsed() || contextRestored,
                 deduplicationKey
         );
+    }
+
+    private boolean requiresContext(MessageIntent intent) {
+        return switch (intent) {
+            case COUNT_UPDATE,
+            ROUTE_UPDATE -> true;
+            default -> false;
+        };
+    }
+
+    private MessageIntent resolveFinalIntent(
+            MessageIntent detectedIntent,
+            MonitorMatch match,
+            boolean contextRestored
+    ) {
+        if (contextRestored) {
+            return detectedIntent;
+        }
+
+        if (match.matchType() == MatchType.TARGET_AND_LOCATION) {
+            return MessageIntent.NEW_EVENT;
+        }
+
+        return detectedIntent;
     }
 }
