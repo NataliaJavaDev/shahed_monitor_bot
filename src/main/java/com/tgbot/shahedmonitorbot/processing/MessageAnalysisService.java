@@ -29,7 +29,7 @@ public class MessageAnalysisService {
         this.messageIntentDetectorService = messageIntentDetectorService;
     }
 
-    public MessageAnalysis analyze(String text) {
+    public MessageAnalysis analyze(String chatId, String text) {
         MessageIntent intent = messageIntentDetectorService.detect(text);
 
         Optional<MonitorMatch> match = monitorFilterService.findMatch(text);
@@ -37,7 +37,7 @@ public class MessageAnalysisService {
         boolean contextRestored = false;
 
         if (match.isEmpty() && requiresContext(intent)) {
-            match = eventContextService.getLastEvent();
+            match = eventContextService.getContext(chatId);
             contextRestored = match.isPresent();
         }
 
@@ -46,6 +46,7 @@ public class MessageAnalysisService {
 
         return match
                 .map(currentMatch -> analyzeMatch(
+                        chatId,
                         currentMatch,
                         finalIntent,
                         finalContextRestored
@@ -54,6 +55,7 @@ public class MessageAnalysisService {
     }
 
     private MessageAnalysis analyzeMatch(
+            String chatId,
             MonitorMatch initialMatch,
             MessageIntent intent,
             boolean contextRestored
@@ -62,7 +64,7 @@ public class MessageAnalysisService {
                 resolveFinalIntent(intent, initialMatch, contextRestored);
 
         ContextResolution resolution =
-                contextResolverService.resolve(initialMatch);
+                contextResolverService.resolve(chatId, initialMatch);
 
         MonitorMatch finalMatch = resolution.match();
 
@@ -72,8 +74,8 @@ public class MessageAnalysisService {
         boolean duplicate =
                 deduplicationService.isDuplicate(finalMatch);
 
-        if (!duplicate) {
-            eventContextService.save(finalMatch);
+        if (!duplicate && shouldSaveContext(finalMatch, finalIntent)) {
+            eventContextService.saveContext(chatId, finalMatch);
         }
 
         return new MessageAnalysis(
@@ -88,7 +90,28 @@ public class MessageAnalysisService {
     private boolean requiresContext(MessageIntent intent) {
         return switch (intent) {
             case COUNT_UPDATE,
-            ROUTE_UPDATE -> true;
+                 ROUTE_UPDATE -> true;
+            default -> false;
+        };
+    }
+
+    private boolean shouldSaveContext(
+            MonitorMatch match,
+            MessageIntent intent
+    ) {
+        if (match == null) {
+            return false;
+        }
+
+        if (intent == MessageIntent.ATTENTION
+                || intent == MessageIntent.COUNT_UPDATE
+                || intent == MessageIntent.STATUS_UPDATE) {
+            return false;
+        }
+
+        return switch (match.matchType()) {
+            case TARGET_AND_LOCATION,
+                 DIRECTION_AND_LOCATION -> true;
             default -> false;
         };
     }

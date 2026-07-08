@@ -12,12 +12,12 @@ public class ContextResolverService {
         this.eventContextService = eventContextService;
     }
 
-    public ContextResolution resolve(MonitorMatch initialMatch) {
+    public ContextResolution resolve(String chatId, MonitorMatch initialMatch) {
         if (initialMatch.matchType() != MatchType.LOCATION_ONLY) {
             return new ContextResolution(initialMatch, false);
         }
 
-        return eventContextService.getLastEvent()
+        return eventContextService.getContext(chatId)
                 .filter(previous -> previous.targetCategory() != null)
                 .filter(previous -> !previous.targetCategory().isBlank())
                 .map(previous -> new ContextResolution(

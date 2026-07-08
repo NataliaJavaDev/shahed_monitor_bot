@@ -115,7 +115,7 @@ public class TdLibUpdateHandler {
 
             var source = monitoredSourceService.findByChatId(chatId);
 
-            MessageAnalysis analysis = messageAnalysisService.analyze(text);
+            MessageAnalysis analysis = messageAnalysisService.analyze(chatId, text);
 
             if (analysis == null) {
                 return;
