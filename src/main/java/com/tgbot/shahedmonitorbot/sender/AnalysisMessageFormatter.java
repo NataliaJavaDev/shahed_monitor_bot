@@ -2,6 +2,7 @@ package com.tgbot.shahedmonitorbot.sender;
 
 import com.tgbot.shahedmonitorbot.processing.MessageAnalysis;
 import com.tgbot.shahedmonitorbot.processing.MonitorMatch;
+import com.tgbot.shahedmonitorbot.processing.ThreatMatch;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,7 +14,29 @@ public class AnalysisMessageFormatter {
             String chatId,
             String originalText
     ) {
+        if (analysis.threatMatch() != null) {
+            return formatThreatAnalysis(
+                    analysis,
+                    sourceTitle,
+                    chatId,
+                    originalText
+            );
+        }
 
+        return formatMonitorAnalysis(
+                analysis,
+                sourceTitle,
+                chatId,
+                originalText
+        );
+    }
+
+    private String formatMonitorAnalysis(
+            MessageAnalysis analysis,
+            String sourceTitle,
+            String chatId,
+            String originalText
+    ) {
         MonitorMatch match = analysis.monitorMatch();
 
         return """
@@ -58,6 +81,49 @@ public class AnalysisMessageFormatter {
                 formatNullable(match.locationCategory()),
                 formatNullable(analysis.deduplicationKey()),
                 analysis.contextUsed() ? "Так" : "Ні",
+                analysis.intent(),
+                originalText
+        );
+    }
+
+    private String formatThreatAnalysis(
+            MessageAnalysis analysis,
+            String sourceTitle,
+            String chatId,
+            String originalText
+    ) {
+        ThreatMatch threat = analysis.threatMatch();
+
+        return """
+                🧠 Аналіз повідомлення
+
+                📡 Джерело: %s
+                🆔 Chat ID: %s
+
+                📂 Тип збігу: 🌐 Глобальна загроза
+
+                ⚠️ Знайдена загроза: %s
+
+                🧩 Категорія загрози:
+                %s
+
+                🔑 Ключ антидубля: %s
+
+                🔄 Контекст використано:
+                Ні
+
+                🧠 Intent:
+                %s
+
+                💬 Оригінальне повідомлення:
+
+                %s
+                """.formatted(
+                sourceTitle,
+                chatId,
+                formatNullable(threat.matchedThreat()),
+                formatNullable(threat.threatCategory()),
+                formatNullable(analysis.deduplicationKey()),
                 analysis.intent(),
                 originalText
         );

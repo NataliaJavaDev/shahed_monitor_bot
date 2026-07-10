@@ -8,5 +8,6 @@ public enum MessageIntent {
     LOCATION_UPDATE,
     STATUS_UPDATE,
     ATTENTION,
-    UNKNOWN
+    UNKNOWN,
+    THREAT_DETECTED
 }

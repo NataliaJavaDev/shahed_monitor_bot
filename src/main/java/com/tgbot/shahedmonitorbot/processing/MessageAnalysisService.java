@@ -14,25 +14,50 @@ public class MessageAnalysisService {
     private final DeduplicationService deduplicationService;
     private final EventContextService eventContextService;
     private final MessageIntentDetectorService messageIntentDetectorService;
+    private final ThreatDetectorService threatDetectorService;
+    private final MessagePreprocessorService messagePreprocessorService;
 
     public MessageAnalysisService(
             MonitorFilterService monitorFilterService,
             ContextResolverService contextResolverService,
             DeduplicationService deduplicationService,
             EventContextService eventContextService,
-            MessageIntentDetectorService messageIntentDetectorService
+            MessageIntentDetectorService messageIntentDetectorService,
+            ThreatDetectorService threatDetectorService,
+            MessagePreprocessorService messagePreprocessorService
     ) {
         this.monitorFilterService = monitorFilterService;
         this.contextResolverService = contextResolverService;
         this.deduplicationService = deduplicationService;
         this.eventContextService = eventContextService;
         this.messageIntentDetectorService = messageIntentDetectorService;
+        this.threatDetectorService = threatDetectorService;
+        this.messagePreprocessorService = messagePreprocessorService;
     }
 
     public MessageAnalysis analyze(String chatId, String text) {
-        MessageIntent intent = messageIntentDetectorService.detect(text);
+        PreprocessedMessage preprocessed =
+                messagePreprocessorService.preprocess(text);
 
-        Optional<MonitorMatch> match = monitorFilterService.findMatch(text);
+        if (preprocessed.cleanedText() == null) {
+            return null;
+        }
+
+        String cleanedText = preprocessed.cleanedText();
+
+        MessageIntent intent =
+                messageIntentDetectorService.detect(cleanedText);
+
+        if (intent == MessageIntent.THREAT_DETECTED) {
+            return analyzeThreat(cleanedText, intent);
+        }
+
+        if (preprocessed.tooLongForLocalAnalysis()) {
+            return null;
+        }
+
+        Optional<MonitorMatch> match =
+                monitorFilterService.findMatch(cleanedText);
 
         boolean contextRestored = false;
 
@@ -80,6 +105,7 @@ public class MessageAnalysisService {
 
         return new MessageAnalysis(
                 finalMatch,
+                null,
                 finalIntent,
                 duplicate,
                 resolution.contextUsed() || contextRestored,
@@ -105,7 +131,8 @@ public class MessageAnalysisService {
 
         if (intent == MessageIntent.ATTENTION
                 || intent == MessageIntent.COUNT_UPDATE
-                || intent == MessageIntent.STATUS_UPDATE) {
+                || intent == MessageIntent.STATUS_UPDATE
+                || intent == MessageIntent.THREAT_DETECTED) {
             return false;
         }
 
@@ -130,5 +157,29 @@ public class MessageAnalysisService {
         }
 
         return detectedIntent;
+    }
+
+    private MessageAnalysis analyzeThreat(
+            String text,
+            MessageIntent intent
+    ) {
+        return threatDetectorService.findThreat(text)
+                .map(threatMatch -> {
+                    String deduplicationKey =
+                            deduplicationService.buildThreatDeduplicationKey(threatMatch);
+
+                    boolean duplicate =
+                            deduplicationService.isDuplicate(threatMatch);
+
+                    return new MessageAnalysis(
+                            null,
+                            threatMatch,
+                            intent,
+                            duplicate,
+                            false,
+                            deduplicationKey
+                    );
+                })
+                .orElse(null);
     }
 }
