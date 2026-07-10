@@ -5,6 +5,7 @@ app:
 
   monitor:
     duplicate-ttl-minutes: 5
+    context-ttl: 15m
 
     location-categories:
       - category: "біла церква"
