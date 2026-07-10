@@ -2,9 +2,6 @@ package com.tgbot.shahedmonitorbot.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import com.tgbot.shahedmonitorbot.config.AppProperties.AlertApi;
-import com.tgbot.shahedmonitorbot.config.AppProperties.Tdlib;
-
 import java.util.List;
 
 @ConfigurationProperties(prefix = "app")

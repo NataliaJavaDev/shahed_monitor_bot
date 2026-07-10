@@ -6,7 +6,6 @@ import com.tgbot.shahedmonitorbot.alertapi.formatter.ApiAlertStatusFormatter;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
 import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateService;
 import com.tgbot.shahedmonitorbot.alertapi.service.AirAlertApiService;
-import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
 import org.springframework.stereotype.Service;
 
 import com.tgbot.shahedmonitorbot.admin.menu.AdminMenuService;
@@ -33,7 +32,6 @@ public class AdminCommandHandler {
     private final ManualAlertService manualAlertService;
     private final AirAlertApiService airAlertApiService;
     private final ApiAlertStatusFormatter apiAlertStatusFormatter;
-    private final MonitoringStateService monitoringStateService;
     private final MonitoredSourceService monitoredSourceService;
     private final UnknownSourceCandidateService unknownSourceCandidateService;
 
@@ -48,7 +46,6 @@ public class AdminCommandHandler {
             ManualAlertService manualAlertService,
             AirAlertApiService airAlertApiService,
             ApiAlertStatusFormatter apiAlertStatusFormatter,
-            MonitoringStateService monitoringStateService,
             MonitoredSourceService monitoredSourceService,
             UnknownSourceCandidateService unknownSourceCandidateService
     ) {
@@ -62,7 +59,6 @@ public class AdminCommandHandler {
         this.manualAlertService = manualAlertService;
         this.airAlertApiService = airAlertApiService;
         this.apiAlertStatusFormatter = apiAlertStatusFormatter;
-        this.monitoringStateService = monitoringStateService;
         this.monitoredSourceService = monitoredSourceService;
         this.unknownSourceCandidateService = unknownSourceCandidateService;
     }
@@ -307,16 +303,6 @@ public class AdminCommandHandler {
                 );
                 return true;
 
-            case API_CONTROL:
-                monitoringStateService.toggleApiControl();
-
-                senderService.sendToChat(
-                    chatId,
-                    "🔌 API-керування: "
-                    + monitoringStateService.getApiControlStatus()
-                );
-                return true;
-
             case SOURCES:
                 senderService.sendToChatWithReplyKeyboard(
                     chatId,
@@ -338,12 +324,6 @@ public class AdminCommandHandler {
                 return true;
         }
         return false;
-    }
-
-    private void requestKeyword(Long userId, String chatId, AdminSessionState state, AdminMessage message) {
-        
-        sessionService.setState(userId, state);
-        senderService.sendToChat(chatId, message.text());
     }
 
     private void sendTargets(String chatId) {
@@ -535,12 +515,8 @@ public class AdminCommandHandler {
                 🤖 Статус бота
                 
                 TDLib-моніторинг каналів: увімкнений
-                API-керування моніторингом: %s
-                API-режим активного моніторингу: %s
-                """.formatted(
-                monitoringStateService.isApiControlEnabled() ? "увімкнене" : "вимкнене",
-                monitoringStateService.isMonitoringEnabled() ? "активний" : "неактивний"
-        );
+                API-керування моніторингом: увімкнене
+            """;
 
         senderService.sendToChat(chatId, message);
     }
@@ -579,19 +555,6 @@ public class AdminCommandHandler {
         }
 
         senderService.sendToChat(chatId, builder.toString());
-    }
-
-    private void requestAddSource(Long userId, String chatId) {
-
-        sessionService.setState(
-                userId,
-                AdminSessionState.WAITING_FOR_NEW_SOURCE_ID
-        );
-
-        senderService.sendToChat(
-                chatId,
-                "Введіть chat_id джерела моніторингу:"
-        );
     }
 
     private void requestRemoveSource(Long userId, String chatId) {

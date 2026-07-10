@@ -140,16 +140,13 @@ public class AdminMenuService {
     public ReplyKeyboardMarkup settingsReplyKeyboard() {
 
         KeyboardRow row1 = new KeyboardRow();
-        row1.add(AdminButton.API_CONTROL.text());
+        row1.add(AdminButton.SOURCES.text());
 
         KeyboardRow row2 = new KeyboardRow();
-        row2.add(AdminButton.SOURCES.text());
-
-        KeyboardRow row3 = new KeyboardRow();
-        row3.add(AdminButton.BACK.text());
+        row2.add(AdminButton.BACK.text());
 
         return ReplyKeyboardMarkup.builder()
-                .keyboard(List.of(row1, row2, row3))
+                .keyboard(List.of(row1, row2))
                 .resizeKeyboard(true)
                 .build();
     }
