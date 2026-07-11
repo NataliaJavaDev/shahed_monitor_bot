@@ -55,11 +55,12 @@ public record AppProperties(
     ) {}
 
     public record AlertApi(
-        String baseUrl,
-        String apiKey,
-        String alarmRegionId,
-        List<String> dangerRegionIds,
-        Long pollingDelayMs
+            String baseUrl,
+            String apiKey,
+            String alarmRegionId,
+            String highRiskRegionId,
+            List<String> dangerRegionIds,
+            Long pollingDelayMs
     ) {}
 
     public record Tdlib(

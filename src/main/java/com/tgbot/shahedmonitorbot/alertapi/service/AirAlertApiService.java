@@ -7,28 +7,36 @@ import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertType;
 import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
 import java.time.ZoneId;
-
-import org.springframework.stereotype.Service;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 
 @Service
 public class AirAlertApiService {
+
+    private static final ZoneId KYIV_ZONE = ZoneId.of("Europe/Kyiv");
 
     private final AirAlertApiClient client;
     private final AppProperties properties;
     private final ManualAlertService manualAlertService;
     private final MonitoringStateService monitoringStateService;
-    private static final ZoneId KYIV_ZONE = ZoneId.of("Europe/Kyiv");
+
+    private ApiAlertStatus lastStatus = new ApiAlertStatus(
+            false,
+            false,
+            List.of(),
+            LocalDateTime.now(KYIV_ZONE)
+    );
 
     public AirAlertApiService(
-        AirAlertApiClient client,
-        AppProperties properties,
-        ManualAlertService manualAlertService,
-        MonitoringStateService monitoringStateService
+            AirAlertApiClient client,
+            AppProperties properties,
+            ManualAlertService manualAlertService,
+            MonitoringStateService monitoringStateService
     ) {
         this.client = client;
         this.properties = properties;
@@ -37,23 +45,32 @@ public class AirAlertApiService {
     }
 
     public void checkAlerts() {
-
         try {
             RegionAlertDto[] alerts = client.fetchAlerts();
 
-            ApiAlertStatus currentStatus = detectAlertStatus(alerts);
-            updateMonitoringFromApi(currentStatus.type());
-
-            if (currentStatus.type() == lastStatus.type()) {
-                System.out.println("API alert status unchanged: " + currentStatus);
-                lastStatus = currentStatus;
-                return;
+            if (alerts == null) {
+                alerts = new RegionAlertDto[0];
             }
 
-            System.out.println("API alert status changed: " + lastStatus.type() + " -> " + currentStatus.type());
+            ApiAlertStatus currentStatus = detectAlertStatus(alerts);
 
-            manualAlertService.sendAlert(currentStatus.type());
-            
+            processDistrictAlertChange(lastStatus, currentStatus);
+            processHighRiskChange(lastStatus, currentStatus);
+
+            if (hasStatusChanged(lastStatus, currentStatus)) {
+                System.out.println(
+                        "API alert status changed: "
+                                + formatStatusForLog(lastStatus)
+                                + " -> "
+                                + formatStatusForLog(currentStatus)
+                );
+            } else {
+                System.out.println(
+                        "API alert status unchanged: "
+                                + formatStatusForLog(currentStatus)
+                );
+            }
+
             lastStatus = currentStatus;
 
         } catch (Exception e) {
@@ -61,8 +78,48 @@ public class AirAlertApiService {
         }
     }
 
-    private void updateMonitoringFromApi(ManualAlertType type) {
+    private void processDistrictAlertChange(
+            ApiAlertStatus previousStatus,
+            ApiAlertStatus currentStatus
+    ) {
+        boolean wasActive = previousStatus.districtAlertActive();
+        boolean isActive = currentStatus.districtAlertActive();
 
+        if (wasActive == isActive) {
+            return;
+        }
+
+        if (isActive) {
+            updateMonitoringFromApi(ManualAlertType.ALERT);
+            manualAlertService.sendAlert(ManualAlertType.ALERT);
+            return;
+        }
+
+        updateMonitoringFromApi(ManualAlertType.ALL_CLEAR);
+        manualAlertService.sendAlert(ManualAlertType.ALL_CLEAR);
+    }
+
+    private void processHighRiskChange(
+            ApiAlertStatus previousStatus,
+            ApiAlertStatus currentStatus
+    ) {
+        boolean wasActive = previousStatus.highRiskActive();
+        boolean isActive = currentStatus.highRiskActive();
+
+        /*
+         * HIGH_RISK надсилається тільки тоді,
+         * коли активується громада з high-risk-region-id,
+         * тобто 711.
+         *
+         * Зміни інших danger-region-ids
+         * повідомлень у групу не створюють.
+         */
+        if (!wasActive && isActive) {
+            manualAlertService.sendAlert(ManualAlertType.HIGH_RISK);
+        }
+    }
+
+    private void updateMonitoringFromApi(ManualAlertType type) {
         if (!monitoringStateService.isApiControlEnabled()) {
             return;
         }
@@ -77,45 +134,64 @@ public class AirAlertApiService {
     }
 
     private ApiAlertStatus detectAlertStatus(RegionAlertDto[] alerts) {
+        boolean districtAlertActive = Arrays.stream(alerts)
+                .anyMatch(alert ->
+                        properties.alertApi()
+                                .alarmRegionId()
+                                .equals(alert.regionId())
+                );
 
-        List<String> activeDangerRegions = Arrays.stream(alerts)
-                .filter(alert -> properties.alertApi()
-                        .dangerRegionIds()
-                        .contains(alert.regionId()))
+        boolean highRiskActive = Arrays.stream(alerts)
+                .anyMatch(alert ->
+                        properties.alertApi()
+                                .highRiskRegionId()
+                                .equals(alert.regionId())
+                );
+
+        List<String> activeDangerRegionNames = Arrays.stream(alerts)
+                .filter(alert ->
+                        properties.alertApi()
+                                .dangerRegionIds()
+                                .contains(alert.regionId())
+                )
                 .map(RegionAlertDto::regionName)
+                .filter(regionName ->
+                        regionName != null && !regionName.isBlank()
+                )
+                .distinct()
+                .sorted(Comparator.naturalOrder())
                 .toList();
 
-        boolean districtAlertActive = Arrays.stream(alerts)
-                .anyMatch(alert -> properties.alertApi()
-                        .alarmRegionId()
-                        .equals(alert.regionId()));
-
-        ManualAlertType type;
-
-        if (!activeDangerRegions.isEmpty()) {
-            type = ManualAlertType.HIGH_RISK;
-        } else if (districtAlertActive) {
-            type = ManualAlertType.ALERT;
-        } else {
-            type = ManualAlertType.ALL_CLEAR;
-        }
-
         return new ApiAlertStatus(
-                type,
                 districtAlertActive,
-                activeDangerRegions,
+                highRiskActive,
+                activeDangerRegionNames,
                 LocalDateTime.now(KYIV_ZONE)
         );
+    }
+
+    private boolean hasStatusChanged(
+            ApiAlertStatus previousStatus,
+            ApiAlertStatus currentStatus
+    ) {
+        return previousStatus.districtAlertActive()
+                != currentStatus.districtAlertActive()
+                || previousStatus.highRiskActive()
+                != currentStatus.highRiskActive()
+                || !previousStatus.activeDangerRegionNames()
+                        .equals(currentStatus.activeDangerRegionNames());
+    }
+
+    private String formatStatusForLog(ApiAlertStatus status) {
+        return "districtAlertActive="
+                + status.districtAlertActive()
+                + ", highRiskActive="
+                + status.highRiskActive()
+                + ", activeDangerRegions="
+                + status.activeDangerRegionNames();
     }
 
     public ApiAlertStatus getLastStatus() {
         return lastStatus;
     }
-
-    private ApiAlertStatus lastStatus = new ApiAlertStatus(
-        ManualAlertType.ALL_CLEAR,
-        false,
-        List.of(),
-        LocalDateTime.now(KYIV_ZONE)
-    );
 }
