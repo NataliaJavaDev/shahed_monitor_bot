@@ -607,34 +607,36 @@ public class AdminCommandHandler {
         if (sources.isEmpty()) {
             senderService.sendToChat(
                     chatId,
-                    "✅ Активних джерел поки немає."
+                    "📡 Активних джерел поки немає."
             );
             return;
         }
 
         senderService.sendToChat(
                 chatId,
-                "✅ Активні джерела: "
-                        + sources.size()
+                "📡 Активні джерела (" + sources.size() + ")"
         );
 
-        for (MonitoredSource source : sources) {
+        for (int index = 0; index < sources.size(); index++) {
+
+            MonitoredSource source = sources.get(index);
 
             String message = """
-                    📡 %s
+                    📡 Джерело %d/%d (активне)
 
-                    ID: %s
-                    Статус: ✅ моніторинг увімкнено
+                    Назва: %s
+                    Chat ID: %s
                     """.formatted(
+                    index + 1,
+                    sources.size(),
                     source.title(),
                     source.chatId()
             );
 
             InlineKeyboardMarkup keyboard =
                     singleButtonKeyboard(
-                            "⛔ Ігнорувати",
-                            SOURCE_IGNORE_CALLBACK
-                                    + source.chatId()
+                            "⛔ Вимкнути моніторинг",
+                            SOURCE_IGNORE_CALLBACK + source.chatId()
                     );
 
             senderService.sendToChatWithKeyboard(
@@ -660,37 +662,39 @@ public class AdminCommandHandler {
 
         senderService.sendToChat(
                 chatId,
-                "🆕 Нові джерела: "
-                        + candidates.size()
+                "🆕 Нові джерела (" + candidates.size() + ")"
         );
 
-        for (UnknownSourceCandidate candidate : candidates) {
+        for (int index = 0; index < candidates.size(); index++) {
+
+            UnknownSourceCandidate candidate =
+                    candidates.get(index);
 
             String message = """
-                    📡 %s
+                    📡 Джерело %d/%d (нове)
 
-                    ID: %s
-                    Вперше знайдено: %s
-                    Остання активність: %s
+                    Назва: %s
+                    Chat ID: %s
 
-                    Останнє повідомлення:
+                    🕒 Остання активність: %s
+
+                    💬 Повідомлення:
                     %s
                     """.formatted(
+                    index + 1,
+                    candidates.size(),
                     candidate.title(),
                     candidate.chatId(),
-                    formatInstant(candidate.firstSeenAt()),
                     formatInstant(candidate.lastSeenAt()),
                     candidate.lastText()
             );
 
             InlineKeyboardMarkup keyboard =
                     twoButtonKeyboard(
-                            "👁 Увімкнути",
-                            SOURCE_ENABLE_CALLBACK
-                                    + candidate.chatId(),
+                            "✅ Увімкнути моніторинг",
+                            SOURCE_ENABLE_CALLBACK + candidate.chatId(),
                             "⛔ Ігнорувати",
-                            SOURCE_IGNORE_CALLBACK
-                                    + candidate.chatId()
+                            SOURCE_IGNORE_CALLBACK + candidate.chatId()
                     );
 
             senderService.sendToChatWithKeyboard(
@@ -716,27 +720,29 @@ public class AdminCommandHandler {
 
         senderService.sendToChat(
                 chatId,
-                "⛔ Ігноровані джерела: "
-                        + sources.size()
+                "⛔ Ігноровані джерела (" + sources.size() + ")"
         );
 
-        for (MonitoredSource source : sources) {
+        for (int index = 0; index < sources.size(); index++) {
+
+            MonitoredSource source = sources.get(index);
 
             String message = """
-                    📡 %s
+                    📡 Джерело %d/%d (ігнороване)
 
-                    ID: %s
-                    Статус: ⛔ джерело ігнорується
+                    Назва: %s
+                    Chat ID: %s
                     """.formatted(
+                    index + 1,
+                    sources.size(),
                     source.title(),
                     source.chatId()
             );
 
             InlineKeyboardMarkup keyboard =
                     singleButtonKeyboard(
-                            "👁 Увімкнути",
-                            SOURCE_ENABLE_CALLBACK
-                                    + source.chatId()
+                            "✅ Увімкнути моніторинг",
+                            SOURCE_ENABLE_CALLBACK + source.chatId()
                     );
 
             senderService.sendToChatWithKeyboard(
@@ -754,9 +760,11 @@ public class AdminCommandHandler {
     ) {
 
         UnknownSourceCandidate candidate =
-                unknownSourceCandidateService
-                        .findByChatId(sourceId);
+                unknownSourceCandidateService.findByChatId(sourceId);
 
+        /*
+        * NEW → ACTIVE
+        */
         if (candidate != null) {
 
             boolean added =
@@ -772,48 +780,63 @@ public class AdminCommandHandler {
 
                 senderService.answerCallback(
                         callbackQueryId,
-                        "Джерело увімкнено"
+                        "Джерело додано"
                 );
 
                 senderService.sendToChat(
                         adminChatId,
-                        "✅ Джерело додано до моніторингу:\n\n"
-                                + candidate.title()
-                                + "\nID: "
-                                + candidate.chatId()
+                        """
+                        ✅ Джерело додано до моніторингу
+
+                        Назва: %s
+                        Chat ID: %s
+                        """.formatted(
+                                candidate.title(),
+                                candidate.chatId()
+                        )
                 );
 
+                sendNewSources(adminChatId);
                 return;
             }
         }
 
+        /*
+        * IGNORED → ACTIVE
+        */
         boolean enabled =
                 monitoredSourceService.enableSource(sourceId);
 
         if (enabled) {
-            senderService.answerCallback(
-                    callbackQueryId,
-                    "Джерело увімкнено"
-            );
 
             MonitoredSource source =
-                    monitoredSourceService
-                            .findByChatId(sourceId);
+                    monitoredSourceService.findByChatId(sourceId);
+
+            senderService.answerCallback(
+                    callbackQueryId,
+                    "Моніторинг увімкнено"
+            );
 
             senderService.sendToChat(
                     adminChatId,
-                    "✅ Моніторинг джерела увімкнено:\n\n"
-                            + source.title()
-                            + "\nID: "
-                            + source.chatId()
+                    """
+                    ✅ Моніторинг джерела увімкнено
+
+                    Назва: %s
+                    Chat ID: %s
+                    """.formatted(
+                            source.title(),
+                            source.chatId()
+                    )
             );
 
+            sendIgnoredSources(adminChatId);
             return;
         }
 
         senderService.answerCallback(
                 callbackQueryId,
-                "Стан не змінено"
+                "Стан уже актуальний"
         );
     }
 
@@ -824,9 +847,11 @@ public class AdminCommandHandler {
     ) {
 
         UnknownSourceCandidate candidate =
-                unknownSourceCandidateService
-                        .findByChatId(sourceId);
+                unknownSourceCandidateService.findByChatId(sourceId);
 
+        /*
+        * NEW → IGNORED
+        */
         if (candidate != null) {
 
             boolean added =
@@ -847,43 +872,58 @@ public class AdminCommandHandler {
 
                 senderService.sendToChat(
                         adminChatId,
-                        "⛔ Джерело додано до ігнорованих:\n\n"
-                                + candidate.title()
-                                + "\nID: "
-                                + candidate.chatId()
+                        """
+                        ⛔ Джерело додано до ігнорованих
+
+                        Назва: %s
+                        Chat ID: %s
+                        """.formatted(
+                                candidate.title(),
+                                candidate.chatId()
+                        )
                 );
 
+                sendNewSources(adminChatId);
                 return;
             }
         }
 
+        /*
+        * ACTIVE → IGNORED
+        */
         boolean ignored =
                 monitoredSourceService.ignoreSource(sourceId);
 
         if (ignored) {
-            senderService.answerCallback(
-                    callbackQueryId,
-                    "Джерело вимкнено"
-            );
 
             MonitoredSource source =
-                    monitoredSourceService
-                            .findByChatId(sourceId);
+                    monitoredSourceService.findByChatId(sourceId);
+
+            senderService.answerCallback(
+                    callbackQueryId,
+                    "Моніторинг вимкнено"
+            );
 
             senderService.sendToChat(
                     adminChatId,
-                    "⛔ Джерело більше не моніториться:\n\n"
-                            + source.title()
-                            + "\nID: "
-                            + source.chatId()
+                    """
+                    ⛔ Моніторинг джерела вимкнено
+
+                    Назва: %s
+                    Chat ID: %s
+                    """.formatted(
+                            source.title(),
+                            source.chatId()
+                    )
             );
 
+            sendActiveSources(adminChatId);
             return;
         }
 
         senderService.answerCallback(
                 callbackQueryId,
-                "Стан не змінено"
+                "Стан уже актуальний"
         );
     }
 

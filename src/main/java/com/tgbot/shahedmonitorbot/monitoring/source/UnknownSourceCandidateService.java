@@ -90,8 +90,8 @@ public class UnknownSourceCandidateService {
             return "[без тексту]";
         }
 
-        return text.length() > 500
-                ? text.substring(0, 500) + "..."
+        return text.length() > 220
+                ? text.substring(0, 220) + "..."
                 : text;
     }
 }

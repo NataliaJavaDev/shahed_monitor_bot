@@ -177,6 +177,6 @@ public class TdLibUpdateHandler {
                     .asText("");
         }
 
-        return "[unsupported message type: " + contentType + "]";
+        return "";
     }
 }
