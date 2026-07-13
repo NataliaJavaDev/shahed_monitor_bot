@@ -8,6 +8,7 @@ public enum AdminButton {
     REMOVE_TARGET("➖ Видалити ціль"),
 
     KEYWORDS("🔑 Ключові слова"),
+
     LOCATIONS("📍 Локації"),
     SHOW_LOCATIONS("📋 Показати локації"),
     ADD_LOCATION("➕ Додати локацію"),
@@ -25,15 +26,16 @@ public enum AdminButton {
 
     STATUS("📊 Статус"),
     BOT_STATUS("🤖 Статус бота"),
-    ALERT_STATUS("📡 Статус тривоги"),
+    ALERT_STATUS("🚨 Статус тривоги"),
 
     SETTINGS("⚙️ Налаштування"),
     API_CONTROL("🔌 API-керування"),
 
     SOURCES("📡 Джерела моніторингу"),
-    SHOW_SOURCES("📋 Показати джерела"),
-    ADD_SOURCE("➕ Додати джерело"),
-    REMOVE_SOURCE("➖ Видалити джерело"),
+
+    ACTIVE_SOURCES("✅ Активні джерела"),
+    NEW_SOURCES("🆕 Нові джерела"),
+    IGNORED_SOURCES("⛔ Ігноровані джерела"),
 
     BACK("⬅️ Назад");
 
@@ -53,12 +55,12 @@ public enum AdminButton {
 
     public static AdminButton fromText(String text) {
 
-    for (AdminButton button : values()) {
-        if (button.text.equals(text)) {
-            return button;
+        for (AdminButton button : values()) {
+            if (button.text.equals(text)) {
+                return button;
+            }
         }
-    }
 
-    return null;
+        return null;
     }
 }

@@ -6,6 +6,7 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer;
+import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.List;
@@ -29,7 +30,10 @@ public class AdminTelegramBot implements LongPollingUpdateConsumer {
         TelegramBotsLongPollingApplication application =
                 new TelegramBotsLongPollingApplication();
 
-        application.registerBot(properties.telegram().botToken(), this);
+        application.registerBot(
+                properties.telegram().botToken(),
+                this
+        );
     }
 
     @Override
@@ -40,6 +44,12 @@ public class AdminTelegramBot implements LongPollingUpdateConsumer {
     }
 
     private void handleUpdate(Update update) {
+
+        if (update.hasCallbackQuery()) {
+            handleCallbackQuery(update.getCallbackQuery());
+            return;
+        }
+
         if (!update.hasMessage()) {
             return;
         }
@@ -52,13 +62,64 @@ public class AdminTelegramBot implements LongPollingUpdateConsumer {
         Long chatId = update.getMessage().getChatId();
         String text = update.getMessage().getText();
 
-        System.out.println("NEW UPDATE FROM USER " + userId + " IN CHAT " + chatId + ": " + text);
+        System.out.println(
+                "NEW UPDATE FROM USER "
+                        + userId
+                        + " IN CHAT "
+                        + chatId
+                        + ": "
+                        + text
+        );
 
-        if (chatId.toString().equals(properties.telegram().targetChannelId())) {
-            System.out.println("Ignored message from target channel/group: " + text);
+        if (chatId.toString().equals(
+                properties.telegram().targetChannelId()
+        )) {
+            System.out.println(
+                    "Ignored message from target channel/group: " + text
+            );
             return;
         }
-        
-        adminCommandHandler.handle(userId, chatId.toString(), text);
+
+        adminCommandHandler.handle(
+                userId,
+                chatId.toString(),
+                text
+        );
+    }
+
+    private void handleCallbackQuery(CallbackQuery callbackQuery) {
+
+        if (callbackQuery.getMessage() == null) {
+            return;
+        }
+
+        Long userId = callbackQuery.getFrom().getId();
+
+        String chatId = callbackQuery
+                .getMessage()
+                .getChatId()
+                .toString();
+
+        String callbackData = callbackQuery.getData();
+
+        if (callbackData == null || callbackData.isBlank()) {
+            return;
+        }
+
+        System.out.println(
+                "NEW CALLBACK FROM USER "
+                        + userId
+                        + " IN CHAT "
+                        + chatId
+                        + ": "
+                        + callbackData
+        );
+
+        adminCommandHandler.handleCallback(
+                userId,
+                chatId,
+                callbackQuery.getId(),
+                callbackData
+        );
     }
 }

@@ -18,9 +18,31 @@ import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertType;
 import com.tgbot.shahedmonitorbot.admin.enums.*;
 
+import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSource;
+import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidate;
+
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.*;
+
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+
 
 @Service
 public class AdminCommandHandler {
+
+    private static final String SOURCE_ENABLE_CALLBACK =
+            "source:enable:";
+
+    private static final String SOURCE_IGNORE_CALLBACK =
+            "source:ignore:";
+
+    private static final ZoneId KYIV_ZONE =
+            ZoneId.of("Europe/Kyiv");
+
+    private static final DateTimeFormatter SOURCE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     private final TargetAdminService targetAdminService;
     private final LocationAdminService locationAdminService;
@@ -100,6 +122,68 @@ public class AdminCommandHandler {
         );
     }
 
+    public void handleCallback(
+            Long userId,
+            String chatId,
+            String callbackQueryId,
+            String callbackData
+    ) {
+
+        if (!accessService.isAdmin(userId)) {
+            senderService.answerCallback(
+                    callbackQueryId,
+                    "Немає доступу"
+            );
+            return;
+        }
+
+        if (callbackData == null
+                || callbackData.isBlank()) {
+            senderService.answerCallback(
+                    callbackQueryId,
+                    "Некоректна дія"
+            );
+            return;
+        }
+
+        if (callbackData.startsWith(
+                SOURCE_ENABLE_CALLBACK
+        )) {
+            String sourceId = callbackData.substring(
+                    SOURCE_ENABLE_CALLBACK.length()
+            );
+
+            enableSource(
+                    chatId,
+                    callbackQueryId,
+                    sourceId
+            );
+
+            return;
+        }
+
+        if (callbackData.startsWith(
+                SOURCE_IGNORE_CALLBACK
+        )) {
+            String sourceId = callbackData.substring(
+                    SOURCE_IGNORE_CALLBACK.length()
+            );
+
+            ignoreSource(
+                    chatId,
+                    callbackQueryId,
+                    sourceId
+            );
+
+            return;
+        }
+
+        senderService.answerCallback(
+                callbackQueryId,
+                "Невідома дія"
+        );
+    }
+
     private boolean handleSession(Long userId, String chatId, String text) {
 
         AdminSessionState state = sessionService.getState(userId);
@@ -131,21 +215,6 @@ public class AdminCommandHandler {
 
         if (state == AdminSessionState.WAITING_FOR_REMOVE_DIRECTION) {
             removeDirection(userId, chatId, text);
-            return true;
-        }
-
-        if (state == AdminSessionState.WAITING_FOR_NEW_SOURCE_ID) {
-            saveSourceId(userId, chatId, text);
-            return true;
-        }
-
-        if (state == AdminSessionState.WAITING_FOR_NEW_SOURCE_TITLE) {
-            addSource(userId, chatId, text);
-            return true;
-        }
-
-        if (state == AdminSessionState.WAITING_FOR_REMOVE_SOURCE) {
-            removeSource(userId, chatId, text);
             return true;
         }
 
@@ -311,16 +380,16 @@ public class AdminCommandHandler {
                 );
                 return true;
 
-            case SHOW_SOURCES:
-                sendSources(chatId);
+            case ACTIVE_SOURCES:
+                sendActiveSources(chatId);
                 return true;
 
-            case ADD_SOURCE:
-                sendUnknownSources(chatId);
+            case NEW_SOURCES:
+                sendNewSources(chatId);
                 return true;
 
-            case REMOVE_SOURCE:
-                requestRemoveSource(userId, chatId);
+            case IGNORED_SOURCES:
+                sendIgnoredSources(chatId);
                 return true;
         }
         return false;
@@ -530,130 +599,349 @@ public class AdminCommandHandler {
         );
     }
 
-    private void sendSources(String chatId) {
+    private void sendActiveSources(String chatId) {
 
-        var sources = monitoredSourceService.getAllSources();
+        List<MonitoredSource> sources =
+                monitoredSourceService.getActiveSources();
 
         if (sources.isEmpty()) {
             senderService.sendToChat(
                     chatId,
-                    "Список джерел моніторингу порожній."
+                    "✅ Активних джерел поки немає."
             );
             return;
         }
 
-        StringBuilder builder = new StringBuilder();
-        builder.append("📡 Джерела моніторингу:\n\n");
-
-        for (var source : sources) {
-            builder.append(source.active() ? "✅ " : "⛔ ")
-                    .append(source.title())
-                    .append("\n")
-                    .append("ID: ")
-                    .append(source.chatId())
-                    .append("\n\n");
-        }
-
-        senderService.sendToChat(chatId, builder.toString());
-    }
-
-    private void requestRemoveSource(Long userId, String chatId) {
-
-        sessionService.setState(
-                userId,
-                AdminSessionState.WAITING_FOR_REMOVE_SOURCE
-        );
-
         senderService.sendToChat(
                 chatId,
-                "Введіть chat_id джерела, яке треба видалити:"
-        );
-    }
-
-    private void saveSourceId(Long userId, String chatId, String sourceId) {
-
-        sessionService.setPendingSourceId(userId, sourceId);
-        sessionService.setState(
-                userId,
-                AdminSessionState.WAITING_FOR_NEW_SOURCE_TITLE
+                "✅ Активні джерела: "
+                        + sources.size()
         );
 
-        senderService.sendToChat(
-                chatId,
-                "Тепер введіть назву джерела:"
-        );
-    }
+        for (MonitoredSource source : sources) {
 
-    private void addSource(Long userId, String chatId, String title) {
+            String message = """
+                    📡 %s
 
-        String sourceId = sessionService.getPendingSourceId(userId);
-
-        boolean added = monitoredSourceService.addSource(sourceId, title);
-
-        sessionService.reset(userId);
-
-        if (added) {
-            senderService.sendToChat(
-                    chatId,
-                    "✅ Джерело додано:\n\n"
-                            + title
-                            + "\nID: "
-                            + sourceId
+                    ID: %s
+                    Статус: ✅ моніторинг увімкнено
+                    """.formatted(
+                    source.title(),
+                    source.chatId()
             );
-        } else {
-            senderService.sendToChat(
+
+            InlineKeyboardMarkup keyboard =
+                    singleButtonKeyboard(
+                            "⛔ Ігнорувати",
+                            SOURCE_IGNORE_CALLBACK
+                                    + source.chatId()
+                    );
+
+            senderService.sendToChatWithKeyboard(
                     chatId,
-                    "⚠️ Джерело з таким ID уже існує."
+                    message,
+                    keyboard
             );
         }
     }
 
-    private void removeSource(Long userId, String chatId, String sourceId) {
+    private void sendNewSources(String chatId) {
 
-        boolean removed = monitoredSourceService.removeSource(sourceId);
-
-        sessionService.reset(userId);
-
-        if (removed) {
-            senderService.sendToChat(
-                    chatId,
-                    "✅ Джерело видалено:\n\nID: " + sourceId
-            );
-        } else {
-            senderService.sendToChat(
-                    chatId,
-                    "⚠️ Джерело з таким ID не знайдено."
-            );
-        }
-    }
-
-    private void sendUnknownSources(String chatId) {
-
-        var candidates = unknownSourceCandidateService.getAll();
+        List<UnknownSourceCandidate> candidates =
+                unknownSourceCandidateService.getAll();
 
         if (candidates.isEmpty()) {
             senderService.sendToChat(
                     chatId,
-                    "Поки що немає знайдених невідомих джерел."
+                    "🆕 Нових джерел поки немає."
             );
             return;
         }
 
-        StringBuilder builder = new StringBuilder();
-        builder.append("🕵️ Знайдені невідомі джерела:\n\n");
+        senderService.sendToChat(
+                chatId,
+                "🆕 Нові джерела: "
+                        + candidates.size()
+        );
 
-        for (var candidate : candidates) {
-            builder.append("📌 ")
-                    .append(candidate.title())
-                    .append("\n")
-                    .append("ID: ")
-                    .append(candidate.chatId())
-                    .append("\n")
-                    .append("Останній текст:\n")
-                    .append(candidate.lastText())
-                    .append("\n\n");
+        for (UnknownSourceCandidate candidate : candidates) {
+
+            String message = """
+                    📡 %s
+
+                    ID: %s
+                    Вперше знайдено: %s
+                    Остання активність: %s
+
+                    Останнє повідомлення:
+                    %s
+                    """.formatted(
+                    candidate.title(),
+                    candidate.chatId(),
+                    formatInstant(candidate.firstSeenAt()),
+                    formatInstant(candidate.lastSeenAt()),
+                    candidate.lastText()
+            );
+
+            InlineKeyboardMarkup keyboard =
+                    twoButtonKeyboard(
+                            "👁 Увімкнути",
+                            SOURCE_ENABLE_CALLBACK
+                                    + candidate.chatId(),
+                            "⛔ Ігнорувати",
+                            SOURCE_IGNORE_CALLBACK
+                                    + candidate.chatId()
+                    );
+
+            senderService.sendToChatWithKeyboard(
+                    chatId,
+                    message,
+                    keyboard
+            );
+        }
+    }
+
+    private void sendIgnoredSources(String chatId) {
+
+        List<MonitoredSource> sources =
+                monitoredSourceService.getIgnoredSources();
+
+        if (sources.isEmpty()) {
+            senderService.sendToChat(
+                    chatId,
+                    "⛔ Ігнорованих джерел поки немає."
+            );
+            return;
         }
 
-        senderService.sendToChat(chatId, builder.toString());
+        senderService.sendToChat(
+                chatId,
+                "⛔ Ігноровані джерела: "
+                        + sources.size()
+        );
+
+        for (MonitoredSource source : sources) {
+
+            String message = """
+                    📡 %s
+
+                    ID: %s
+                    Статус: ⛔ джерело ігнорується
+                    """.formatted(
+                    source.title(),
+                    source.chatId()
+            );
+
+            InlineKeyboardMarkup keyboard =
+                    singleButtonKeyboard(
+                            "👁 Увімкнути",
+                            SOURCE_ENABLE_CALLBACK
+                                    + source.chatId()
+                    );
+
+            senderService.sendToChatWithKeyboard(
+                    chatId,
+                    message,
+                    keyboard
+            );
+        }
+    }
+
+    private void enableSource(
+            String adminChatId,
+            String callbackQueryId,
+            String sourceId
+    ) {
+
+        UnknownSourceCandidate candidate =
+                unknownSourceCandidateService
+                        .findByChatId(sourceId);
+
+        if (candidate != null) {
+
+            boolean added =
+                    monitoredSourceService.addActiveSource(
+                            candidate.chatId(),
+                            candidate.title()
+                    );
+
+            if (added) {
+                unknownSourceCandidateService.remove(
+                        candidate.chatId()
+                );
+
+                senderService.answerCallback(
+                        callbackQueryId,
+                        "Джерело увімкнено"
+                );
+
+                senderService.sendToChat(
+                        adminChatId,
+                        "✅ Джерело додано до моніторингу:\n\n"
+                                + candidate.title()
+                                + "\nID: "
+                                + candidate.chatId()
+                );
+
+                return;
+            }
+        }
+
+        boolean enabled =
+                monitoredSourceService.enableSource(sourceId);
+
+        if (enabled) {
+            senderService.answerCallback(
+                    callbackQueryId,
+                    "Джерело увімкнено"
+            );
+
+            MonitoredSource source =
+                    monitoredSourceService
+                            .findByChatId(sourceId);
+
+            senderService.sendToChat(
+                    adminChatId,
+                    "✅ Моніторинг джерела увімкнено:\n\n"
+                            + source.title()
+                            + "\nID: "
+                            + source.chatId()
+            );
+
+            return;
+        }
+
+        senderService.answerCallback(
+                callbackQueryId,
+                "Стан не змінено"
+        );
+    }
+
+    private void ignoreSource(
+            String adminChatId,
+            String callbackQueryId,
+            String sourceId
+    ) {
+
+        UnknownSourceCandidate candidate =
+                unknownSourceCandidateService
+                        .findByChatId(sourceId);
+
+        if (candidate != null) {
+
+            boolean added =
+                    monitoredSourceService.addIgnoredSource(
+                            candidate.chatId(),
+                            candidate.title()
+                    );
+
+            if (added) {
+                unknownSourceCandidateService.remove(
+                        candidate.chatId()
+                );
+
+                senderService.answerCallback(
+                        callbackQueryId,
+                        "Джерело ігнорується"
+                );
+
+                senderService.sendToChat(
+                        adminChatId,
+                        "⛔ Джерело додано до ігнорованих:\n\n"
+                                + candidate.title()
+                                + "\nID: "
+                                + candidate.chatId()
+                );
+
+                return;
+            }
+        }
+
+        boolean ignored =
+                monitoredSourceService.ignoreSource(sourceId);
+
+        if (ignored) {
+            senderService.answerCallback(
+                    callbackQueryId,
+                    "Джерело вимкнено"
+            );
+
+            MonitoredSource source =
+                    monitoredSourceService
+                            .findByChatId(sourceId);
+
+            senderService.sendToChat(
+                    adminChatId,
+                    "⛔ Джерело більше не моніториться:\n\n"
+                            + source.title()
+                            + "\nID: "
+                            + source.chatId()
+            );
+
+            return;
+        }
+
+        senderService.answerCallback(
+                callbackQueryId,
+                "Стан не змінено"
+        );
+    }
+
+    private InlineKeyboardMarkup singleButtonKeyboard(
+            String text,
+            String callbackData
+    ) {
+
+        InlineKeyboardButton button =
+                InlineKeyboardButton.builder()
+                        .text(text)
+                        .callbackData(callbackData)
+                        .build();
+
+        InlineKeyboardRow row = new InlineKeyboardRow();
+        row.add(button);
+
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(row))
+                .build();
+    }
+
+    private InlineKeyboardMarkup twoButtonKeyboard(
+            String firstText,
+            String firstCallback,
+            String secondText,
+            String secondCallback
+    ) {
+
+        InlineKeyboardButton firstButton =
+                InlineKeyboardButton.builder()
+                        .text(firstText)
+                        .callbackData(firstCallback)
+                        .build();
+
+        InlineKeyboardButton secondButton =
+                InlineKeyboardButton.builder()
+                        .text(secondText)
+                        .callbackData(secondCallback)
+                        .build();
+
+        InlineKeyboardRow row = new InlineKeyboardRow();
+        row.add(firstButton);
+        row.add(secondButton);
+
+        return InlineKeyboardMarkup.builder()
+                .keyboard(List.of(row))
+                .build();
+    }
+
+    private String formatInstant(java.time.Instant instant) {
+
+        if (instant == null) {
+            return "невідомо";
+        }
+
+        return SOURCE_TIME_FORMATTER.format(
+                instant.atZone(KYIV_ZONE)
+        );
     }
 }

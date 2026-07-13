@@ -27,37 +27,128 @@ public class MonitoredSourceService {
         );
     }
 
-    public List<MonitoredSource> getAllSources() {
+    public synchronized List<MonitoredSource> getAllSources() {
         return List.copyOf(sources);
     }
 
-    public MonitoredSource findByChatId(String chatId) {
+    public synchronized List<MonitoredSource> getActiveSources() {
+        return sources.stream()
+                .filter(MonitoredSource::active)
+                .toList();
+    }
+
+    public synchronized List<MonitoredSource> getIgnoredSources() {
+        return sources.stream()
+                .filter(source -> !source.active())
+                .toList();
+    }
+
+    public synchronized MonitoredSource findByChatId(String chatId) {
+        if (chatId == null || chatId.isBlank()) {
+            return null;
+        }
+
         return sources.stream()
                 .filter(source -> source.chatId().equals(chatId))
                 .findFirst()
                 .orElse(null);
     }
 
-    public boolean isMonitored(String chatId) {
-        return sources.stream()
-                .anyMatch(source ->
-                        source.active()
-                                && source.chatId().equals(chatId));
+    public synchronized boolean isKnown(String chatId) {
+        return findByChatId(chatId) != null;
     }
 
-    public boolean addSource(String chatId, String title) {
-        boolean exists = sources.stream()
-                .anyMatch(source -> source.chatId().equals(chatId));
+    public synchronized boolean isMonitored(String chatId) {
+        MonitoredSource source = findByChatId(chatId);
+        return source != null && source.active();
+    }
 
-        if (exists) {
+    public synchronized boolean addSource(
+            String chatId,
+            String title,
+            boolean active
+    ) {
+        if (chatId == null || chatId.isBlank()) {
             return false;
         }
 
-        sources.add(new MonitoredSource(chatId, title, true));
+        if (findByChatId(chatId) != null) {
+            return false;
+        }
+
+        sources.add(new MonitoredSource(
+                chatId,
+                safeTitle(title),
+                active
+        ));
+
         return true;
     }
 
-    public boolean removeSource(String chatId) {
-        return sources.removeIf(source -> source.chatId().equals(chatId));
+    public synchronized boolean addSource(
+            String chatId,
+            String title
+    ) {
+        return addSource(chatId, title, true);
+    }
+
+    public synchronized boolean addActiveSource(
+            String chatId,
+            String title
+    ) {
+        return addSource(chatId, title, true);
+    }
+
+    public synchronized boolean addIgnoredSource(
+            String chatId,
+            String title
+    ) {
+        return addSource(chatId, title, false);
+    }
+
+    public synchronized boolean enableSource(String chatId) {
+        return changeActiveState(chatId, true);
+    }
+
+    public synchronized boolean ignoreSource(String chatId) {
+        return changeActiveState(chatId, false);
+    }
+
+    private boolean changeActiveState(
+            String chatId,
+            boolean active
+    ) {
+        for (int index = 0; index < sources.size(); index++) {
+            MonitoredSource current = sources.get(index);
+
+            if (!current.chatId().equals(chatId)) {
+                continue;
+            }
+
+            if (current.active() == active) {
+                return false;
+            }
+
+            sources.set(
+                    index,
+                    new MonitoredSource(
+                            current.chatId(),
+                            current.title(),
+                            active
+                    )
+            );
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private String safeTitle(String title) {
+        if (title == null || title.isBlank()) {
+            return "Невідоме джерело";
+        }
+
+        return title.trim();
     }
 }

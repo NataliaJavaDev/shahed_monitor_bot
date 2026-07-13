@@ -6,12 +6,11 @@ import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.monitoring.source.ChatInfoService;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
 import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateService;
-import com.tgbot.shahedmonitorbot.sender.AnalysisMessageFormatter;
-import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
+import com.tgbot.shahedmonitorbot.processing.MessageAnalysis;
 import com.tgbot.shahedmonitorbot.processing.MessageAnalysisService;
 import com.tgbot.shahedmonitorbot.processing.MessageIntent;
-import com.tgbot.shahedmonitorbot.processing.MessageAnalysis;
-
+import com.tgbot.shahedmonitorbot.sender.AnalysisMessageFormatter;
+import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -35,7 +34,6 @@ public class TdLibUpdateHandler {
             AnalysisMessageFormatter analysisMessageFormatter,
             TelegramSenderService telegramSenderService,
             MessageAnalysisService messageAnalysisService
-            
     ) {
         this.objectMapper = objectMapper;
         this.appProperties = appProperties;
@@ -83,21 +81,18 @@ public class TdLibUpdateHandler {
             String chatId = message.path("chat_id").asText();
             String text = extractText(message);
 
-            if (monitoredSourceService.isMonitored(chatId)) {
+            if (chatId.equals(appProperties.telegram().targetChannelId())) {
+                return;
+            }
 
-                unknownSourceCandidateService.remove(chatId);
+            if (appProperties.monitor().ignoredChatIds() != null
+                    && appProperties.monitor().ignoredChatIds().contains(chatId)) {
+                return;
+            }
 
-            } else {
+            var source = monitoredSourceService.findByChatId(chatId);
 
-                if (chatId.equals(appProperties.telegram().targetChannelId())) {
-                    return;
-                }
-
-                if (appProperties.monitor().ignoredChatIds() != null
-                        && appProperties.monitor().ignoredChatIds().contains(chatId)) {
-                    return;
-                }
-
+            if (source == null) {
                 unknownSourceCandidateService.register(
                         chatId,
                         chatInfoService.getTitle(chatId),
@@ -107,44 +102,58 @@ public class TdLibUpdateHandler {
                 System.out.println("""
                         UNKNOWN CHAT DETECTED
                         CHAT_ID: %s
+                        TITLE: %s
                         TEXT: %s
-                        """.formatted(chatId, text));
+                        """.formatted(
+                        chatId,
+                        chatInfoService.getTitle(chatId),
+                        text
+                ));
 
                 return;
             }
 
-            var source = monitoredSourceService.findByChatId(chatId);
+            unknownSourceCandidateService.remove(chatId);
 
-            MessageAnalysis analysis = messageAnalysisService.analyze(chatId, text);
+            if (!source.active()) {
+                return;
+            }
+
+            MessageAnalysis analysis =
+                    messageAnalysisService.analyze(chatId, text);
 
             if (analysis == null) {
                 return;
             }
-            
-            if (analysis.duplicate() && !canSendDuplicateUpdate(analysis.intent())) {
+
+            if (analysis.duplicate()
+                    && !canSendDuplicateUpdate(analysis.intent())) {
                 return;
             }
 
             telegramSenderService.sendToChat(
-                appProperties.telegram().targetChannelId(),
-                analysisMessageFormatter.format(
-                        analysis,
-                        source.title(),
-                        chatId,
-                        text
-                )
+                    appProperties.telegram().targetChannelId(),
+                    analysisMessageFormatter.format(
+                            analysis,
+                            source.title(),
+                            chatId,
+                            text
+                    )
             );
 
         } catch (Exception e) {
-            System.out.println("Failed to handle TDLib update: " + e.getMessage());
+            System.out.println(
+                    "Failed to handle TDLib update: " + e.getMessage()
+            );
         }
     }
 
     private boolean canSendDuplicateUpdate(MessageIntent intent) {
         return switch (intent) {
             case COUNT_UPDATE,
-                ROUTE_UPDATE,
-                ATTENTION -> true;
+                 ROUTE_UPDATE,
+                 ATTENTION -> true;
+
             default -> false;
         };
     }

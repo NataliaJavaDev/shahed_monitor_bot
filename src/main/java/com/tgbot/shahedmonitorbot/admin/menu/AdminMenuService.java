@@ -24,10 +24,7 @@ public class AdminMenuService {
         row2.add(AdminButton.STATUS.text());
         row2.add(AdminButton.SETTINGS.text());
 
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(List.of(row1, row2))
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(List.of(row1, row2));
     }
 
     public ReplyKeyboardMarkup keywordsReplyKeyboard() {
@@ -40,12 +37,9 @@ public class AdminMenuService {
         row2.add(AdminButton.DIRECTIONS.text());
 
         KeyboardRow row3 = new KeyboardRow();
-        row2.add(AdminButton.BACK.text());
+        row3.add(AdminButton.BACK.text());
 
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(List.of(row1, row2, row3))
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(List.of(row1, row2, row3));
     }
 
     public ReplyKeyboardMarkup targetsReplyKeyboard() {
@@ -60,10 +54,7 @@ public class AdminMenuService {
         KeyboardRow row3 = new KeyboardRow();
         row3.add(AdminButton.BACK.text());
 
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(List.of(row1, row2, row3))
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(List.of(row1, row2, row3));
     }
 
     public ReplyKeyboardMarkup locationsReplyKeyboard() {
@@ -78,10 +69,7 @@ public class AdminMenuService {
         KeyboardRow row3 = new KeyboardRow();
         row3.add(AdminButton.BACK.text());
 
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(List.of(row1, row2, row3))
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(List.of(row1, row2, row3));
     }
 
     public ReplyKeyboardMarkup directionsReplyKeyboard() {
@@ -96,10 +84,7 @@ public class AdminMenuService {
         KeyboardRow row3 = new KeyboardRow();
         row3.add(AdminButton.BACK.text());
 
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(List.of(row1, row2, row3))
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(List.of(row1, row2, row3));
     }
 
     public ReplyKeyboardMarkup alertReplyKeyboard() {
@@ -116,10 +101,7 @@ public class AdminMenuService {
         KeyboardRow row4 = new KeyboardRow();
         row4.add(AdminButton.BACK.text());
 
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(List.of(row1, row2, row3, row4))
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(List.of(row1, row2, row3, row4));
     }
 
     public ReplyKeyboardMarkup statusReplyKeyboard() {
@@ -131,10 +113,7 @@ public class AdminMenuService {
         KeyboardRow row2 = new KeyboardRow();
         row2.add(AdminButton.BACK.text());
 
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(List.of(row1, row2))
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(List.of(row1, row2));
     }
 
     public ReplyKeyboardMarkup settingsReplyKeyboard() {
@@ -145,26 +124,29 @@ public class AdminMenuService {
         KeyboardRow row2 = new KeyboardRow();
         row2.add(AdminButton.BACK.text());
 
-        return ReplyKeyboardMarkup.builder()
-                .keyboard(List.of(row1, row2))
-                .resizeKeyboard(true)
-                .build();
+        return buildKeyboard(List.of(row1, row2));
     }
 
     public ReplyKeyboardMarkup sourcesReplyKeyboard() {
 
         KeyboardRow row1 = new KeyboardRow();
-        row1.add(AdminButton.SHOW_SOURCES.text());
+        row1.add(AdminButton.ACTIVE_SOURCES.text());
 
         KeyboardRow row2 = new KeyboardRow();
-        row2.add(AdminButton.ADD_SOURCE.text());
-        row2.add(AdminButton.REMOVE_SOURCE.text());
+        row2.add(AdminButton.NEW_SOURCES.text());
 
         KeyboardRow row3 = new KeyboardRow();
-        row3.add(AdminButton.BACK.text());
+        row3.add(AdminButton.IGNORED_SOURCES.text());
 
+        KeyboardRow row4 = new KeyboardRow();
+        row4.add(AdminButton.BACK.text());
+
+        return buildKeyboard(List.of(row1, row2, row3, row4));
+    }
+
+    private ReplyKeyboardMarkup buildKeyboard(List<KeyboardRow> rows) {
         return ReplyKeyboardMarkup.builder()
-                .keyboard(List.of(row1, row2, row3))
+                .keyboard(rows)
                 .resizeKeyboard(true)
                 .build();
     }

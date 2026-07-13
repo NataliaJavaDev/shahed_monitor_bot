@@ -13,7 +13,11 @@ public class UnknownSourceCandidateService {
     private final Map<String, UnknownSourceCandidate> candidates =
             new ConcurrentHashMap<>();
 
-    public void register(String chatId, String title, String text) {
+    public void register(
+            String chatId,
+            String title,
+            String text
+    ) {
 
         if (chatId == null || chatId.isBlank()) {
             return;
@@ -26,6 +30,7 @@ public class UnknownSourceCandidateService {
         Instant now = Instant.now();
 
         candidates.compute(chatId, (id, existing) -> {
+
             if (existing == null) {
                 return new UnknownSourceCandidate(
                         id,
@@ -48,8 +53,24 @@ public class UnknownSourceCandidateService {
 
     public List<UnknownSourceCandidate> getAll() {
         return candidates.values().stream()
-                .sorted((a, b) -> b.lastSeenAt().compareTo(a.lastSeenAt()))
+                .sorted(
+                        (first, second) ->
+                                second.lastSeenAt()
+                                        .compareTo(first.lastSeenAt())
+                )
                 .toList();
+    }
+
+    public UnknownSourceCandidate findByChatId(String chatId) {
+        if (chatId == null || chatId.isBlank()) {
+            return null;
+        }
+
+        return candidates.get(chatId);
+    }
+
+    public boolean contains(String chatId) {
+        return candidates.containsKey(chatId);
     }
 
     public void remove(String chatId) {
@@ -61,7 +82,7 @@ public class UnknownSourceCandidateService {
             return "Невідоме джерело";
         }
 
-        return title;
+        return title.trim();
     }
 
     private String safeText(String text) {
