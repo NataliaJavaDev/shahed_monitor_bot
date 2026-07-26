@@ -1,7 +1,7 @@
 package com.tgbot.shahedmonitorbot.manualalert;
 
-import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
 import com.tgbot.shahedmonitorbot.alert.AlertDeliveryService;
+import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -10,7 +10,6 @@ public class ManualAlertService {
     private final AlertDeliveryService alertDeliveryService;
     private final ManualAlertMessageFormatter formatter;
     private final MonitoringStateService monitoringStateService;
-
 
     public ManualAlertService(
             AlertDeliveryService alertDeliveryService,
@@ -22,23 +21,47 @@ public class ManualAlertService {
         this.monitoringStateService = monitoringStateService;
     }
 
-    private void updateMonitoringFromManual(ManualAlertType type) {
+    /*
+     * Викликається тільки після натискання кнопок
+     * ручного керування в адмінці.
+     */
+    public void sendAlert(ManualAlertType type) {
 
-        if (monitoringStateService.isApiControlEnabled()) {
+        updateMonitoringFromManual(type);
+
+        alertDeliveryService.send(
+                formatter.format(type)
+        );
+    }
+
+    /*
+     * Викликається AirAlertApiService.
+     *
+     * Не змінює ручний аварійний стан.
+     */
+    public void sendApiAlert(ManualAlertType type) {
+        alertDeliveryService.send(
+                formatter.format(type)
+        );
+    }
+
+    private void updateMonitoringFromManual(
+            ManualAlertType type
+    ) {
+
+        if (type == ManualAlertType.ALERT) {
+            monitoringStateService
+                    .enableMonitoringManually();
             return;
         }
 
-        if (type == ManualAlertType.ALERT) {
-            monitoringStateService.enableMonitoring();
-        }
-
         if (type == ManualAlertType.ALL_CLEAR) {
-            monitoringStateService.disableMonitoring();
+            monitoringStateService
+                    .disableMonitoringManually();
         }
-    }
 
-    public void sendAlert(ManualAlertType type) {
-        updateMonitoringFromManual(type);
-        alertDeliveryService.send(formatter.format(type));
+        /*
+         * HIGH_RISK не впливає на моніторинг.
+         */
     }
 }

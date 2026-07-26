@@ -12,17 +12,20 @@ public class TdLibAuthorizationService {
     private final AppProperties appProperties;
     private final TdLibUpdateHandler tdLibUpdateHandler;
     private final TemporaryHistoryExportService temporaryHistoryExportService;
+    private final TdLibStatusService tdLibStatusService;
 
     public TdLibAuthorizationService(
             TdLibClientService tdLibClientService,
             AppProperties appProperties,
             TdLibUpdateHandler tdLibUpdateHandler,
-            TemporaryHistoryExportService temporaryHistoryExportService
+            TemporaryHistoryExportService temporaryHistoryExportService,
+            TdLibStatusService tdLibStatusService
     ) {
         this.tdLibClientService = tdLibClientService;
         this.appProperties = appProperties;
         this.tdLibUpdateHandler = tdLibUpdateHandler;
         this.temporaryHistoryExportService = temporaryHistoryExportService;
+        this.tdLibStatusService = tdLibStatusService;
     }
 
     @PostConstruct
@@ -106,9 +109,20 @@ public class TdLibAuthorizationService {
             }
 
             if (update.contains("\"authorizationStateReady\"")) {
+                tdLibStatusService.markReady();
+
                 System.out.println("TDLib authorization ready!");
                 requestChats();
-                //temporaryHistoryExportService.startExport();
+                temporaryHistoryExportService.startExport();
+            }
+
+            if (update.contains("\"authorizationStateClosing\"")
+                    || update.contains("\"authorizationStateClosed\"")
+                    || update.contains("\"authorizationStateLoggingOut\"")) {
+
+                tdLibStatusService.markNotReady();
+
+                System.out.println("TDLib authorization is not ready.");
             }
         }
     }

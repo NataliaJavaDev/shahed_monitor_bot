@@ -27,6 +27,7 @@ public class AdminTelegramBot implements LongPollingUpdateConsumer {
 
     @PostConstruct
     public void registerBot() throws Exception {
+
         TelegramBotsLongPollingApplication application =
                 new TelegramBotsLongPollingApplication();
 
@@ -38,6 +39,7 @@ public class AdminTelegramBot implements LongPollingUpdateConsumer {
 
     @Override
     public void consume(List<Update> updates) {
+
         for (Update update : updates) {
             handleUpdate(update);
         }
@@ -58,9 +60,14 @@ public class AdminTelegramBot implements LongPollingUpdateConsumer {
             return;
         }
 
-        Long userId = update.getMessage().getFrom().getId();
-        Long chatId = update.getMessage().getChatId();
-        String text = update.getMessage().getText();
+        Long userId =
+                update.getMessage().getFrom().getId();
+
+        Long chatId =
+                update.getMessage().getChatId();
+
+        String text =
+                update.getMessage().getText();
 
         System.out.println(
                 "NEW UPDATE FROM USER "
@@ -75,7 +82,8 @@ public class AdminTelegramBot implements LongPollingUpdateConsumer {
                 properties.telegram().targetChannelId()
         )) {
             System.out.println(
-                    "Ignored message from target channel/group: " + text
+                    "Ignored message from target channel/group: "
+                            + text
             );
             return;
         }
@@ -87,22 +95,33 @@ public class AdminTelegramBot implements LongPollingUpdateConsumer {
         );
     }
 
-    private void handleCallbackQuery(CallbackQuery callbackQuery) {
+    private void handleCallbackQuery(
+            CallbackQuery callbackQuery
+    ) {
 
         if (callbackQuery.getMessage() == null) {
             return;
         }
 
-        Long userId = callbackQuery.getFrom().getId();
+        Long userId =
+                callbackQuery.getFrom().getId();
 
-        String chatId = callbackQuery
-                .getMessage()
-                .getChatId()
-                .toString();
+        String chatId =
+                callbackQuery
+                        .getMessage()
+                        .getChatId()
+                        .toString();
 
-        String callbackData = callbackQuery.getData();
+        Integer messageId =
+                callbackQuery
+                        .getMessage()
+                        .getMessageId();
 
-        if (callbackData == null || callbackData.isBlank()) {
+        String callbackData =
+                callbackQuery.getData();
+
+        if (callbackData == null
+                || callbackData.isBlank()) {
             return;
         }
 
@@ -118,6 +137,7 @@ public class AdminTelegramBot implements LongPollingUpdateConsumer {
         adminCommandHandler.handleCallback(
                 userId,
                 chatId,
+                messageId,
                 callbackQuery.getId(),
                 callbackData
         );

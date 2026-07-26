@@ -25,8 +25,8 @@ public class TemporaryHistoryExportService {
     private final AppProperties appProperties;
     private final ObjectMapper objectMapper;
 
-    private final LocalDateTime from = LocalDateTime.of(2026, 4, 1, 0, 0);
-    private final LocalDateTime to = LocalDateTime.of(2026, 7, 2, 2, 0);
+    private final LocalDateTime from = LocalDateTime.of(2026, 7, 12, 0, 0);
+    private final LocalDateTime to = LocalDateTime.of(2026, 7, 18, 11, 0);
     private final ZoneId zoneId = ZoneId.of("Europe/Kyiv");
 
     private final Path exportDirectory = Path.of("exports").resolve(

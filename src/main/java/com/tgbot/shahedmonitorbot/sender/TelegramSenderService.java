@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.AnswerCallbackQuery;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
@@ -74,6 +75,44 @@ public class TelegramSenderService {
         execute(message);
     }
 
+    public void editMessageWithKeyboard(
+            String chatId,
+            Integer messageId,
+            String text,
+            InlineKeyboardMarkup keyboard
+    ) {
+        if (chatId == null
+                || chatId.isBlank()
+                || messageId == null) {
+            return;
+        }
+
+        EditMessageText message = EditMessageText.builder()
+                .chatId(chatId)
+                .messageId(messageId)
+                .text(text)
+                .replyMarkup(keyboard)
+                .build();
+
+        try {
+            telegramClient.execute(message);
+
+            log.info(
+                    "Telegram message {} edited in chat {}",
+                    messageId,
+                    chatId
+            );
+
+        } catch (Exception exception) {
+            log.error(
+                    "Telegram message edit error. Chat: {}, message: {}",
+                    chatId,
+                    messageId,
+                    exception
+            );
+        }
+    }
+
     public void answerCallback(
             String callbackQueryId,
             String text
@@ -92,6 +131,7 @@ public class TelegramSenderService {
 
         try {
             telegramClient.execute(answer);
+
         } catch (Exception exception) {
             log.error(
                     "Telegram callback answer error",

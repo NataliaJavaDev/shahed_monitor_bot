@@ -1,33 +1,34 @@
 package com.tgbot.shahedmonitorbot.admin.command;
 
-import com.tgbot.shahedmonitorbot.model.admin.AdminSessionState;
-import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
-import com.tgbot.shahedmonitorbot.alertapi.formatter.ApiAlertStatusFormatter;
-import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
-import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateService;
-import com.tgbot.shahedmonitorbot.alertapi.service.AirAlertApiService;
-import org.springframework.stereotype.Service;
-
+import com.tgbot.shahedmonitorbot.admin.enums.AdminButton;
+import com.tgbot.shahedmonitorbot.admin.enums.AdminCommand;
+import com.tgbot.shahedmonitorbot.admin.enums.AdminMessage;
 import com.tgbot.shahedmonitorbot.admin.menu.AdminMenuService;
 import com.tgbot.shahedmonitorbot.admin.service.AdminAccessService;
 import com.tgbot.shahedmonitorbot.admin.service.AdminSessionService;
 import com.tgbot.shahedmonitorbot.admin.service.DirectionAdminService;
 import com.tgbot.shahedmonitorbot.admin.service.LocationAdminService;
 import com.tgbot.shahedmonitorbot.admin.service.TargetAdminService;
+import com.tgbot.shahedmonitorbot.alertapi.formatter.ApiAlertStatusFormatter;
+import com.tgbot.shahedmonitorbot.alertapi.service.AirAlertApiService;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertType;
-import com.tgbot.shahedmonitorbot.admin.enums.*;
-
+import com.tgbot.shahedmonitorbot.model.admin.AdminSessionState;
+import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSource;
+import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
 import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidate;
-
+import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateService;
+import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
+import com.tgbot.shahedmonitorbot.tdlib.TdLibStatusService;
+import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.*;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-
 
 @Service
 public class AdminCommandHandler {
@@ -56,6 +57,8 @@ public class AdminCommandHandler {
     private final ApiAlertStatusFormatter apiAlertStatusFormatter;
     private final MonitoredSourceService monitoredSourceService;
     private final UnknownSourceCandidateService unknownSourceCandidateService;
+    private final MonitoringStateService monitoringStateService;
+    private final TdLibStatusService tdLibStatusService;
 
     public AdminCommandHandler(
             TargetAdminService targetAdminService,
@@ -69,7 +72,9 @@ public class AdminCommandHandler {
             AirAlertApiService airAlertApiService,
             ApiAlertStatusFormatter apiAlertStatusFormatter,
             MonitoredSourceService monitoredSourceService,
-            UnknownSourceCandidateService unknownSourceCandidateService
+            UnknownSourceCandidateService unknownSourceCandidateService,
+            MonitoringStateService monitoringStateService,
+            TdLibStatusService tdLibStatusService
     ) {
         this.targetAdminService = targetAdminService;
         this.locationAdminService = locationAdminService;
@@ -82,10 +87,17 @@ public class AdminCommandHandler {
         this.airAlertApiService = airAlertApiService;
         this.apiAlertStatusFormatter = apiAlertStatusFormatter;
         this.monitoredSourceService = monitoredSourceService;
-        this.unknownSourceCandidateService = unknownSourceCandidateService;
+        this.unknownSourceCandidateService =
+                unknownSourceCandidateService;
+        this.monitoringStateService = monitoringStateService;
+        this.tdLibStatusService = tdLibStatusService;
     }
 
-    public void handle(Long userId, String chatId, String text) {
+    public void handle(
+            Long userId,
+            String chatId,
+            String text
+    ) {
 
         if (!accessService.isAdmin(userId)) {
             senderService.sendToChat(
@@ -101,10 +113,15 @@ public class AdminCommandHandler {
 
         text = normalizeCommand(text);
 
-        boolean isCommand = AdminCommand.fromText(text) != null;
-        boolean isButton = AdminButton.fromText(text) != null;
+        boolean isCommand =
+                AdminCommand.fromText(text) != null;
 
-        if (!isCommand && !isButton && handleSession(userId, chatId, text)) {
+        boolean isButton =
+                AdminButton.fromText(text) != null;
+
+        if (!isCommand
+                && !isButton
+                && handleSession(userId, chatId, text)) {
             return;
         }
 
@@ -125,6 +142,7 @@ public class AdminCommandHandler {
     public void handleCallback(
             Long userId,
             String chatId,
+            Integer messageId,
             String callbackQueryId,
             String callbackData
     ) {
@@ -149,32 +167,34 @@ public class AdminCommandHandler {
         if (callbackData.startsWith(
                 SOURCE_ENABLE_CALLBACK
         )) {
-            String sourceId = callbackData.substring(
-                    SOURCE_ENABLE_CALLBACK.length()
-            );
+            String sourceId =
+                    callbackData.substring(
+                            SOURCE_ENABLE_CALLBACK.length()
+                    );
 
             enableSource(
                     chatId,
+                    messageId,
                     callbackQueryId,
                     sourceId
             );
-
             return;
         }
 
         if (callbackData.startsWith(
                 SOURCE_IGNORE_CALLBACK
         )) {
-            String sourceId = callbackData.substring(
-                    SOURCE_IGNORE_CALLBACK.length()
-            );
+            String sourceId =
+                    callbackData.substring(
+                            SOURCE_IGNORE_CALLBACK.length()
+                    );
 
             ignoreSource(
                     chatId,
+                    messageId,
                     callbackQueryId,
                     sourceId
             );
-
             return;
         }
 
@@ -184,36 +204,47 @@ public class AdminCommandHandler {
         );
     }
 
-    private boolean handleSession(Long userId, String chatId, String text) {
+    private boolean handleSession(
+            Long userId,
+            String chatId,
+            String text
+    ) {
 
-        AdminSessionState state = sessionService.getState(userId);
+        AdminSessionState state =
+                sessionService.getState(userId);
 
-        if (state == AdminSessionState.WAITING_FOR_NEW_TARGET) {
+        if (state
+                == AdminSessionState.WAITING_FOR_NEW_TARGET) {
             addTarget(userId, chatId, text);
             return true;
         }
 
-        if (state == AdminSessionState.WAITING_FOR_REMOVE_TARGET) {
+        if (state
+                == AdminSessionState.WAITING_FOR_REMOVE_TARGET) {
             removeTarget(userId, chatId, text);
             return true;
         }
 
-        if (state == AdminSessionState.WAITING_FOR_NEW_LOCATION) {
+        if (state
+                == AdminSessionState.WAITING_FOR_NEW_LOCATION) {
             addLocation(userId, chatId, text);
             return true;
         }
 
-        if (state == AdminSessionState.WAITING_FOR_REMOVE_LOCATION) {
+        if (state
+                == AdminSessionState.WAITING_FOR_REMOVE_LOCATION) {
             removeLocation(userId, chatId, text);
             return true;
         }
 
-        if (state == AdminSessionState.WAITING_FOR_NEW_DIRECTION) {
+        if (state
+                == AdminSessionState.WAITING_FOR_NEW_DIRECTION) {
             addDirection(userId, chatId, text);
             return true;
         }
 
-        if (state == AdminSessionState.WAITING_FOR_REMOVE_DIRECTION) {
+        if (state
+                == AdminSessionState.WAITING_FOR_REMOVE_DIRECTION) {
             removeDirection(userId, chatId, text);
             return true;
         }
@@ -221,9 +252,14 @@ public class AdminCommandHandler {
         return false;
     }
 
-    private boolean handleCommand(Long userId, String chatId, String text) {
+    private boolean handleCommand(
+            Long userId,
+            String chatId,
+            String text
+    ) {
 
-        AdminCommand command = AdminCommand.fromText(text);
+        AdminCommand command =
+                AdminCommand.fromText(text);
 
         if (command == null) {
             return false;
@@ -233,8 +269,8 @@ public class AdminCommandHandler {
 
             case START:
                 senderService.sendToChat(
-                    chatId,
-                    AdminMessage.WELCOME_MESSAGE.text()
+                        chatId,
+                        AdminMessage.WELCOME_MESSAGE.text()
                 );
                 return true;
 
@@ -246,9 +282,14 @@ public class AdminCommandHandler {
         return false;
     }
 
-    private boolean handleButton(Long userId, String chatId, String text) {
+    private boolean handleButton(
+            Long userId,
+            String chatId,
+            String text
+    ) {
 
-        AdminButton button = AdminButton.fromText(text);
+        AdminButton button =
+                AdminButton.fromText(text);
 
         if (button == null) {
             return false;
@@ -326,22 +367,34 @@ public class AdminCommandHandler {
 
             case ALERTS:
                 senderService.sendToChatWithReplyKeyboard(
-                    chatId,
-                    AdminMessage.ALERT_MENU_TITLE.text(),
-                    menuService.alertReplyKeyboard()
+                        chatId,
+                        AdminMessage.ALERT_MENU_TITLE.text(),
+                        menuService.alertReplyKeyboard()
                 );
                 return true;
 
             case ALERT:
-                sendManualAlert(chatId, ManualAlertType.ALERT, AdminMessage.ALERT_SENT);
+                sendManualAlert(
+                        chatId,
+                        ManualAlertType.ALERT,
+                        AdminMessage.ALERT_SENT
+                );
                 return true;
 
             case HIGH_RISK:
-                sendManualAlert(chatId, ManualAlertType.HIGH_RISK, AdminMessage.HIGH_RISK_SENT);
+                sendManualAlert(
+                        chatId,
+                        ManualAlertType.HIGH_RISK,
+                        AdminMessage.HIGH_RISK_SENT
+                );
                 return true;
 
             case ALL_CLEAR:
-                sendManualAlert(chatId, ManualAlertType.ALL_CLEAR, AdminMessage.ALL_CLEAR_SENT);
+                sendManualAlert(
+                        chatId,
+                        ManualAlertType.ALL_CLEAR,
+                        AdminMessage.ALL_CLEAR_SENT
+                );
                 return true;
 
             case BACK:
@@ -350,9 +403,9 @@ public class AdminCommandHandler {
 
             case STATUS:
                 senderService.sendToChatWithReplyKeyboard(
-                    chatId,
-                    "📊 Статус\n\nОберіть дію:",
-                    menuService.statusReplyKeyboard()
+                        chatId,
+                        "📊 Статус\n\nОберіть дію:",
+                        menuService.statusReplyKeyboard()
                 );
                 return true;
 
@@ -366,17 +419,17 @@ public class AdminCommandHandler {
 
             case SETTINGS:
                 senderService.sendToChatWithReplyKeyboard(
-                    chatId,
-                    "⚙️ Налаштування\n\nОберіть дію:",
-                    menuService.settingsReplyKeyboard()
+                        chatId,
+                        "⚙️ Налаштування\n\nОберіть дію:",
+                        menuService.settingsReplyKeyboard()
                 );
                 return true;
 
             case SOURCES:
                 senderService.sendToChatWithReplyKeyboard(
-                    chatId,
-                "📡 Джерела моніторингу\n\nОберіть дію:",
-                menuService.sourcesReplyKeyboard()
+                        chatId,
+                        "📡 Джерела моніторингу\n\nОберіть дію:",
+                        menuService.sourcesReplyKeyboard()
                 );
                 return true;
 
@@ -392,6 +445,7 @@ public class AdminCommandHandler {
                 sendIgnoredSources(chatId);
                 return true;
         }
+
         return false;
     }
 
@@ -403,7 +457,10 @@ public class AdminCommandHandler {
         );
 
         if (targets.isBlank()) {
-            senderService.sendToChat(chatId, "Список цілей порожній.");
+            senderService.sendToChat(
+                    chatId,
+                    "Список цілей порожній."
+            );
             return;
         }
 
@@ -414,183 +471,387 @@ public class AdminCommandHandler {
     }
 
     private void sendLocations(String chatId) {
+
         String locations = String.join(
                 "\n",
                 locationAdminService.getLocations()
         );
 
         if (locations.isBlank()) {
-            senderService.sendToChat(chatId, "Список локацій порожній.");
+            senderService.sendToChat(
+                    chatId,
+                    "Список локацій порожній."
+            );
             return;
         }
 
         senderService.sendToChat(
                 chatId,
-                "📍 Локації моніторингу:\n\n" + locations
+                "📍 Локації моніторингу:\n\n"
+                        + locations
         );
     }
 
-    private void addTarget(Long userId, String chatId, String target) {
-        boolean added = targetAdminService.addTarget(target);
+    private void addTarget(
+            Long userId,
+            String chatId,
+            String target
+    ) {
+
+        boolean added =
+                targetAdminService.addTarget(target);
 
         sessionService.reset(userId);
 
         if (added) {
-            senderService.sendToChat(chatId, "✅ Ціль додано: " + target);
+            senderService.sendToChat(
+                    chatId,
+                    "✅ Ціль додано: " + target
+            );
         } else {
-            senderService.sendToChat(chatId, "⚠️ Таку ціль уже додано або значення порожнє.");
+            senderService.sendToChat(
+                    chatId,
+                    "⚠️ Таку ціль уже додано або значення порожнє."
+            );
         }
     }
 
-    private void removeTarget(Long userId, String chatId, String target) {
-        boolean removed = targetAdminService.removeTarget(target);
+    private void removeTarget(
+            Long userId,
+            String chatId,
+            String target
+    ) {
+
+        boolean removed =
+                targetAdminService.removeTarget(target);
 
         sessionService.reset(userId);
 
         if (removed) {
-            senderService.sendToChat(chatId, "✅ Ціль видалено: " + target);
+            senderService.sendToChat(
+                    chatId,
+                    "✅ Ціль видалено: " + target
+            );
         } else {
-            senderService.sendToChat(chatId, "⚠️ Таку ціль не знайдено.");
+            senderService.sendToChat(
+                    chatId,
+                    "⚠️ Таку ціль не знайдено."
+            );
         }
     }
 
-    private void addLocation(Long userId, String chatId, String location) {
-        boolean added = locationAdminService.addLocation(location);
+    private void addLocation(
+            Long userId,
+            String chatId,
+            String location
+    ) {
+
+        boolean added =
+                locationAdminService.addLocation(location);
 
         sessionService.reset(userId);
 
         if (added) {
-            senderService.sendToChat(chatId, "✅ Локацію додано: " + location);
+            senderService.sendToChat(
+                    chatId,
+                    "✅ Локацію додано: " + location
+            );
         } else {
-            senderService.sendToChat(chatId, "⚠️ Таку локацію вже додано або значення порожнє.");
+            senderService.sendToChat(
+                    chatId,
+                    "⚠️ Таку локацію вже додано або значення порожнє."
+            );
         }
     }
 
-    private void removeLocation(Long userId, String chatId, String location) {
-        boolean removed = locationAdminService.removeLocation(location);
+    private void removeLocation(
+            Long userId,
+            String chatId,
+            String location
+    ) {
+
+        boolean removed =
+                locationAdminService.removeLocation(location);
 
         sessionService.reset(userId);
 
         if (removed) {
-            senderService.sendToChat(chatId, "✅ Локацію видалено: " + location);
+            senderService.sendToChat(
+                    chatId,
+                    "✅ Локацію видалено: " + location
+            );
         } else {
-            senderService.sendToChat(chatId, "⚠️ Таку локацію не знайдено.");
+            senderService.sendToChat(
+                    chatId,
+                    "⚠️ Таку локацію не знайдено."
+            );
         }
     }
 
-    private void requestAddTarget(Long userId, String chatId) {
-        sessionService.setState(userId, AdminSessionState.WAITING_FOR_NEW_TARGET);
-        senderService.sendToChat(chatId, "Введіть ціль для моніторингу:");
+    private void requestAddTarget(
+            Long userId,
+            String chatId
+    ) {
+
+        sessionService.setState(
+                userId,
+                AdminSessionState.WAITING_FOR_NEW_TARGET
+        );
+
+        senderService.sendToChat(
+                chatId,
+                "Введіть ціль для моніторингу:"
+        );
     }
 
-    private void requestRemoveTarget(Long userId, String chatId) {
-        sessionService.setState(userId, AdminSessionState.WAITING_FOR_REMOVE_TARGET);
-        senderService.sendToChat(chatId, "Введіть ціль, яку треба видалити:");
+    private void requestRemoveTarget(
+            Long userId,
+            String chatId
+    ) {
+
+        sessionService.setState(
+                userId,
+                AdminSessionState.WAITING_FOR_REMOVE_TARGET
+        );
+
+        senderService.sendToChat(
+                chatId,
+                "Введіть ціль, яку треба видалити:"
+        );
     }
 
-    private void requestAddLocation(Long userId, String chatId) {
-        sessionService.setState(userId, AdminSessionState.WAITING_FOR_NEW_LOCATION);
-        senderService.sendToChat(chatId, "Введіть локацію для моніторингу:");
+    private void requestAddLocation(
+            Long userId,
+            String chatId
+    ) {
+
+        sessionService.setState(
+                userId,
+                AdminSessionState.WAITING_FOR_NEW_LOCATION
+        );
+
+        senderService.sendToChat(
+                chatId,
+                "Введіть локацію для моніторингу:"
+        );
     }
 
-    private void requestRemoveLocation(Long userId, String chatId) {
-        sessionService.setState(userId, AdminSessionState.WAITING_FOR_REMOVE_LOCATION);
-        senderService.sendToChat(chatId, "Введіть локацію, яку треба видалити:");
+    private void requestRemoveLocation(
+            Long userId,
+            String chatId
+    ) {
+
+        sessionService.setState(
+                userId,
+                AdminSessionState.WAITING_FOR_REMOVE_LOCATION
+        );
+
+        senderService.sendToChat(
+                chatId,
+                "Введіть локацію, яку треба видалити:"
+        );
     }
 
-    private void sendManualAlert(String chatId, ManualAlertType type, AdminMessage successMessage) {
-        
+    private void sendManualAlert(
+            String chatId,
+            ManualAlertType type,
+            AdminMessage successMessage
+    ) {
+
         manualAlertService.sendAlert(type);
-        senderService.sendToChat(chatId, successMessage.text());
+
+        senderService.sendToChat(
+                chatId,
+                successMessage.text()
+        );
     }
 
     private void sendMainMenu(String chatId) {
-        
+
         senderService.sendToChatWithReplyKeyboard(
-            chatId,
-            menuService.mainMenuText(),
-            menuService.mainReplyKeyboard()
-        );
-    }
-
-    private void sendComingSoon(String chatId) {
-
-        senderService.sendToChat(
-            chatId,
-            AdminMessage.COMING_SOON.text()
+                chatId,
+                menuService.mainMenuText(),
+                menuService.mainReplyKeyboard()
         );
     }
 
     private void sendDirections(String chatId) {
+
         String directions = String.join(
                 "\n",
                 directionAdminService.getDirections()
         );
 
         if (directions.isBlank()) {
-            senderService.sendToChat(chatId, "Список напрямків порожній.");
+            senderService.sendToChat(
+                    chatId,
+                    "Список напрямків порожній."
+            );
             return;
         }
 
         senderService.sendToChat(
                 chatId,
-                "🧭 Напрямки моніторингу:\n\n" + directions
+                "🧭 Напрямки моніторингу:\n\n"
+                        + directions
         );
     }
 
-    private void addDirection(Long userId, String chatId, String direction) {
-        boolean added = directionAdminService.addDirection(direction);
+    private void addDirection(
+            Long userId,
+            String chatId,
+            String direction
+    ) {
+
+        boolean added =
+                directionAdminService.addDirection(direction);
 
         sessionService.reset(userId);
 
         if (added) {
-            senderService.sendToChat(chatId, "✅ Напрямок додано: " + direction);
+            senderService.sendToChat(
+                    chatId,
+                    "✅ Напрямок додано: " + direction
+            );
         } else {
-            senderService.sendToChat(chatId, "⚠️ Такий напрямок уже додано або значення порожнє.");
+            senderService.sendToChat(
+                    chatId,
+                    "⚠️ Такий напрямок уже додано або значення порожнє."
+            );
         }
     }
 
-    private void removeDirection(Long userId, String chatId, String direction) {
-        boolean removed = directionAdminService.removeDirection(direction);
+    private void removeDirection(
+            Long userId,
+            String chatId,
+            String direction
+    ) {
+
+        boolean removed =
+                directionAdminService.removeDirection(direction);
 
         sessionService.reset(userId);
 
         if (removed) {
-            senderService.sendToChat(chatId, "✅ Напрямок видалено: " + direction);
+            senderService.sendToChat(
+                    chatId,
+                    "✅ Напрямок видалено: " + direction
+            );
         } else {
-            senderService.sendToChat(chatId, "⚠️ Такий напрямок не знайдено.");
+            senderService.sendToChat(
+                    chatId,
+                    "⚠️ Такий напрямок не знайдено."
+            );
         }
     }
 
-    private void requestAddDirection(Long userId, String chatId) {
-        sessionService.setState(userId, AdminSessionState.WAITING_FOR_NEW_DIRECTION);
-        senderService.sendToChat(chatId, "Введіть напрямок для моніторингу:");
+    private void requestAddDirection(
+            Long userId,
+            String chatId
+    ) {
+
+        sessionService.setState(
+                userId,
+                AdminSessionState.WAITING_FOR_NEW_DIRECTION
+        );
+
+        senderService.sendToChat(
+                chatId,
+                "Введіть напрямок для моніторингу:"
+        );
     }
 
-    private void requestRemoveDirection(Long userId, String chatId) {
-        sessionService.setState(userId, AdminSessionState.WAITING_FOR_REMOVE_DIRECTION);
-        senderService.sendToChat(chatId, "Введіть напрямок, який треба видалити:");
+    private void requestRemoveDirection(
+            Long userId,
+            String chatId
+    ) {
+
+        sessionService.setState(
+                userId,
+                AdminSessionState.WAITING_FOR_REMOVE_DIRECTION
+        );
+
+        senderService.sendToChat(
+                chatId,
+                "Введіть напрямок, який треба видалити:"
+        );
     }
 
     private String normalizeCommand(String text) {
 
-        return text.replace("@bc_shahed_monitor_bot", "")
+        return text
+                .replace("@bc_shahed_monitor_bot", "")
                 .trim();
     }
 
     private void sendBotStatus(String chatId) {
 
-        String message = """
-                🤖 Статус бота
-                
-                TDLib-моніторинг каналів: увімкнений
-                API-керування моніторингом: увімкнене
-            """;
+        boolean monitoringEnabled =
+                monitoringStateService.isMonitoringEnabled();
 
-        senderService.sendToChat(chatId, message);
+        String tdLibStatus =
+                tdLibStatusService.isReady()
+                        ? "✅ підключено"
+                        : "⛔ не підключено";
+
+        String activeMonitoringStatus =
+                monitoringEnabled
+                        ? "✅ увімкнено"
+                        : "⛔ вимкнено";
+
+        String automaticControlStatus =
+                monitoringStateService.isApiControlEnabled()
+                        ? "✅ увімкнено"
+                        : "⛔ вимкнено";
+
+        int activeSourcesCount =
+                monitoredSourceService
+                        .getActiveSources()
+                        .size();
+
+        StringBuilder message =
+                new StringBuilder();
+
+        message.append("""
+                🤖 Статус бота
+
+                🤖 Сервіс: ✅ працює
+                📡 TDLib: %s
+                📡 Активних джерел: %d
+
+                🚨 Активний моніторинг: %s
+                """.formatted(
+                tdLibStatus,
+                activeSourcesCount,
+                activeMonitoringStatus
+        ));
+
+        if (monitoringEnabled) {
+            message.append(
+                    "Джерело активації: "
+                            + monitoringStateService
+                            .getMonitoringActivationSource()
+                            + "\n"
+            );
+        }
+
+        message.append("""
+                
+                🔭 Моніторинг прогнозу: ✅ увімкнено
+
+                ⚙️ Автоматичне керування: %s
+                """.formatted(
+                automaticControlStatus
+        ));
+
+        senderService.sendToChat(
+                chatId,
+                message.toString()
+        );
     }
 
     private void sendAlertStatus(String chatId) {
+
         senderService.sendToChat(
                 chatId,
                 apiAlertStatusFormatter.format(
@@ -614,12 +875,17 @@ public class AdminCommandHandler {
 
         senderService.sendToChat(
                 chatId,
-                "📡 Активні джерела (" + sources.size() + ")"
+                "📡 Активні джерела ("
+                        + sources.size()
+                        + ")"
         );
 
-        for (int index = 0; index < sources.size(); index++) {
+        for (int index = 0;
+             index < sources.size();
+             index++) {
 
-            MonitoredSource source = sources.get(index);
+            MonitoredSource source =
+                    sources.get(index);
 
             String message = """
                     📡 Джерело %d/%d (активне)
@@ -636,7 +902,8 @@ public class AdminCommandHandler {
             InlineKeyboardMarkup keyboard =
                     singleButtonKeyboard(
                             "⛔ Вимкнути моніторинг",
-                            SOURCE_IGNORE_CALLBACK + source.chatId()
+                            SOURCE_IGNORE_CALLBACK
+                                    + source.chatId()
                     );
 
             senderService.sendToChatWithKeyboard(
@@ -662,10 +929,14 @@ public class AdminCommandHandler {
 
         senderService.sendToChat(
                 chatId,
-                "🆕 Нові джерела (" + candidates.size() + ")"
+                "🆕 Нові джерела ("
+                        + candidates.size()
+                        + ")"
         );
 
-        for (int index = 0; index < candidates.size(); index++) {
+        for (int index = 0;
+             index < candidates.size();
+             index++) {
 
             UnknownSourceCandidate candidate =
                     candidates.get(index);
@@ -692,9 +963,11 @@ public class AdminCommandHandler {
             InlineKeyboardMarkup keyboard =
                     twoButtonKeyboard(
                             "✅ Увімкнути моніторинг",
-                            SOURCE_ENABLE_CALLBACK + candidate.chatId(),
+                            SOURCE_ENABLE_CALLBACK
+                                    + candidate.chatId(),
                             "⛔ Ігнорувати",
-                            SOURCE_IGNORE_CALLBACK + candidate.chatId()
+                            SOURCE_IGNORE_CALLBACK
+                                    + candidate.chatId()
                     );
 
             senderService.sendToChatWithKeyboard(
@@ -720,12 +993,17 @@ public class AdminCommandHandler {
 
         senderService.sendToChat(
                 chatId,
-                "⛔ Ігноровані джерела (" + sources.size() + ")"
+                "⛔ Ігноровані джерела ("
+                        + sources.size()
+                        + ")"
         );
 
-        for (int index = 0; index < sources.size(); index++) {
+        for (int index = 0;
+             index < sources.size();
+             index++) {
 
-            MonitoredSource source = sources.get(index);
+            MonitoredSource source =
+                    sources.get(index);
 
             String message = """
                     📡 Джерело %d/%d (ігнороване)
@@ -742,7 +1020,8 @@ public class AdminCommandHandler {
             InlineKeyboardMarkup keyboard =
                     singleButtonKeyboard(
                             "✅ Увімкнути моніторинг",
-                            SOURCE_ENABLE_CALLBACK + source.chatId()
+                            SOURCE_ENABLE_CALLBACK
+                                    + source.chatId()
                     );
 
             senderService.sendToChatWithKeyboard(
@@ -755,82 +1034,110 @@ public class AdminCommandHandler {
 
     private void enableSource(
             String adminChatId,
+            Integer messageId,
             String callbackQueryId,
             String sourceId
     ) {
 
         UnknownSourceCandidate candidate =
-                unknownSourceCandidateService.findByChatId(sourceId);
+                unknownSourceCandidateService
+                        .findByChatId(sourceId);
 
         /*
-        * NEW → ACTIVE
-        */
+         * NEW → ACTIVE
+         */
         if (candidate != null) {
 
             boolean added =
-                    monitoredSourceService.addActiveSource(
-                            candidate.chatId(),
-                            candidate.title()
-                    );
+                    monitoredSourceService
+                            .addActiveSource(
+                                    candidate.chatId(),
+                                    candidate.title()
+                            );
 
             if (added) {
+
                 unknownSourceCandidateService.remove(
                         candidate.chatId()
                 );
 
                 senderService.answerCallback(
                         callbackQueryId,
-                        "Джерело додано"
+                        "Моніторинг увімкнено"
                 );
 
-                senderService.sendToChat(
-                        adminChatId,
-                        """
-                        ✅ Джерело додано до моніторингу
+                String message = """
+                        📡 Джерело (активне)
 
                         Назва: %s
                         Chat ID: %s
                         """.formatted(
-                                candidate.title(),
-                                candidate.chatId()
+                        candidate.title(),
+                        candidate.chatId()
+                );
+
+                senderService.editMessageWithKeyboard(
+                        adminChatId,
+                        messageId,
+                        message,
+                        singleButtonKeyboard(
+                                "⛔ Вимкнути моніторинг",
+                                SOURCE_IGNORE_CALLBACK
+                                        + candidate.chatId()
                         )
                 );
 
-                sendNewSources(adminChatId);
                 return;
             }
         }
 
         /*
-        * IGNORED → ACTIVE
-        */
+         * IGNORED → ACTIVE
+         */
+        MonitoredSource source =
+                monitoredSourceService
+                        .findByChatId(sourceId);
+
+        if (source == null) {
+            senderService.answerCallback(
+                    callbackQueryId,
+                    "Джерело не знайдено"
+            );
+            return;
+        }
+
         boolean enabled =
-                monitoredSourceService.enableSource(sourceId);
+                monitoredSourceService
+                        .enableSource(sourceId);
 
         if (enabled) {
-
-            MonitoredSource source =
-                    monitoredSourceService.findByChatId(sourceId);
 
             senderService.answerCallback(
                     callbackQueryId,
                     "Моніторинг увімкнено"
             );
 
-            senderService.sendToChat(
-                    adminChatId,
-                    """
-                    ✅ Моніторинг джерела увімкнено
+            String message = """
+                    📡 Джерело (активне)
 
                     Назва: %s
                     Chat ID: %s
                     """.formatted(
-                            source.title(),
-                            source.chatId()
+                    source.title(),
+                    source.chatId()
+            );
+
+            senderService.editMessageWithKeyboard(
+                    adminChatId,
+                    messageId,
+                    message,
+                    singleButtonKeyboard(
+                            "⛔ Вимкнути моніторинг",
+                            SOURCE_IGNORE_CALLBACK
+                                    + source.chatId()
                     )
             );
 
-            sendIgnoredSources(adminChatId);
             return;
         }
 
@@ -842,25 +1149,29 @@ public class AdminCommandHandler {
 
     private void ignoreSource(
             String adminChatId,
+            Integer messageId,
             String callbackQueryId,
             String sourceId
     ) {
 
         UnknownSourceCandidate candidate =
-                unknownSourceCandidateService.findByChatId(sourceId);
+                unknownSourceCandidateService
+                        .findByChatId(sourceId);
 
         /*
-        * NEW → IGNORED
-        */
+         * NEW → IGNORED
+         */
         if (candidate != null) {
 
             boolean added =
-                    monitoredSourceService.addIgnoredSource(
-                            candidate.chatId(),
-                            candidate.title()
-                    );
+                    monitoredSourceService
+                            .addIgnoredSource(
+                                    candidate.chatId(),
+                                    candidate.title()
+                            );
 
             if (added) {
+
                 unknownSourceCandidateService.remove(
                         candidate.chatId()
                 );
@@ -870,54 +1181,78 @@ public class AdminCommandHandler {
                         "Джерело ігнорується"
                 );
 
-                senderService.sendToChat(
-                        adminChatId,
-                        """
-                        ⛔ Джерело додано до ігнорованих
+                String message = """
+                        📡 Джерело (ігнороване)
 
                         Назва: %s
                         Chat ID: %s
                         """.formatted(
-                                candidate.title(),
-                                candidate.chatId()
+                        candidate.title(),
+                        candidate.chatId()
+                );
+
+                senderService.editMessageWithKeyboard(
+                        adminChatId,
+                        messageId,
+                        message,
+                        singleButtonKeyboard(
+                                "✅ Увімкнути моніторинг",
+                                SOURCE_ENABLE_CALLBACK
+                                        + candidate.chatId()
                         )
                 );
 
-                sendNewSources(adminChatId);
                 return;
             }
         }
 
         /*
-        * ACTIVE → IGNORED
-        */
+         * ACTIVE → IGNORED
+         */
+        MonitoredSource source =
+                monitoredSourceService
+                        .findByChatId(sourceId);
+
+        if (source == null) {
+            senderService.answerCallback(
+                    callbackQueryId,
+                    "Джерело не знайдено"
+            );
+            return;
+        }
+
         boolean ignored =
-                monitoredSourceService.ignoreSource(sourceId);
+                monitoredSourceService
+                        .ignoreSource(sourceId);
 
         if (ignored) {
-
-            MonitoredSource source =
-                    monitoredSourceService.findByChatId(sourceId);
 
             senderService.answerCallback(
                     callbackQueryId,
                     "Моніторинг вимкнено"
             );
 
-            senderService.sendToChat(
-                    adminChatId,
-                    """
-                    ⛔ Моніторинг джерела вимкнено
+            String message = """
+                    📡 Джерело (ігнороване)
 
                     Назва: %s
                     Chat ID: %s
                     """.formatted(
-                            source.title(),
-                            source.chatId()
+                    source.title(),
+                    source.chatId()
+            );
+
+            senderService.editMessageWithKeyboard(
+                    adminChatId,
+                    messageId,
+                    message,
+                    singleButtonKeyboard(
+                            "✅ Увімкнути моніторинг",
+                            SOURCE_ENABLE_CALLBACK
+                                    + source.chatId()
                     )
             );
 
-            sendActiveSources(adminChatId);
             return;
         }
 
@@ -938,7 +1273,9 @@ public class AdminCommandHandler {
                         .callbackData(callbackData)
                         .build();
 
-        InlineKeyboardRow row = new InlineKeyboardRow();
+        InlineKeyboardRow row =
+                new InlineKeyboardRow();
+
         row.add(button);
 
         return InlineKeyboardMarkup.builder()
@@ -965,7 +1302,9 @@ public class AdminCommandHandler {
                         .callbackData(secondCallback)
                         .build();
 
-        InlineKeyboardRow row = new InlineKeyboardRow();
+        InlineKeyboardRow row =
+                new InlineKeyboardRow();
+
         row.add(firstButton);
         row.add(secondButton);
 
@@ -974,7 +1313,9 @@ public class AdminCommandHandler {
                 .build();
     }
 
-    private String formatInstant(java.time.Instant instant) {
+    private String formatInstant(
+            java.time.Instant instant
+    ) {
 
         if (instant == null) {
             return "невідомо";

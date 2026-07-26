@@ -91,12 +91,16 @@ public class AirAlertApiService {
 
         if (isActive) {
             updateMonitoringFromApi(ManualAlertType.ALERT);
-            manualAlertService.sendAlert(ManualAlertType.ALERT);
+            manualAlertService.sendApiAlert(
+                    ManualAlertType.ALERT
+            );
             return;
         }
 
         updateMonitoringFromApi(ManualAlertType.ALL_CLEAR);
-        manualAlertService.sendAlert(ManualAlertType.ALL_CLEAR);
+        manualAlertService.sendApiAlert(
+                ManualAlertType.ALL_CLEAR
+        );
     }
 
     private void processHighRiskChange(
@@ -115,21 +119,29 @@ public class AirAlertApiService {
          * повідомлень у групу не створюють.
          */
         if (!wasActive && isActive) {
-            manualAlertService.sendAlert(ManualAlertType.HIGH_RISK);
+            manualAlertService.sendApiAlert(
+                    ManualAlertType.HIGH_RISK
+            );
         }
     }
 
-    private void updateMonitoringFromApi(ManualAlertType type) {
+    private void updateMonitoringFromApi(
+            ManualAlertType type
+    ) {
+
         if (!monitoringStateService.isApiControlEnabled()) {
             return;
         }
 
         if (type == ManualAlertType.ALERT) {
-            monitoringStateService.enableMonitoring();
+            monitoringStateService
+                    .enableMonitoringFromApi();
+            return;
         }
 
         if (type == ManualAlertType.ALL_CLEAR) {
-            monitoringStateService.disableMonitoring();
+            monitoringStateService
+                    .disableMonitoringFromApi();
         }
     }
 

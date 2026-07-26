@@ -5,15 +5,35 @@ import org.springframework.stereotype.Service;
 @Service
 public class MonitoringStateService {
 
-    private boolean apiControlEnabled = true;
-    private boolean monitoringEnabled = false;
+    private volatile boolean apiControlEnabled = true;
+
+    /*
+     * Стан, встановлений API тривог.
+     */
+    private volatile boolean apiMonitoringEnabled = false;
+
+    /*
+     * Аварійний ручний стан.
+     */
+    private volatile boolean manualMonitoringEnabled = false;
 
     public boolean isApiControlEnabled() {
         return apiControlEnabled;
     }
 
+    /*
+     * Фінальний стан активного моніторингу.
+     */
     public boolean isMonitoringEnabled() {
-        return monitoringEnabled;
+        return apiMonitoringEnabled || manualMonitoringEnabled;
+    }
+
+    public boolean isApiMonitoringEnabled() {
+        return apiMonitoringEnabled;
+    }
+
+    public boolean isManualMonitoringEnabled() {
+        return manualMonitoringEnabled;
     }
 
     public void enableApiControl() {
@@ -22,21 +42,66 @@ public class MonitoringStateService {
 
     public void disableApiControl() {
         apiControlEnabled = false;
-    }
 
-    public void enableMonitoring() {
-        monitoringEnabled = true;
-    }
-
-    public void disableMonitoring() {
-        monitoringEnabled = false;
+        /*
+         * Після вимкнення API-керування старий API-стан
+         * не повинен утримувати моніторинг увімкненим.
+         */
+        apiMonitoringEnabled = false;
     }
 
     public void toggleApiControl() {
-        apiControlEnabled = !apiControlEnabled;
+        if (apiControlEnabled) {
+            disableApiControl();
+        } else {
+            enableApiControl();
+        }
+    }
+
+    public void enableMonitoringFromApi() {
+        if (!apiControlEnabled) {
+            return;
+        }
+
+        apiMonitoringEnabled = true;
+    }
+
+    public void disableMonitoringFromApi() {
+        if (!apiControlEnabled) {
+            return;
+        }
+
+        apiMonitoringEnabled = false;
+    }
+
+    public void enableMonitoringManually() {
+        manualMonitoringEnabled = true;
+    }
+
+    public void disableMonitoringManually() {
+        manualMonitoringEnabled = false;
     }
 
     public String getApiControlStatus() {
-        return apiControlEnabled ? "УВІМКНЕНО" : "ВИМКНЕНО";
+        return apiControlEnabled
+                ? "УВІМКНЕНО"
+                : "ВИМКНЕНО";
+    }
+
+    public String getMonitoringActivationSource() {
+
+        if (apiMonitoringEnabled && manualMonitoringEnabled) {
+            return "API + ручне керування";
+        }
+
+        if (manualMonitoringEnabled) {
+            return "ручне керування";
+        }
+
+        if (apiMonitoringEnabled) {
+            return "API";
+        }
+
+        return "неактивний";
     }
 }
