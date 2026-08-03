@@ -1,6 +1,8 @@
 package com.tgbot.shahedmonitorbot.tdlib;
 
 import com.tgbot.shahedmonitorbot.config.AppProperties;
+import com.tgbot.shahedmonitorbot.tdlib.history.TdLibHistoryRequestService;
+
 import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
@@ -12,19 +14,23 @@ public class TdLibAuthorizationService {
     private final AppProperties appProperties;
     private final TdLibUpdateHandler tdLibUpdateHandler;
     private final TemporaryHistoryExportService temporaryHistoryExportService;
+    private final TdLibHistoryRequestService tdLibHistoryRequestService;
     private final TdLibStatusService tdLibStatusService;
+    
 
     public TdLibAuthorizationService(
             TdLibClientService tdLibClientService,
             AppProperties appProperties,
             TdLibUpdateHandler tdLibUpdateHandler,
             TemporaryHistoryExportService temporaryHistoryExportService,
+            TdLibHistoryRequestService tdLibHistoryRequestService,
             TdLibStatusService tdLibStatusService
     ) {
         this.tdLibClientService = tdLibClientService;
         this.appProperties = appProperties;
         this.tdLibUpdateHandler = tdLibUpdateHandler;
         this.temporaryHistoryExportService = temporaryHistoryExportService;
+        this.tdLibHistoryRequestService = tdLibHistoryRequestService;
         this.tdLibStatusService = tdLibStatusService;
     }
 
@@ -59,7 +65,10 @@ public class TdLibAuthorizationService {
             }
 
             tdLibUpdateHandler.handle(update);
-            temporaryHistoryExportService.handle(update); //
+            // temporaryHistoryExportService.handle(update);
+            tdLibHistoryRequestService.handle(update);
+
+            tdLibHistoryRequestService.handle(update);
 
             if (update.contains("\"@type\":\"error\"")) {
                 System.out.println("TDLIB ERROR:");
@@ -113,7 +122,7 @@ public class TdLibAuthorizationService {
 
                 System.out.println("TDLib authorization ready!");
                 requestChats();
-                //temporaryHistoryExportService.startExport();
+                temporaryHistoryExportService.startExport();
             }
 
             if (update.contains("\"authorizationStateClosing\"")

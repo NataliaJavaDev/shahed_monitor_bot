@@ -94,10 +94,6 @@ app:
           - "гайок"
           - "гайках"
 
-      - category: "гай"
-        aliases:
-          - "гай"
-
       - category: "дрозди"
         aliases:
           - "дрозди"
