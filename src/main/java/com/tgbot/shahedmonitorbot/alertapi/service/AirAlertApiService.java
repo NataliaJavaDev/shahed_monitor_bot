@@ -6,7 +6,7 @@ import com.tgbot.shahedmonitorbot.alertapi.model.ApiAlertStatus;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertType;
-import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
+import com.tgbot.shahedmonitorbot.monitoring.AlertLifecycleService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -23,7 +23,7 @@ public class AirAlertApiService {
     private final AirAlertApiClient client;
     private final AppProperties properties;
     private final ManualAlertService manualAlertService;
-    private final MonitoringStateService monitoringStateService;
+    private final AlertLifecycleService alertLifecycleService;
 
     private ApiAlertStatus lastStatus = new ApiAlertStatus(
             false,
@@ -36,12 +36,12 @@ public class AirAlertApiService {
             AirAlertApiClient client,
             AppProperties properties,
             ManualAlertService manualAlertService,
-            MonitoringStateService monitoringStateService
+            AlertLifecycleService alertLifecycleService
     ) {
         this.client = client;
         this.properties = properties;
         this.manualAlertService = manualAlertService;
-        this.monitoringStateService = monitoringStateService;
+        this.alertLifecycleService = alertLifecycleService;
     }
 
     public void checkAlerts() {
@@ -129,18 +129,18 @@ public class AirAlertApiService {
             ManualAlertType type
     ) {
 
-        if (!monitoringStateService.isApiControlEnabled()) {
+        if (!alertLifecycleService.isApiControlEnabled()) {
             return;
         }
 
         if (type == ManualAlertType.ALERT) {
-            monitoringStateService
+            alertLifecycleService
                     .enableMonitoringFromApi();
             return;
         }
 
         if (type == ManualAlertType.ALL_CLEAR) {
-            monitoringStateService
+            alertLifecycleService
                     .disableMonitoringFromApi();
         }
     }

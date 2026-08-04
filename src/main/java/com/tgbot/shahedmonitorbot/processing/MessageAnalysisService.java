@@ -74,7 +74,8 @@ public class MessageAnalysisService {
                         chatId,
                         currentMatch,
                         finalIntent,
-                        finalContextRestored
+                        finalContextRestored,
+                        cleanedText
                 ))
                 .orElse(null);
     }
@@ -83,7 +84,8 @@ public class MessageAnalysisService {
             String chatId,
             MonitorMatch initialMatch,
             MessageIntent intent,
-            boolean contextRestored
+            boolean contextRestored,
+            String text
     ) {
         MessageIntent finalIntent =
                 resolveFinalIntent(intent, initialMatch, contextRestored);
@@ -109,7 +111,8 @@ public class MessageAnalysisService {
                 finalIntent,
                 duplicate,
                 resolution.contextUsed() || contextRestored,
-                deduplicationKey
+                deduplicationKey,
+                text
         );
     }
 
@@ -177,7 +180,8 @@ public class MessageAnalysisService {
                             intent,
                             duplicate,
                             false,
-                            deduplicationKey
+                            deduplicationKey,
+                            text
                     );
                 })
                 .orElse(null);

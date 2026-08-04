@@ -6,6 +6,7 @@ public record MessageAnalysis(
         MessageIntent intent,
         boolean duplicate,
         boolean contextUsed,
-        String deduplicationKey
+        String deduplicationKey,
+        String originalMessage
 ) {
 }
