@@ -75,4 +75,12 @@ public class RecentMessageCacheService {
 
         return result;
     }
+
+    public int getTotalMessages() {
+
+        return cache.values()
+                .stream()
+                .mapToInt(Deque::size)
+                .sum();
+    }
 }

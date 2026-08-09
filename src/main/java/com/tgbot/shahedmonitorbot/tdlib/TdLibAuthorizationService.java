@@ -40,22 +40,10 @@ public class TdLibAuthorizationService {
 
     @PostConstruct
     public void startAuthorization() {
+
         Thread thread = new Thread(this::authorizationLoop);
         thread.setName("tdlib-authorization-thread");
         thread.start();
-
-        Thread chatRequestThread = new Thread(() -> {
-            try {
-                Thread.sleep(5000);
-                System.out.println("Requesting chats after startup...");
-                requestChats();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        });
-
-        chatRequestThread.setName("tdlib-chat-request-thread");
-        chatRequestThread.start();
     }
 
     private void authorizationLoop() {
@@ -84,6 +72,8 @@ public class TdLibAuthorizationService {
             if (update.contains("\"@type\":\"chats\"")) {
                 System.out.println("TDLIB_CHATS_LIST received");
                 requestChatDetails(update);
+
+                recentHistoryBootstrapService.bootstrap();
             }
 
             if (update.contains("\"authorizationStateWaitTdlibParameters\"")) {
@@ -124,8 +114,6 @@ public class TdLibAuthorizationService {
 
                 System.out.println("TDLib authorization ready!");
                 requestChats();
-
-                recentHistoryBootstrapService.bootstrap();
                 // temporaryHistoryExportService.startExport();
             }
 

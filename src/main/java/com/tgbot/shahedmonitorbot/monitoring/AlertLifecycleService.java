@@ -1,20 +1,16 @@
 package com.tgbot.shahedmonitorbot.monitoring;
 
-import com.tgbot.shahedmonitorbot.monitoring.history.ThreatHistoryBootstrapService;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AlertLifecycleService {
 
     private final MonitoringStateService monitoringStateService;
-    private final ThreatHistoryBootstrapService threatHistoryBootstrapService;
 
     public AlertLifecycleService(
-            MonitoringStateService monitoringStateService,
-            ThreatHistoryBootstrapService threatHistoryBootstrapService
+            MonitoringStateService monitoringStateService
     ) {
         this.monitoringStateService = monitoringStateService;
-        this.threatHistoryBootstrapService = threatHistoryBootstrapService;
     }
 
     /*
@@ -59,55 +55,22 @@ public class AlertLifecycleService {
 
     public void enableMonitoringFromApi() {
 
-        boolean wasEnabled =
-                monitoringStateService.isMonitoringEnabled();
-
         monitoringStateService.enableMonitoringFromApi();
-
-        if (!wasEnabled
-                && monitoringStateService.isMonitoringEnabled()) {
-
-            threatHistoryBootstrapService.initialize();
-        }
     }
 
     public void disableMonitoringFromApi() {
 
-        boolean wasEnabled =
-                monitoringStateService.isMonitoringEnabled();
-
         monitoringStateService.disableMonitoringFromApi();
-
-        if (wasEnabled && !monitoringStateService.isMonitoringEnabled()) {
-
-            //
-        }
     }
 
     public void enableMonitoringManually() {
 
-        boolean wasEnabled = monitoringStateService.isMonitoringEnabled();
-
         monitoringStateService.enableMonitoringManually();
-
-        if (!wasEnabled
-                && monitoringStateService.isMonitoringEnabled()) {
-
-            threatHistoryBootstrapService.initialize();
-        }
     }
 
     public void disableMonitoringManually() {
 
-        boolean wasEnabled =
-                monitoringStateService.isMonitoringEnabled();
-
         monitoringStateService.disableMonitoringManually();
-
-        if (wasEnabled && !monitoringStateService.isMonitoringEnabled()) {
-
-            //
-        }
     }
 
     /*
