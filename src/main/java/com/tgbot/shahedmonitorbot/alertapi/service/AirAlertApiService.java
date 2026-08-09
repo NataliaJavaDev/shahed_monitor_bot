@@ -7,6 +7,7 @@ import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertType;
 import com.tgbot.shahedmonitorbot.monitoring.AlertLifecycleService;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -79,25 +80,30 @@ public class AirAlertApiService {
     }
 
     private void processDistrictAlertChange(
-            ApiAlertStatus previousStatus,
-            ApiAlertStatus currentStatus
+        ApiAlertStatus previousStatus,
+        ApiAlertStatus currentStatus
     ) {
+    
         boolean wasActive = previousStatus.districtAlertActive();
         boolean isActive = currentStatus.districtAlertActive();
-
+    
         if (wasActive == isActive) {
             return;
         }
-
+    
         if (isActive) {
+    
             updateMonitoringFromApi(ManualAlertType.ALERT);
+    
             manualAlertService.sendApiAlert(
                     ManualAlertType.ALERT
             );
+    
             return;
         }
-
+    
         updateMonitoringFromApi(ManualAlertType.ALL_CLEAR);
+    
         manualAlertService.sendApiAlert(
                 ManualAlertType.ALL_CLEAR
         );

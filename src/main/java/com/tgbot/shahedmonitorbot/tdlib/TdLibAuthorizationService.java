@@ -65,9 +65,7 @@ public class TdLibAuthorizationService {
             }
 
             tdLibUpdateHandler.handle(update);
-            // temporaryHistoryExportService.handle(update);
-            tdLibHistoryRequestService.handle(update);
-
+            temporaryHistoryExportService.handle(update);
             tdLibHistoryRequestService.handle(update);
 
             if (update.contains("\"@type\":\"error\"")) {

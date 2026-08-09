@@ -5,10 +5,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class ThreatHistoryBootstrapService {
 
-    private final HistoricalThreatAnalyzerService analyzerService;
+    private final AlertReasonAnalyzerService analyzerService;
 
     public ThreatHistoryBootstrapService(
-            HistoricalThreatAnalyzerService analyzerService
+            AlertReasonAnalyzerService analyzerService
     ) {
         this.analyzerService = analyzerService;
     }

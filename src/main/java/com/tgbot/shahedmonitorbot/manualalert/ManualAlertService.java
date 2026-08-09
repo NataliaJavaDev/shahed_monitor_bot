@@ -2,6 +2,8 @@ package com.tgbot.shahedmonitorbot.manualalert;
 
 import com.tgbot.shahedmonitorbot.alert.AlertDeliveryService;
 import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
+import com.tgbot.shahedmonitorbot.monitoring.history.AlertReasonAnalyzerService;
+import com.tgbot.shahedmonitorbot.monitoring.reason.AlertReason;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -10,15 +12,18 @@ public class ManualAlertService {
     private final AlertDeliveryService alertDeliveryService;
     private final ManualAlertMessageFormatter formatter;
     private final MonitoringStateService monitoringStateService;
+    private final AlertReasonAnalyzerService alertReasonAnalyzerService;
 
     public ManualAlertService(
             AlertDeliveryService alertDeliveryService,
             ManualAlertMessageFormatter formatter,
-            MonitoringStateService monitoringStateService
+            MonitoringStateService monitoringStateService,
+            AlertReasonAnalyzerService alertReasonAnalyzerService
     ) {
         this.alertDeliveryService = alertDeliveryService;
         this.formatter = formatter;
         this.monitoringStateService = monitoringStateService;
+        this.alertReasonAnalyzerService = alertReasonAnalyzerService;
     }
 
     /*
@@ -29,19 +34,20 @@ public class ManualAlertService {
 
         updateMonitoringFromManual(type);
 
-        alertDeliveryService.send(
-                formatter.format(type)
-        );
+        sendWithReason(type);
     }
 
-    /*
-     * Викликається AirAlertApiService.
-     *
-     * Не змінює ручний аварійний стан.
-     */
     public void sendApiAlert(ManualAlertType type) {
+
+        sendWithReason(type);
+    }
+
+    private void send(
+            ManualAlertType type,
+            AlertReason reason
+    ) {
         alertDeliveryService.send(
-                formatter.format(type)
+                formatter.format(type, reason)
         );
     }
 
@@ -59,9 +65,25 @@ public class ManualAlertService {
             monitoringStateService
                     .disableMonitoringManually();
         }
+    }
 
-        /*
-         * HIGH_RISK не впливає на моніторинг.
-         */
+    private void sendWithReason(
+            ManualAlertType type
+    ) {
+
+        if (type != ManualAlertType.ALERT) {
+            send(type, null);
+            return;
+        }
+
+        alertReasonAnalyzerService
+                .analyze()
+                .thenAccept(reason -> {send(type, reason);})
+                .exceptionally(ex -> {
+
+                    send(type, null);
+
+                    return null;
+                });
     }
 }
