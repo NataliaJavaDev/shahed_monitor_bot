@@ -90,15 +90,14 @@ public class AlertReasonAnalyzerService {
             }
         });
 
-        AlertReason reason =
-                alertReasonResolverService.resolve(items);
+        AlertReason reason = alertReasonResolverService.resolve(items);
 
-        alertDeliveryService.send("""
-        DEBUG
+        // alertDeliveryService.send("""
+        // DEBUG
 
-        Items:
-        %s
-        """.formatted(reason));
+        // Items:
+        // %s
+        // """.formatted(reason));
 
         return reason;
     }
