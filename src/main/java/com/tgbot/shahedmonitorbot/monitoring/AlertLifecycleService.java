@@ -78,17 +78,15 @@ public class AlertLifecycleService {
 
         monitoringStateService.disableMonitoringFromApi();
 
-        if (wasEnabled
-                && !monitoringStateService.isMonitoringEnabled()) {
+        if (wasEnabled && !monitoringStateService.isMonitoringEnabled()) {
 
-            threatHistoryBootstrapService.clear();
+            //
         }
     }
 
     public void enableMonitoringManually() {
 
-        boolean wasEnabled =
-                monitoringStateService.isMonitoringEnabled();
+        boolean wasEnabled = monitoringStateService.isMonitoringEnabled();
 
         monitoringStateService.enableMonitoringManually();
 
@@ -106,10 +104,9 @@ public class AlertLifecycleService {
 
         monitoringStateService.disableMonitoringManually();
 
-        if (wasEnabled
-                && !monitoringStateService.isMonitoringEnabled()) {
+        if (wasEnabled && !monitoringStateService.isMonitoringEnabled()) {
 
-            threatHistoryBootstrapService.clear();
+            //
         }
     }
 

@@ -5,8 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgbot.shahedmonitorbot.tdlib.TdLibClientService;
 import org.springframework.stereotype.Service;
 
-import com.tgbot.shahedmonitorbot.alert.AlertDeliveryService;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -28,19 +26,16 @@ public class TdLibHistoryRequestService {
 
     private final TdLibClientService tdLibClientService;
     private final ObjectMapper objectMapper;
-    private final AlertDeliveryService alertDeliveryService;
 
     private final Map<String, HistoryRequest> activeRequests =
             new ConcurrentHashMap<>();
 
     public TdLibHistoryRequestService(
             TdLibClientService tdLibClientService,
-            ObjectMapper objectMapper,
-            AlertDeliveryService alertDeliveryService
+            ObjectMapper objectMapper
     ) {
         this.tdLibClientService = tdLibClientService;
         this.objectMapper = objectMapper;
-        this.alertDeliveryService = alertDeliveryService;
     }
 
     public CompletableFuture<List<TdHistoryMessage>> requestHistory(
@@ -58,41 +53,17 @@ public class TdLibHistoryRequestService {
 
         activeRequests.put(requestId, request);
 
-        alertDeliveryService.send("""
-DEBUG
-
-START
-requestId: %s
-chat: %s
-""".formatted(
-        requestId,
-        chatId
-));
-
         requestHistoryPage(request, 0);
 
-        CompletableFuture<List<TdHistoryMessage>> future =
-                request.getFuture();
+        CompletableFuture<List<TdHistoryMessage>> future = request.getFuture();
 
-            future
-                .orTimeout(60, TimeUnit.SECONDS)
-                .whenComplete((r, ex) -> {
-                    if (ex != null) {
-
-            alertDeliveryService.send("""
-DEBUG
-
-TIMEOUT
-requestId: %s
-chat: %s
-""".formatted(
-                    requestId,
-                    chatId
-            ));
-
-            activeRequests.remove(requestId);
-        }
-                });
+        future
+            .orTimeout(60, TimeUnit.SECONDS)
+            .whenComplete((r, ex) -> {
+                if (ex != null) {
+                    activeRequests.remove(requestId);
+                }
+            });
 
         return future;
     }
@@ -100,329 +71,133 @@ chat: %s
     public CompletableFuture<Map<String, List<TdHistoryMessage>>> requestHistory(
         Collection<String> chatIds,
         Duration lookback
-) {
+    ) {
 
-    CompletableFuture<Map<String, List<TdHistoryMessage>>> future =
-            CompletableFuture.completedFuture(new HashMap<>());
+        CompletableFuture<Map<String, List<TdHistoryMessage>>> future =
+                CompletableFuture.completedFuture(new HashMap<>());
 
-    for (String chatId : chatIds) {
+        for (String chatId : chatIds) {
 
-        future = future.thenCompose(result ->
+            future = future.thenCompose(result ->
 
-                requestHistory(chatId, lookback)
-                        .thenApply(messages -> {
+                    requestHistory(chatId, lookback)
+                            .thenApply(messages -> {
 
-                            result.put(chatId, messages);
+                                result.put(chatId, messages);
 
-                            return result;
-                        })
-        );
-    }
-
-    return future;
-}
-
-    // public CompletableFuture<Map<String, List<TdHistoryMessage>>> requestHistory(
-    //         Collection<String> chatIds,
-    //         Duration lookback
-    // ) {
-
-    //     Map<String, CompletableFuture<List<TdHistoryMessage>>> futures =
-    //             new HashMap<>();
-
-    //     for (String chatId : chatIds) {
-    //         futures.put(chatId, requestHistory(chatId, lookback));
-    //     }
-
-    //     CompletableFuture<?>[] array =
-    //             futures.values().toArray(new CompletableFuture[0]);
-
-    //     return CompletableFuture
-    //             .allOf(array)
-    //             .thenApply(v -> {
-
-    //                 Map<String, List<TdHistoryMessage>> result =
-    //                         new HashMap<>();
-
-    //                 futures.forEach((chatId, future) ->
-    //                         result.put(chatId, future.join()));
-
-    //                 return result;
-    //             });
-    // }
-
-    public void handle(String update) {
-
-    JsonNode root = null;
-    HistoryRequest request = null;
-
-    try {
-
-        if (update == null
-                || !update.contains("\"@type\":\"messages\"")) {
-            return;
-        }
-
-        root = objectMapper.readTree(update);
-
-        String extra = root.path("@extra").asText("");
-
-        if (!extra.startsWith(EXTRA_PREFIX)) {
-            return;
-        }
-
-        String requestId =
-                extra.substring(EXTRA_PREFIX.length());
-
-        alertDeliveryService.send("""
-DEBUG
-
-HANDLE
-requestId: %s
-""".formatted(requestId));
-
-alertDeliveryService.send("A");
-
-        request = activeRequests.get(requestId);
-
-        if (request == null) {
-            return;
-        }
-
-        alertDeliveryService.send("B");
-
-        JsonNode messages = root.path("messages");
-
-        alertDeliveryService.send("C");
-
-        if (!messages.isArray()
-                || messages.isEmpty()) {
-
-            finishRequest(request);
-
-            return;
-        }
-
-        alertDeliveryService.send("D");
-
-        boolean reachedFromTime = false;
-
-        alertDeliveryService.send(
-                "DEBUG\n\nBefore loop: " + messages.size()
-        );
-
-        for (JsonNode message : messages) {
-
-            long messageId =
-                    message.path("id").asLong();
-
-            if (request.getOldestMessageId() == 0
-                    || messageId < request.getOldestMessageId()) {
-
-                request.setOldestMessageId(messageId);
-            }
-
-            LocalDateTime messageTime =
-                    LocalDateTime.ofInstant(
-                            Instant.ofEpochSecond(
-                                    message.path("date").asLong()
-                            ),
-                            KYIV_ZONE
-                    );
-
-            if (messageTime.isBefore(request.getFrom())) {
-
-                reachedFromTime = true;
-
-                break;
-            }
-
-            String text = extractText(message);
-
-            if (text.isBlank()) {
-                continue;
-            }
-
-            request.getMessages().add(
-                    new TdHistoryMessage(
-                            messageId,
-                            messageTime,
-                            text
-                    )
+                                return result;
+                            })
             );
         }
 
-        alertDeliveryService.send(
-                "DEBUG\n\nAfter loop"
-        );
-
-        if (reachedFromTime) {
-
-            finishRequest(request);
-
-            return;
-        }
-
-        requestHistoryPage(
-                request,
-                request.getOldestMessageId()
-        );
-
-    } catch (Exception e) {
-
-        alertDeliveryService.send("""
-DEBUG
-
-HANDLE EXCEPTION
-
-%s
-""".formatted(e));
-
-        failRequest(request, e);
+        return future;
     }
-}
 
-//     public void handle(String update) {
+    public void handle(String update) {
 
-//         if (update == null
-//                 || !update.contains("\"@type\":\"messages\"")) {
-//             return;
-//         }
+        JsonNode root = null;
+        HistoryRequest request = null;
 
-//         try {
+        try {
 
-//             JsonNode root = objectMapper.readTree(update);
+            if (update == null
+                    || !update.contains("\"@type\":\"messages\"")) {
+                return;
+            }
 
-//             String extra = root.path("@extra").asText("");
+            root = objectMapper.readTree(update);
 
-//             if (!extra.startsWith(EXTRA_PREFIX)) {
-//                 return;
-//             }
+            String extra = root.path("@extra").asText("");
 
-//             String requestId =
-//                     extra.substring(EXTRA_PREFIX.length());
+            if (!extra.startsWith(EXTRA_PREFIX)) {
+                return;
+            }
 
-//             alertDeliveryService.send("""
-// DEBUG
+            String requestId = extra.substring(EXTRA_PREFIX.length());
 
-// HANDLE
-// requestId: %s
-// """.formatted(requestId));
+            request = activeRequests.get(requestId);
 
-//             HistoryRequest request =
-//                     activeRequests.get(requestId);
+            if (request == null) {
+                return;
+            }
 
-//             if (request == null) {
-//                 return;
-//             }
+            JsonNode messages = root.path("messages");
 
-//             JsonNode messages = root.path("messages");
+            if (!messages.isArray()
+                    || messages.isEmpty()) {
 
-//             if (!messages.isArray()
-//                     || messages.isEmpty()) {
+                finishRequest(request);
 
-//                 finishRequest(request);
+                return;
+            }
 
-//                 return;
-//             }
+            boolean reachedFromTime = false;
 
-//             boolean reachedFromTime = false;
+            for (JsonNode message : messages) {
 
-//             alertDeliveryService.send(
-//         "DEBUG\n\nBefore loop: " + messages.size()
-// );
+                long messageId =
+                        message.path("id").asLong();
 
-//             for (JsonNode message : messages) {
+                if (request.getOldestMessageId() == 0
+                        || messageId < request.getOldestMessageId()) {
 
-//                 long messageId =
-//                         message.path("id").asLong();
+                    request.setOldestMessageId(messageId);
+                }
 
-//                 if (request.getOldestMessageId() == 0
-//                         || messageId < request.getOldestMessageId()) {
+                LocalDateTime messageTime =
+                        LocalDateTime.ofInstant(
+                                Instant.ofEpochSecond(
+                                        message.path("date").asLong()
+                                ),
+                                KYIV_ZONE
+                        );
 
-//                     request.setOldestMessageId(messageId);
-//                 }
+                if (messageTime.isBefore(request.getFrom())) {
 
-//                 LocalDateTime messageTime =
-//                         LocalDateTime.ofInstant(
-//                                 Instant.ofEpochSecond(
-//                                         message.path("date").asLong()
-//                                 ),
-//                                 KYIV_ZONE
-//                         );
+                    reachedFromTime = true;
 
-//                 if (messageTime.isBefore(request.getFrom())) {
+                    break;
+                }
 
-//                     reachedFromTime = true;
+                String text = extractText(message);
 
-//                     break;
-//                 }
+                if (text.isBlank()) {
+                    continue;
+                }
 
-//                 String text = extractText(message);
+                request.getMessages().add(
+                        new TdHistoryMessage(
+                                messageId,
+                                messageTime,
+                                text
+                        )
+                );
+            }
 
-//                 if (text.isBlank()) {
-//                     continue;
-//                 }
+            if (reachedFromTime) {
 
-//                 request.getMessages().add(
-//                         new TdHistoryMessage(
-//                                 messageId,
-//                                 messageTime,
-//                                 text
-//                         )
-//                 );
-//             }
+                finishRequest(request);
 
-//             alertDeliveryService.send(
-//         "DEBUG\n\nAfter loop"
-// );
+                return;
+            }
 
-//             if (reachedFromTime) {
+            requestHistoryPage(
+                    request,
+                    request.getOldestMessageId()
+            );
 
-//                 finishRequest(request);
+        } catch (Exception e) {
 
-//                 return;
-//             }
-
-//             requestHistoryPage(
-//                     request,
-//                     request.getOldestMessageId()
-//             );
-
-//         } catch (Exception e) {
-
-//             System.out.println(
-//                 "Failed to process history response: "
-//                         + e.getMessage()
-//             );
-
-//             e.printStackTrace();
-
-//         }
-//     }
+            failRequest(request, e);
+        }
+    }
 
     private void requestHistoryPage(
         HistoryRequest request,
         long fromMessageId
     ) {
 
-        // int offset = fromMessageId == 0 ? 0 : 1;
-
         int offset = 0;
-
-        alertDeliveryService.send("""
-DEBUG
-
-PAGE
-
-chat: %s
-fromMessageId: %d
-offset: %d
-""".formatted(
-        request.getChatId(),
-        fromMessageId,
-        offset
-));
 
         tdLibClientService.send("""
                 {
@@ -445,17 +220,6 @@ offset: %d
 
     private void finishRequest(HistoryRequest request) {
 
-        alertDeliveryService.send("""
-DEBUG
-
-FINISH
-Chat: %s
-Messages: %d
-""".formatted(
-        request.getChatId(),
-        request.getMessages().size()
-));
-
         activeRequests.remove(request.getRequestId());
 
         request.getFuture().complete(List.copyOf(request.getMessages()));
@@ -467,16 +231,6 @@ Messages: %d
     ) {
 
         if (request == null) {
-
-            alertDeliveryService.send("""
-DEBUG
-
-FAIL REQUEST
-
-request == null
-
-%s
-""".formatted(e));
 
             return;
         }

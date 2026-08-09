@@ -1,6 +1,7 @@
 package com.tgbot.shahedmonitorbot.tdlib;
 
 import com.tgbot.shahedmonitorbot.config.AppProperties;
+import com.tgbot.shahedmonitorbot.monitoring.history.RecentHistoryBootstrapService;
 import com.tgbot.shahedmonitorbot.tdlib.history.TdLibHistoryRequestService;
 
 import jakarta.annotation.PostConstruct;
@@ -16,6 +17,7 @@ public class TdLibAuthorizationService {
     private final TemporaryHistoryExportService temporaryHistoryExportService;
     private final TdLibHistoryRequestService tdLibHistoryRequestService;
     private final TdLibStatusService tdLibStatusService;
+    private final RecentHistoryBootstrapService recentHistoryBootstrapService;
     
 
     public TdLibAuthorizationService(
@@ -24,7 +26,8 @@ public class TdLibAuthorizationService {
             TdLibUpdateHandler tdLibUpdateHandler,
             TemporaryHistoryExportService temporaryHistoryExportService,
             TdLibHistoryRequestService tdLibHistoryRequestService,
-            TdLibStatusService tdLibStatusService
+            TdLibStatusService tdLibStatusService,
+            RecentHistoryBootstrapService recentHistoryBootstrapService
     ) {
         this.tdLibClientService = tdLibClientService;
         this.appProperties = appProperties;
@@ -32,6 +35,7 @@ public class TdLibAuthorizationService {
         this.temporaryHistoryExportService = temporaryHistoryExportService;
         this.tdLibHistoryRequestService = tdLibHistoryRequestService;
         this.tdLibStatusService = tdLibStatusService;
+        this.recentHistoryBootstrapService = recentHistoryBootstrapService;
     }
 
     @PostConstruct
@@ -120,6 +124,8 @@ public class TdLibAuthorizationService {
 
                 System.out.println("TDLib authorization ready!");
                 requestChats();
+
+                recentHistoryBootstrapService.bootstrap();
                 // temporaryHistoryExportService.startExport();
             }
 
