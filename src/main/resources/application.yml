@@ -373,6 +373,7 @@ app:
 
     target-categories:
       - category: "бпла"
+        display-name: "БПЛА"
         aliases:
           - "бпла"
           - "безпілотник"
@@ -429,6 +430,7 @@ app:
           - "дальній"
 
       - category: "ракета"
+        display-name: "Ракетна загроза"
         aliases:
           - "балістики"
           - "балістика"
@@ -483,6 +485,7 @@ app:
           - "швидкісні"
 
       - category: "міг"
+        display-name: "Ворожа авіація"
         aliases:
           - "винищувачі"
           - "бомбардувальника"

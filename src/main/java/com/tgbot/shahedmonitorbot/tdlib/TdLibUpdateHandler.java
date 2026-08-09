@@ -1,5 +1,6 @@
 package com.tgbot.shahedmonitorbot.tdlib;
 
+import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
@@ -9,9 +10,14 @@ import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateServic
 import com.tgbot.shahedmonitorbot.processing.MessageAnalysis;
 import com.tgbot.shahedmonitorbot.processing.MessageAnalysisService;
 import com.tgbot.shahedmonitorbot.processing.MessageIntent;
+import com.tgbot.shahedmonitorbot.processing.RecentMessageCacheService;
 import com.tgbot.shahedmonitorbot.sender.AnalysisMessageFormatter;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
-import org.springframework.stereotype.Service;
+import com.tgbot.shahedmonitorbot.tdlib.history.TdHistoryMessage;
+
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Service
 public class TdLibUpdateHandler {
@@ -24,6 +30,7 @@ public class TdLibUpdateHandler {
     private final AnalysisMessageFormatter analysisMessageFormatter;
     private final TelegramSenderService telegramSenderService;
     private final MessageAnalysisService messageAnalysisService;
+    private final RecentMessageCacheService recentMessageCacheService;
 
     public TdLibUpdateHandler(
             ObjectMapper objectMapper,
@@ -33,7 +40,8 @@ public class TdLibUpdateHandler {
             UnknownSourceCandidateService unknownSourceCandidateService,
             AnalysisMessageFormatter analysisMessageFormatter,
             TelegramSenderService telegramSenderService,
-            MessageAnalysisService messageAnalysisService
+            MessageAnalysisService messageAnalysisService,
+            RecentMessageCacheService recentMessageCacheService
     ) {
         this.objectMapper = objectMapper;
         this.appProperties = appProperties;
@@ -43,6 +51,7 @@ public class TdLibUpdateHandler {
         this.analysisMessageFormatter = analysisMessageFormatter;
         this.telegramSenderService = telegramSenderService;
         this.messageAnalysisService = messageAnalysisService;
+        this.recentMessageCacheService = recentMessageCacheService;
     }
 
     public void handle(String update) {
@@ -84,6 +93,20 @@ public class TdLibUpdateHandler {
             if (chatId.equals(appProperties.telegram().targetChannelId())) {
                 return;
             }
+
+            recentMessageCacheService.add(
+                chatId,
+                new TdHistoryMessage(
+                        message.path("id").asLong(),
+                        LocalDateTime.ofInstant(
+                                Instant.ofEpochSecond(
+                                        message.path("date").asLong()
+                                ),
+                                ZoneId.of("Europe/Kyiv")
+                        ),
+                        text
+                )
+            );
 
             if (appProperties.monitor().ignoredChatIds() != null
                     && appProperties.monitor().ignoredChatIds().contains(chatId)) {

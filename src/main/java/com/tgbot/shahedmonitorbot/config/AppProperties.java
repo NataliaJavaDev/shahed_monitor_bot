@@ -30,6 +30,7 @@ public record AppProperties(
 
     public record TargetCategory(
         String category,
+        String displayName,
         List<String> aliases
     ) {}
 

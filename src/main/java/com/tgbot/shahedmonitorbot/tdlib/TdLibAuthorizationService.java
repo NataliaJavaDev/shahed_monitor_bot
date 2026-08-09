@@ -120,7 +120,7 @@ public class TdLibAuthorizationService {
 
                 System.out.println("TDLib authorization ready!");
                 requestChats();
-                temporaryHistoryExportService.startExport();
+                // temporaryHistoryExportService.startExport();
             }
 
             if (update.contains("\"authorizationStateClosing\"")

@@ -44,7 +44,7 @@ public class ManualAlertMessageFormatter {
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("Причина:")
+        sb.append("Виявлена загроза:")
                 .append(System.lineSeparator());
 
         for (AlertReasonItem item : reason.items()) {

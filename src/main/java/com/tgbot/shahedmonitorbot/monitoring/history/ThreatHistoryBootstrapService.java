@@ -15,16 +15,10 @@ public class ThreatHistoryBootstrapService {
 
     public void initialize() {
 
-        analyzerService.analyze()
-                .exceptionally(ex -> {
-                    ex.printStackTrace();
-                    return null;
-                });
-    }
-
-    public void clear() {
-
-        // Поки що нічого.
-        // Пізніше тут очищатимемо HistoricalThreatState.
+        try {
+            analyzerService.analyze();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

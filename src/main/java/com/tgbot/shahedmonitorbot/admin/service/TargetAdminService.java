@@ -14,10 +14,18 @@ public class TargetAdminService {
 
     private final Map<String, String> aliasToCategory = new LinkedHashMap<>();
     private final Map<String, List<String>> categoryToAliases = new LinkedHashMap<>();
+    private final Map<String, String> categoryToDisplayName = new LinkedHashMap<>();
 
     public TargetAdminService(AppProperties properties) {
         properties.monitor().targetCategories().forEach(category -> {
             String categoryName = category.category();
+
+            categoryToDisplayName.put(
+                    categoryName,
+                    category.displayName() != null
+                            ? category.displayName()
+                            : categoryName
+            );
 
             if (category.aliases() == null || category.aliases().isEmpty()) {
                 addTarget(categoryName, categoryName);
@@ -96,5 +104,16 @@ public class TargetAdminService {
         }
 
         return true;
+    }
+
+    public String getDisplayName(String category) {
+
+        String normalizedCategory =
+                TextNormalizer.normalize(category);
+
+        return categoryToDisplayName.getOrDefault(
+                normalizedCategory,
+                normalizedCategory
+        );
     }
 }

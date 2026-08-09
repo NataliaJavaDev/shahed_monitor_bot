@@ -26,11 +26,9 @@ public class ManualAlertService {
         this.alertReasonAnalyzerService = alertReasonAnalyzerService;
     }
 
-    /*
-     * Викликається тільки після натискання кнопок
-     * ручного керування в адмінці.
-     */
     public void sendAlert(ManualAlertType type) {
+
+        alertDeliveryService.send("DEBUG: sendAlert()");
 
         updateMonitoringFromManual(type);
 
@@ -39,6 +37,8 @@ public class ManualAlertService {
 
     public void sendApiAlert(ManualAlertType type) {
 
+        alertDeliveryService.send("DEBUG: sendApiAlert()");
+
         sendWithReason(type);
     }
 
@@ -46,6 +46,11 @@ public class ManualAlertService {
             ManualAlertType type,
             AlertReason reason
     ) {
+
+        alertDeliveryService.send(
+            "SEND() reason == " + (reason == null ? "NULL" : "NOT NULL")
+        );
+
         alertDeliveryService.send(
                 formatter.format(type, reason)
         );
@@ -68,7 +73,7 @@ public class ManualAlertService {
     }
 
     private void sendWithReason(
-            ManualAlertType type
+        ManualAlertType type
     ) {
 
         if (type != ManualAlertType.ALERT) {
@@ -76,14 +81,32 @@ public class ManualAlertService {
             return;
         }
 
-        alertReasonAnalyzerService
-                .analyze()
-                .thenAccept(reason -> {send(type, reason);})
-                .exceptionally(ex -> {
+        try {
 
-                    send(type, null);
+            AlertReason reason =
+                    alertReasonAnalyzerService.analyze();
 
-                    return null;
-                });
+            alertDeliveryService.send(
+                    "DEBUG\n" + reason
+            );
+
+            send(type, reason);
+
+        } catch (Exception e) {
+
+            alertDeliveryService.send("""
+            EXCEPTION
+
+            %s
+            """.formatted(e));
+
+                send(type, null);
+        }
+    }
+
+    public void sendDebug(String text) {
+        alertDeliveryService.send(
+                "DEBUG\n\n" + text
+        );
     }
 }
