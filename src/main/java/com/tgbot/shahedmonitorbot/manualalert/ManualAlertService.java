@@ -51,9 +51,9 @@ public class ManualAlertService {
         //     "SEND() reason == " + (reason == null ? "NULL" : "NOT NULL")
         // );
 
-        // alertDeliveryService.send(
-        //         formatter.format(type, reason)
-        // );
+        alertDeliveryService.send(
+                formatter.format(type, reason)
+        );
     }
 
     private void updateMonitoringFromManual(
