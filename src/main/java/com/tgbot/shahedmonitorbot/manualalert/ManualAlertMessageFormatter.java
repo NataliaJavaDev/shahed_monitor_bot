@@ -44,19 +44,11 @@ public class ManualAlertMessageFormatter {
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append("Виявлена загроза:")
-                .append(System.lineSeparator());
+        sb.append("Виявлена загроза:").append(System.lineSeparator());
 
         for (AlertReasonItem item : reason.items()) {
 
-            sb.append("• ")
-                    .append(item.category());
-
-            if (!item.threats().isEmpty()) {
-                sb.append(": ")
-                        .append(String.join(", ", item.threats()));
-            }
-
+            sb.append("• ").append(item.category());
             sb.append(System.lineSeparator());
         }
 
