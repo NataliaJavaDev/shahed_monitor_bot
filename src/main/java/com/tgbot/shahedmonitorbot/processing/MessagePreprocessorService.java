@@ -9,7 +9,7 @@ import java.util.List;
 @Service
 public class MessagePreprocessorService {
 
-    private static final int MAX_TEXT_LENGTH_FOR_LOCAL_ANALYSIS = 450;
+    private static final int MAX_TEXT_LENGTH_FOR_LOCAL_ANALYSIS = 350;
 
     public PreprocessedMessage preprocess(String text) {
         if (text == null || text.isBlank()) {
