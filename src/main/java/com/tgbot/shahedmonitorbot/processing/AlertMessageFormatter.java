@@ -7,7 +7,7 @@ public class AlertMessageFormatter {
 
     public String format(String sourceName, String text) {
         return """
-                🚨 Моніторинг
+                📢 Оперативно
 
                 %s
                 """.formatted(text);
