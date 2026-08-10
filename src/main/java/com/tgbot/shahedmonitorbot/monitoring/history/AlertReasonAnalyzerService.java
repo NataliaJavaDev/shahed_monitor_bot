@@ -19,7 +19,7 @@ import java.util.Map;
 @Service
 public class AlertReasonAnalyzerService {
 
-    private static final Duration LOOKBACK = Duration.ofMinutes(40);
+    private static final Duration LOOKBACK = Duration.ofMinutes(30);
 
     private final AlertReasonResolverService alertReasonResolverService;
     private final MessagePreprocessorService messagePreprocessorService;
