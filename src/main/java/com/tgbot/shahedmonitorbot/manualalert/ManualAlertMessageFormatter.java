@@ -15,6 +15,7 @@ public class ManualAlertMessageFormatter {
         return switch (type) {
 
             case ALERT -> """
+
                     🚨 ПОВІТРЯНА ТРИВОГА
                     
                     %s
@@ -23,12 +24,14 @@ public class ManualAlertMessageFormatter {
                     .formatted(buildReason(reason));
 
             case HIGH_RISK -> """
-                    ⚠️ ПІДВИЩЕНА НЕБЕЗПЕКА
+
+                    ‼️ ПІДВИЩЕНА НЕБЕЗПЕКА
                     
-                    Слідкуйте за подальшими повідомленнями.
+                    Негайно пройдіть в укриття.
                     """;
 
             case ALL_CLEAR -> """
+
                     ✅ ВІДБІЙ ТРИВОГИ
                     
                     Загрозу скасовано.
