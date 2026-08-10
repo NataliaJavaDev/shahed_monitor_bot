@@ -70,6 +70,8 @@ public class MessagePreprocessorService {
             || lower.contains("надішліть фото")
             || lower.contains("надіслати фото")
             || lower.contains("підтримати канал☕️")
-            || lower.matches(".*\\b\\d{16}\\b.*");
+            || lower.matches(".*\\b\\d{16}\\b.*")
+            || lower.startsWith("✅")
+            || lower.contains("чому тривога");
     }
 }

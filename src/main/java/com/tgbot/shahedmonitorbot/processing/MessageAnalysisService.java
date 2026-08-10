@@ -2,6 +2,8 @@ package com.tgbot.shahedmonitorbot.processing;
 
 import com.tgbot.shahedmonitorbot.context.EventContextService;
 import com.tgbot.shahedmonitorbot.deduplication.DeduplicationService;
+import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
+
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -16,6 +18,7 @@ public class MessageAnalysisService {
     private final MessageIntentDetectorService messageIntentDetectorService;
     private final ThreatDetectorService threatDetectorService;
     private final MessagePreprocessorService messagePreprocessorService;
+    private final MonitoringStateService monitoringStateService;
 
     public MessageAnalysisService(
             MonitorFilterService monitorFilterService,
@@ -24,7 +27,8 @@ public class MessageAnalysisService {
             EventContextService eventContextService,
             MessageIntentDetectorService messageIntentDetectorService,
             ThreatDetectorService threatDetectorService,
-            MessagePreprocessorService messagePreprocessorService
+            MessagePreprocessorService messagePreprocessorService,
+            MonitoringStateService monitoringStateService
     ) {
         this.monitorFilterService = monitorFilterService;
         this.contextResolverService = contextResolverService;
@@ -33,6 +37,7 @@ public class MessageAnalysisService {
         this.messageIntentDetectorService = messageIntentDetectorService;
         this.threatDetectorService = threatDetectorService;
         this.messagePreprocessorService = messagePreprocessorService;
+        this.monitoringStateService = monitoringStateService;
     }
 
     public MessageAnalysis analyze(String chatId, String text) {
@@ -49,7 +54,12 @@ public class MessageAnalysisService {
                 messageIntentDetectorService.detect(cleanedText);
 
         if (intent == MessageIntent.THREAT_DETECTED) {
-            return analyzeThreat(cleanedText, intent);
+
+            if (!monitoringStateService.isMonitoringEnabled()) {
+                return analyzeThreat(cleanedText, intent);
+            }
+
+            return null;
         }
 
         if (preprocessed.tooLongForLocalAnalysis()) {
