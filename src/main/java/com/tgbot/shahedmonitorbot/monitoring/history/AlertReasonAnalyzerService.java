@@ -73,11 +73,11 @@ public class AlertReasonAnalyzerService {
 
                 String normalizedText = preprocessed.cleanedText();
 
-                alertDeliveryService.send("""
-NORMALIZED
+//                 alertDeliveryService.send("""
+// NORMALIZED
 
-%s
-""".formatted(normalizedText));
+// %s
+// """.formatted(normalizedText));
 
                 targetAdminService.getTargets()
                     .stream()

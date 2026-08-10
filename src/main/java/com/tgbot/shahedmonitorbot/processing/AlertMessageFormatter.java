@@ -7,11 +7,9 @@ public class AlertMessageFormatter {
 
     public String format(String sourceName, String text) {
         return """
-                ⚠️ Моніторинг
-                
-                Джерело: %s
-                
+                🚨 Моніторинг
+
                 %s
-                """.formatted(sourceName, text);
+                """.formatted(text);
     }
 }

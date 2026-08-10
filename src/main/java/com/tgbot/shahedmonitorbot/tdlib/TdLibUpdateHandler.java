@@ -7,11 +7,12 @@ import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.monitoring.source.ChatInfoService;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
 import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateService;
+import com.tgbot.shahedmonitorbot.processing.AlertMessageFormatter;
 import com.tgbot.shahedmonitorbot.processing.MessageAnalysis;
 import com.tgbot.shahedmonitorbot.processing.MessageAnalysisService;
 import com.tgbot.shahedmonitorbot.processing.MessageIntent;
 import com.tgbot.shahedmonitorbot.processing.RecentMessageCacheService;
-import com.tgbot.shahedmonitorbot.sender.AnalysisMessageFormatter;
+// import com.tgbot.shahedmonitorbot.sender.AnalysisMessageFormatter;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import com.tgbot.shahedmonitorbot.tdlib.history.TdHistoryMessage;
 
@@ -27,7 +28,8 @@ public class TdLibUpdateHandler {
     private final ChatInfoService chatInfoService;
     private final MonitoredSourceService monitoredSourceService;
     private final UnknownSourceCandidateService unknownSourceCandidateService;
-    private final AnalysisMessageFormatter analysisMessageFormatter;
+    // private final AnalysisMessageFormatter analysisMessageFormatter;
+    private final AlertMessageFormatter alertMessageFormatter;
     private final TelegramSenderService telegramSenderService;
     private final MessageAnalysisService messageAnalysisService;
     private final RecentMessageCacheService recentMessageCacheService;
@@ -38,7 +40,7 @@ public class TdLibUpdateHandler {
             ChatInfoService chatInfoService,
             MonitoredSourceService monitoredSourceService,
             UnknownSourceCandidateService unknownSourceCandidateService,
-            AnalysisMessageFormatter analysisMessageFormatter,
+            AlertMessageFormatter alertMessageFormatter,
             TelegramSenderService telegramSenderService,
             MessageAnalysisService messageAnalysisService,
             RecentMessageCacheService recentMessageCacheService
@@ -48,7 +50,7 @@ public class TdLibUpdateHandler {
         this.chatInfoService = chatInfoService;
         this.monitoredSourceService = monitoredSourceService;
         this.unknownSourceCandidateService = unknownSourceCandidateService;
-        this.analysisMessageFormatter = analysisMessageFormatter;
+        this.alertMessageFormatter = alertMessageFormatter;
         this.telegramSenderService = telegramSenderService;
         this.messageAnalysisService = messageAnalysisService;
         this.recentMessageCacheService = recentMessageCacheService;
@@ -156,10 +158,8 @@ public class TdLibUpdateHandler {
 
             telegramSenderService.sendToChat(
                     appProperties.telegram().targetChannelId(),
-                    analysisMessageFormatter.format(
-                            analysis,
+                    alertMessageFormatter.format(
                             source.title(),
-                            chatId,
                             text
                     )
             );
