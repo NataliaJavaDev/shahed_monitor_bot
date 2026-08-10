@@ -19,7 +19,7 @@ import java.util.Map;
 @Service
 public class AlertReasonAnalyzerService {
 
-    private static final Duration LOOKBACK = Duration.ofMinutes(15);
+    private static final Duration LOOKBACK = Duration.ofMinutes(30);
 
     private final AlertReasonResolverService alertReasonResolverService;
     private final MessagePreprocessorService messagePreprocessorService;
@@ -73,31 +73,30 @@ public class AlertReasonAnalyzerService {
 
                 String normalizedText = preprocessed.cleanedText();
 
+//                 alertDeliveryService.send("""
+// NORMALIZED
+
+// %s
+// """.formatted(normalizedText));
+
                 targetAdminService.getTargets()
                     .stream()
                     .filter(normalizedText::contains)
                     .findFirst()
                     .ifPresent(target ->
-                            items.add(
-                                    new AlertReasonItem(
-                                            targetAdminService.getDisplayName(
-                                                    targetAdminService.getCategory(target)
-                                            ),
-                                            java.util.Set.of(target)
-                                    )
+                        items.add(
+                            new AlertReasonItem(
+                                targetAdminService.getDisplayName(
+                                        targetAdminService.getCategory(target)
+                                ),
+                                java.util.Set.of(target)
                             )
+                        )
                     );
             }
         });
 
         AlertReason reason = alertReasonResolverService.resolve(items);
-
-        // alertDeliveryService.send("""
-        // DEBUG
-
-        // Items:
-        // %s
-        // """.formatted(reason));
 
         return reason;
     }

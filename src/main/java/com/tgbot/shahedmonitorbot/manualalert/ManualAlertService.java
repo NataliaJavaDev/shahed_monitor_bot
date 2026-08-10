@@ -47,10 +47,6 @@ public class ManualAlertService {
             AlertReason reason
     ) {
 
-        // alertDeliveryService.send(
-        //     "SEND() reason == " + (reason == null ? "NULL" : "NOT NULL")
-        // );
-
         alertDeliveryService.send(
                 formatter.format(type, reason)
         );
@@ -83,8 +79,7 @@ public class ManualAlertService {
 
         try {
 
-            AlertReason reason =
-                    alertReasonAnalyzerService.analyze();
+            AlertReason reason = alertReasonAnalyzerService.analyze();
 
             // alertDeliveryService.send(
             //         "DEBUG\n" + reason
@@ -94,11 +89,11 @@ public class ManualAlertService {
 
         } catch (Exception e) {
 
-            // alertDeliveryService.send("""
-            // EXCEPTION
+            alertDeliveryService.send("""
+            EXCEPTION
 
-            // %s
-            // """.formatted(e));
+            %s
+            """.formatted(e));
 
                 send(type, null);
         }

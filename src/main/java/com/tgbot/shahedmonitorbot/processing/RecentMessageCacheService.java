@@ -65,8 +65,6 @@ public class RecentMessageCacheService {
                                     message.dateTime().isAfter(limit)
                             )
                             .toList();
-
-            result.put(chatId, recentMessages);
         
             if (!recentMessages.isEmpty()) {
                 result.put(chatId, recentMessages);

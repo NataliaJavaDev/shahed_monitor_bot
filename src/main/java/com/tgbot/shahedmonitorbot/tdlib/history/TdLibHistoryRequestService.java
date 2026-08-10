@@ -52,7 +52,6 @@ public class TdLibHistoryRequestService {
         );
 
         activeRequests.put(requestId, request);
-
         requestHistoryPage(request, 0);
 
         CompletableFuture<List<TdHistoryMessage>> future = request.getFuture();
@@ -221,7 +220,6 @@ public class TdLibHistoryRequestService {
     private void finishRequest(HistoryRequest request) {
 
         activeRequests.remove(request.getRequestId());
-
         request.getFuture().complete(List.copyOf(request.getMessages()));
     }
 

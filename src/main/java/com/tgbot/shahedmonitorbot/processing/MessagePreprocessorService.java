@@ -1,6 +1,7 @@
 package com.tgbot.shahedmonitorbot.processing;
 
 import org.springframework.stereotype.Service;
+import com.tgbot.shahedmonitorbot.util.TextNormalizer;
 
 import java.util.Arrays;
 import java.util.List;
@@ -37,19 +38,38 @@ public class MessagePreprocessorService {
                 .filter(line -> !isCommonNoiseLine(line))
                 .toList();
 
-        return String.join("\n", cleanedLines);
+        return TextNormalizer.normalize(
+            String.join("\n", cleanedLines)
+        );
     }
 
     private boolean isCommonNoiseLine(String line) {
         String lower = line.toLowerCase();
 
         return lower.startsWith("http://")
-                || lower.startsWith("https://")
-                || lower.contains("підтримати канал")
-                || lower.contains("підтримати")
-                || lower.contains("донат")
-                || lower.contains("monobank")
-                || lower.contains("send.monobank")
-                || lower.matches(".*\\b\\d{16}\\b.*");
+            || lower.startsWith("https://")
+            || lower.contains("підтримати канал")
+            || lower.contains("підтримати")
+            || lower.contains("донат")
+            || lower.contains("monobank")
+            || lower.contains("send.monobank")
+            || lower.contains("номер картки")
+            || lower.contains("картки банки")
+            || lower.contains("посилання на банку")
+            || lower.contains("підтримати збір")
+            || lower.contains("підтримайте збір")
+            || lower.contains("підтримайте, будь ласка")
+            || lower.contains("підтримайте будь ласка")
+            || lower.contains("дякую за ваші фото")
+            || lower.contains("хто бажає надіслати своє")
+            || lower.contains("ставте ❤️")
+            || lower.contains("ставте ❤")
+            || lower.contains("антистрес")
+            || lower.contains("чому")
+            || lower.contains("небо_без_тривог")
+            || lower.contains("надішліть фото")
+            || lower.contains("надіслати фото")
+            || lower.contains("підтримати канал☕️")
+            || lower.matches(".*\\b\\d{16}\\b.*");
     }
 }
