@@ -36,4 +36,17 @@ public class TdLibClientService {
     public String execute(String request) {
         return tdJsonLibrary.td_execute(request);
     }
+
+    public void downloadFile(int fileId) {
+        send("""
+                {
+                "@type": "downloadFile",
+                "file_id": %d,
+                "priority": 32,
+                "offset": 0,
+                "limit": 0,
+                "synchronous": false
+                }
+                """.formatted(fileId));
+    }
 }

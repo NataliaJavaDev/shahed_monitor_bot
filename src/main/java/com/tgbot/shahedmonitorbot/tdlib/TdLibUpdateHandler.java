@@ -7,12 +7,11 @@ import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.monitoring.source.ChatInfoService;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
 import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateService;
-import com.tgbot.shahedmonitorbot.processing.AlertMessageFormatter;
+// import com.tgbot.shahedmonitorbot.processing.AlertMessageFormatter;
 import com.tgbot.shahedmonitorbot.processing.MessageAnalysis;
 import com.tgbot.shahedmonitorbot.processing.MessageAnalysisService;
 import com.tgbot.shahedmonitorbot.processing.MessageIntent;
 import com.tgbot.shahedmonitorbot.processing.RecentMessageCacheService;
-import com.tgbot.shahedmonitorbot.sender.AnalysisMessageFormatter;
 import com.tgbot.shahedmonitorbot.sender.AnalysisMessageFormatter;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import com.tgbot.shahedmonitorbot.tdlib.history.TdHistoryMessage;
@@ -30,10 +29,12 @@ public class TdLibUpdateHandler {
     private final MonitoredSourceService monitoredSourceService;
     private final UnknownSourceCandidateService unknownSourceCandidateService;
     private final AnalysisMessageFormatter analysisMessageFormatter;
-    private final AlertMessageFormatter alertMessageFormatter;
+    // private final AlertMessageFormatter alertMessageFormatter;
     private final TelegramSenderService telegramSenderService;
     private final MessageAnalysisService messageAnalysisService;
     private final RecentMessageCacheService recentMessageCacheService;
+    private final PendingPhotoMessageService pendingPhotoMessageService;
+    private final TdLibClientService tdLibClientService;
 
     public TdLibUpdateHandler(
             ObjectMapper objectMapper,
@@ -42,10 +43,12 @@ public class TdLibUpdateHandler {
             MonitoredSourceService monitoredSourceService,
             UnknownSourceCandidateService unknownSourceCandidateService,
             AnalysisMessageFormatter analysisMessageFormatter,
-            AlertMessageFormatter alertMessageFormatter,
+            // AlertMessageFormatter alertMessageFormatter,
             TelegramSenderService telegramSenderService,
             MessageAnalysisService messageAnalysisService,
-            RecentMessageCacheService recentMessageCacheService
+            RecentMessageCacheService recentMessageCacheService,
+            PendingPhotoMessageService pendingPhotoMessageService,
+            TdLibClientService tdLibClientService
     ) {
         this.objectMapper = objectMapper;
         this.appProperties = appProperties;
@@ -53,10 +56,12 @@ public class TdLibUpdateHandler {
         this.monitoredSourceService = monitoredSourceService;
         this.unknownSourceCandidateService = unknownSourceCandidateService;
         this.analysisMessageFormatter = analysisMessageFormatter;
-        this.alertMessageFormatter = alertMessageFormatter;
+        // this.alertMessageFormatter = alertMessageFormatter;
         this.telegramSenderService = telegramSenderService;
         this.messageAnalysisService = messageAnalysisService;
         this.recentMessageCacheService = recentMessageCacheService;
+        this.pendingPhotoMessageService = pendingPhotoMessageService;
+        this.tdLibClientService = tdLibClientService;
     }
 
     public void handle(String update) {
@@ -86,6 +91,11 @@ public class TdLibUpdateHandler {
                 return;
             }
 
+            if ("updateFile".equals(type)) {
+                handleFileUpdate(root);
+                return;
+            }
+
             if (!"updateNewMessage".equals(type)) {
                 return;
             }
@@ -93,7 +103,8 @@ public class TdLibUpdateHandler {
             JsonNode message = root.path("message");
 
             String chatId = message.path("chat_id").asText();
-            String text = extractText(message);
+            TdMessageContent content = extractContent(message);
+            String text = content.text();
 
             if (chatId.equals(appProperties.telegram().targetChannelId())) {
                 return;
@@ -147,8 +158,7 @@ public class TdLibUpdateHandler {
                 return;
             }
 
-            MessageAnalysis analysis =
-                    messageAnalysisService.analyze(chatId, text);
+            MessageAnalysis analysis = messageAnalysisService.analyze(chatId, text);
 
             if (analysis == null) {
                 return;
@@ -166,6 +176,22 @@ public class TdLibUpdateHandler {
             //                 text
             //         )
             // );
+
+            if (content.photoFileId() != null) {
+                pendingPhotoMessageService.save(
+                        content.photoFileId(),
+                        new PendingPhotoMessage(
+                                chatId,
+                                source.title(),
+                                text,
+                                analysis
+                        )
+                );
+
+                tdLibClientService.downloadFile(content.photoFileId());
+
+                return;
+            }
 
             telegramSenderService.sendToChat(
                 appProperties.telegram().targetChannelId(),
@@ -193,25 +219,118 @@ public class TdLibUpdateHandler {
         };
     }
 
-    private String extractText(JsonNode message) {
+    private TdMessageContent extractContent(JsonNode message) {
         JsonNode content = message.path("content");
 
         String contentType = content.path("@type").asText();
 
         if ("messageText".equals(contentType)) {
-            return content
+            String text = content
                     .path("text")
                     .path("text")
                     .asText("");
+
+            return new TdMessageContent(
+                    text,
+                    null
+            );
         }
 
         if ("messagePhoto".equals(contentType)) {
-            return content
+            String text = content
                     .path("caption")
                     .path("text")
                     .asText("");
+
+            JsonNode sizes = content
+                    .path("photo")
+                    .path("sizes");
+
+            Integer photoFileId = findLargestPhotoFileId(sizes);
+
+            return new TdMessageContent(
+                    text,
+                    photoFileId
+            );
         }
 
-        return "";
+        return new TdMessageContent(
+                "",
+                null
+        );
+    }
+
+    private Integer findLargestPhotoFileId(JsonNode sizes) {
+        if (!sizes.isArray() || sizes.isEmpty()) {
+            return null;
+        }
+
+        JsonNode largestSize = null;
+        long largestArea = -1;
+
+        for (JsonNode size : sizes) {
+            int width = size.path("width").asInt(0);
+            int height = size.path("height").asInt(0);
+
+            long area = (long) width * height;
+
+            if (area > largestArea) {
+                largestArea = area;
+                largestSize = size;
+            }
+        }
+
+        if (largestSize == null) {
+            return null;
+        }
+
+        int fileId = largestSize
+                .path("photo")
+                .path("id")
+                .asInt(0);
+
+        return fileId > 0 ? fileId : null;
+    }
+
+    private void handleFileUpdate(JsonNode root) {
+        JsonNode file = root.path("file");
+
+        int fileId = file.path("id").asInt(0);
+
+        if (fileId == 0) {
+            return;
+        }
+
+        PendingPhotoMessage pending = pendingPhotoMessageService.get(fileId);
+
+        if (pending == null) {
+            return;
+        }
+
+        JsonNode local = file.path("local");
+
+        boolean downloaded = local.path("is_downloading_completed").asBoolean(false);
+
+        if (!downloaded) {
+            return;
+        }
+
+        String localPath = local.path("path").asText("");
+
+        if (localPath.isBlank()) {
+            return;
+        }
+
+        pendingPhotoMessageService.remove(fileId);
+
+        telegramSenderService.sendPhotoToChat(
+                appProperties.telegram().targetChannelId(),
+                localPath,
+                analysisMessageFormatter.formatDebug(
+                        pending.analysis(),
+                        pending.sourceTitle(),
+                        pending.originalText()
+                )
+        );
     }
 }

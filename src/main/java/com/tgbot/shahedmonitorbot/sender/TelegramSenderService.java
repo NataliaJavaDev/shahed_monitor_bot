@@ -11,6 +11,11 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMa
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
+import java.io.File;
+
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
+
 @Service
 public class TelegramSenderService {
 
@@ -137,6 +142,34 @@ public class TelegramSenderService {
                     "Telegram callback answer error",
                     exception
             );
+        }
+    }
+
+    public void sendPhotoToChat(
+        String chatId,
+        String photoPath,
+        String caption
+    ) {
+        SendPhoto photo = SendPhoto.builder()
+                .chatId(chatId)
+                .photo(new InputFile(new File(photoPath)))
+                .caption(caption)
+                .build();
+
+        try {
+                telegramClient.execute(photo);
+
+                log.info(
+                        "Telegram photo sent to chat {}",
+                        chatId
+                );
+
+        } catch (Exception exception) {
+                log.error(
+                        "Telegram photo send error. Chat: {}",
+                        chatId,
+                        exception
+                );
         }
     }
 
