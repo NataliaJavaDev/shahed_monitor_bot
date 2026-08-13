@@ -23,6 +23,8 @@ public record AppProperties(
         List<LocationCategory> locationCategories,
         List<MessageIntentConfig> messageIntents,
         List<AttentionWordConfig> attentionWords,
+        List<String> globalThreatMarkers,
+        List<String> forecastMarkers,
         List<Source> sources,
         List<String> ignoredChatIds
     ) {

@@ -11,6 +11,34 @@ public class MessagePreprocessorService {
 
     private static final int MAX_TEXT_LENGTH_FOR_LOCAL_ANALYSIS = 350;
 
+    private static final List<String> COMMON_NOISE_MARKERS = List.of(
+        "підтримати канал",
+            "підтримати",
+            "донат",
+            "monobank",
+            "send.monobank",
+            "номер картки",
+            "картки банки",
+            "посилання на банку",
+            "підтримати збір",
+            "підтримайте збір",
+            "підтримайте, будь ласка",
+            "підтримайте будь ласка",
+            "дякую за ваші фото",
+            "хто бажає надіслати своє",
+            "ставте ❤️",
+            "ставте ❤",
+            "антистрес",
+            "чому",
+            "чому тривога",
+            "небо_без_тривог",
+            "надішліть фото",
+            "надіслати фото",
+            "підтримати канал",
+            "чому тривога"
+
+    );
+
     public PreprocessedMessage preprocess(String text) {
         if (text == null || text.isBlank()) {
             return new PreprocessedMessage(null, true);
@@ -44,34 +72,11 @@ public class MessagePreprocessorService {
     }
 
     private boolean isCommonNoiseLine(String line) {
-        String lower = line.toLowerCase();
+        String normalizedLine = TextNormalizer.normalize(line);
 
-        return lower.startsWith("http://")
-            || lower.startsWith("https://")
-            || lower.contains("підтримати канал")
-            || lower.contains("підтримати")
-            || lower.contains("донат")
-            || lower.contains("monobank")
-            || lower.contains("send.monobank")
-            || lower.contains("номер картки")
-            || lower.contains("картки банки")
-            || lower.contains("посилання на банку")
-            || lower.contains("підтримати збір")
-            || lower.contains("підтримайте збір")
-            || lower.contains("підтримайте, будь ласка")
-            || lower.contains("підтримайте будь ласка")
-            || lower.contains("дякую за ваші фото")
-            || lower.contains("хто бажає надіслати своє")
-            || lower.contains("ставте ❤️")
-            || lower.contains("ставте ❤")
-            || lower.contains("антистрес")
-            || lower.contains("чому")
-            || lower.contains("небо_без_тривог")
-            || lower.contains("надішліть фото")
-            || lower.contains("надіслати фото")
-            || lower.contains("підтримати канал☕️")
-            || lower.matches(".*\\b\\d{16}\\b.*")
-            || lower.startsWith("✅")
-            || lower.contains("чому тривога");
+        return normalizedLine.startsWith("http://")
+                || normalizedLine.startsWith("https://")
+                || COMMON_NOISE_MARKERS.stream().anyMatch(normalizedLine::contains)
+                || normalizedLine.matches(".*\\b\\d{16}\\b.*");
     }
 }

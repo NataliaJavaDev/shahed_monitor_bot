@@ -37,7 +37,55 @@ public class AnalysisMessageFormatter {
         );
     }
 
+    public String formatDebug(
+        MessageAnalysis analysis,
+        String sourceTitle,
+        String originalText
+    ) {
+        
+        MonitorMatch match = analysis.monitorMatch();
+
+        return """
+                🧪 АНАЛІЗ
+
+                📡 Джерело: %s
+
+                🧠 Intent: %s
+                🔁 Duplicate: %s
+
+                🌐 Global threat: %s
+                🔮 Forecast: %s
+
+                🎯 Ціль: %s
+                🧭 Напрямок: %s
+                📍 Локація: %s
+
+                💬 Оригінальне повідомлення:
+
+                %s
+                """.formatted(
+                sourceTitle,
+                analysis.intent(),
+                analysis.duplicate(),
+                formatNullable(
+                        analysis.globalThreatMatch() == null
+                                ? null
+                                : analysis.globalThreatMatch().matchedMarker()
+                ),
+                formatNullable(
+                        analysis.forecastMatch() == null
+                                ? null
+                                : analysis.forecastMatch().matchedMarker()
+                ),
+                formatNullable(match == null ? null : match.targetCategory()),
+                formatNullable(match == null ? null : match.direction()),
+                formatNullable(match == null ? null : match.locationCategory()),
+                originalText
+        );
+    }
+
     private String formatNullable(String value) {
+
         if (value == null || value.isBlank()) {
             return "-";
         }

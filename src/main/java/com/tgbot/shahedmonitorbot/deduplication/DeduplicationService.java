@@ -1,5 +1,7 @@
 package com.tgbot.shahedmonitorbot.deduplication;
 
+import com.tgbot.shahedmonitorbot.processing.ForecastMatch;
+import com.tgbot.shahedmonitorbot.processing.GlobalThreatMatch;
 import com.tgbot.shahedmonitorbot.processing.MonitorMatch;
 import com.tgbot.shahedmonitorbot.processing.ThreatMatch;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;
@@ -36,6 +38,40 @@ public class DeduplicationService {
 
     public boolean isDuplicate(ThreatMatch threatMatch) {
         String key = buildThreatDeduplicationKey(threatMatch);
+
+            if (key.isBlank()) {
+                return true;
+            }
+
+            cleanupExpired();
+
+            if (seenEvents.containsKey(key)) {
+                return true;
+            }
+
+            seenEvents.put(key, Instant.now());
+            return false;
+        }
+
+        public boolean isDuplicate(GlobalThreatMatch globalThreatMatch) {
+        String key = buildGlobalThreatDeduplicationKey(globalThreatMatch);
+
+        if (key.isBlank()) {
+            return true;
+        }
+
+        cleanupExpired();
+
+        if (seenEvents.containsKey(key)) {
+            return true;
+        }
+
+        seenEvents.put(key, Instant.now());
+        return false;
+    }
+
+    public boolean isDuplicate(ForecastMatch forecastMatch) {
+        String key = buildForecastDeduplicationKey(forecastMatch);
 
         if (key.isBlank()) {
             return true;
@@ -74,6 +110,30 @@ public class DeduplicationService {
         }
 
         return TextNormalizer.normalize(value);
+    }
+
+    public String buildGlobalThreatDeduplicationKey(
+        GlobalThreatMatch globalThreatMatch
+    ) {
+        String matchedMarker =
+                normalizeOrFallback(
+                        globalThreatMatch.matchedMarker(),
+                        "NO_GLOBAL_THREAT"
+                );
+
+        return "GLOBAL_THREAT::" + matchedMarker;
+    }
+
+    public String buildForecastDeduplicationKey(
+        ForecastMatch forecastMatch
+    ) {
+        String matchedMarker =
+                normalizeOrFallback(
+                        forecastMatch.matchedMarker(),
+                        "NO_FORECAST"
+                );
+
+        return "FORECAST::" + matchedMarker;
     }
 
     private void cleanupExpired() {

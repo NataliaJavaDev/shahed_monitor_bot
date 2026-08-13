@@ -17,6 +17,8 @@ public class MessageAnalysisService {
     private final EventContextService eventContextService;
     private final MessageIntentDetectorService messageIntentDetectorService;
     private final ThreatDetectorService threatDetectorService;
+    private final GlobalThreatDetectorService globalThreatDetectorService;
+    private final ForecastDetectorService forecastDetectorService;
     private final MessagePreprocessorService messagePreprocessorService;
     private final MonitoringStateService monitoringStateService;
 
@@ -27,6 +29,8 @@ public class MessageAnalysisService {
             EventContextService eventContextService,
             MessageIntentDetectorService messageIntentDetectorService,
             ThreatDetectorService threatDetectorService,
+            GlobalThreatDetectorService globalThreatDetectorService,
+            ForecastDetectorService forecastDetectorService,
             MessagePreprocessorService messagePreprocessorService,
             MonitoringStateService monitoringStateService
     ) {
@@ -36,6 +40,8 @@ public class MessageAnalysisService {
         this.eventContextService = eventContextService;
         this.messageIntentDetectorService = messageIntentDetectorService;
         this.threatDetectorService = threatDetectorService;
+        this.globalThreatDetectorService = globalThreatDetectorService;
+        this.forecastDetectorService = forecastDetectorService;
         this.messagePreprocessorService = messagePreprocessorService;
         this.monitoringStateService = monitoringStateService;
     }
@@ -50,24 +56,13 @@ public class MessageAnalysisService {
 
         String cleanedText = preprocessed.cleanedText();
 
-        MessageIntent intent =
-                messageIntentDetectorService.detect(cleanedText);
-
-        if (intent == MessageIntent.THREAT_DETECTED) {
-
-            if (!monitoringStateService.isMonitoringEnabled()) {
-                return analyzeThreat(cleanedText, intent);
-            }
-
-            return null;
-        }
-
         if (preprocessed.tooLongForLocalAnalysis()) {
             return null;
         }
 
-        Optional<MonitorMatch> match =
-                monitorFilterService.findMatch(cleanedText);
+        MessageIntent intent = messageIntentDetectorService.detect(cleanedText);
+
+        Optional<MonitorMatch> match = monitorFilterService.findMatch(cleanedText);
 
         boolean contextRestored = false;
 
@@ -76,18 +71,44 @@ public class MessageAnalysisService {
             contextRestored = match.isPresent();
         }
 
-        boolean finalContextRestored = contextRestored;
-        MessageIntent finalIntent = intent;
+        if (match.isPresent()) {
 
-        return match
-                .map(currentMatch -> analyzeMatch(
-                        chatId,
-                        currentMatch,
-                        finalIntent,
-                        finalContextRestored,
-                        cleanedText
-                ))
-                .orElse(null);
+            if (!monitoringStateService.isMonitoringEnabled()) {
+                return null;
+            }
+
+            return analyzeMatch(
+                    chatId,
+                    match.get(),
+                    intent,
+                    contextRestored,
+                    cleanedText
+            );
+        }
+
+        Optional<GlobalThreatMatch> globalThreat = globalThreatDetectorService.findGlobalThreat(cleanedText);
+
+        if (globalThreat.isPresent()) {
+            return analyzeGlobalThreat(
+                    globalThreat.get(),
+                    cleanedText
+            );
+        }
+
+        Optional<ForecastMatch> forecast = forecastDetectorService.findForecast(cleanedText);
+
+        if (forecast.isPresent()) {
+            return analyzeForecast(
+                    forecast.get(),
+                    cleanedText
+            );
+        }
+
+        if (intent == MessageIntent.THREAT_DETECTED) {
+            return analyzeThreat(cleanedText, intent);
+        }
+
+        return null;
     }
 
     private MessageAnalysis analyzeMatch(
@@ -117,6 +138,8 @@ public class MessageAnalysisService {
 
         return new MessageAnalysis(
                 finalMatch,
+                null,
+                null,
                 null,
                 finalIntent,
                 duplicate,
@@ -187,6 +210,8 @@ public class MessageAnalysisService {
                     return new MessageAnalysis(
                             null,
                             threatMatch,
+                            null,
+                            null,
                             intent,
                             duplicate,
                             false,
@@ -195,5 +220,54 @@ public class MessageAnalysisService {
                     );
                 })
                 .orElse(null);
+    }
+
+    private MessageAnalysis analyzeGlobalThreat(
+        GlobalThreatMatch globalThreatMatch,
+        String text
+    ) {
+        String deduplicationKey =
+                deduplicationService.buildGlobalThreatDeduplicationKey(
+                        globalThreatMatch
+                );
+
+        boolean duplicate = deduplicationService.isDuplicate(globalThreatMatch);
+
+        return new MessageAnalysis(
+                null,
+                null,
+                globalThreatMatch,
+                null,
+                MessageIntent.GLOBAL_THREAT,
+                duplicate,
+                false,
+                deduplicationKey,
+                text
+        );
+    }
+
+    private MessageAnalysis analyzeForecast(
+        ForecastMatch forecastMatch,
+        String text
+    ) {
+        String deduplicationKey =
+                deduplicationService.buildForecastDeduplicationKey(
+                        forecastMatch
+                );
+
+        boolean duplicate =
+                deduplicationService.isDuplicate(forecastMatch);
+
+        return new MessageAnalysis(
+                null,
+                null,
+                null,
+                forecastMatch,
+                MessageIntent.FORECAST,
+                duplicate,
+                false,
+                deduplicationKey,
+                text
+        );
     }
 }
