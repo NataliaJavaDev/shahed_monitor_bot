@@ -34,11 +34,8 @@ public class MonitorFilterService {
         }
 
         String normalizedText = TextNormalizer.normalize(text);
-
         String matchedTarget = findFirstMatch(normalizedText, targetAdminService.getTargets());
-
         String matchedLocation = findFirstMatch(normalizedText, locationAdminService.getLocations());
-
         boolean hasAttentionWord = attentionWordAdminService.findAttentionWord(text) != null;
 
         if (matchedTarget != null && matchedLocation != null) {

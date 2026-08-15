@@ -150,10 +150,7 @@ public class MessageAnalysisService {
         };
     }
 
-    private boolean shouldSaveContext(
-            MonitorMatch match,
-            MessageIntent intent
-    ) {
+    private boolean shouldSaveContext(MonitorMatch match, MessageIntent intent) {
 
         if (match == null) {
             return false;
@@ -190,10 +187,7 @@ public class MessageAnalysisService {
         return detectedIntent;
     }
 
-    private MessageAnalysis analyzeThreat(
-            String text,
-            MessageIntent intent
-    ) {
+    private MessageAnalysis analyzeThreat(String text, MessageIntent intent) {
         return threatDetectorService.findThreat(text)
                 .map(threatMatch -> {
                     String deduplicationKey = deduplicationService.buildThreatDeduplicationKey(threatMatch);
@@ -215,10 +209,7 @@ public class MessageAnalysisService {
                 .orElse(null);
     }
 
-    private MessageAnalysis analyzeGlobalThreat(
-        GlobalThreatMatch globalThreatMatch,
-        String text
-    ) {
+    private MessageAnalysis analyzeGlobalThreat(GlobalThreatMatch globalThreatMatch, String text) {
 
         String deduplicationKey = deduplicationService.buildGlobalThreatDeduplicationKey(globalThreatMatch);
 
@@ -237,10 +228,7 @@ public class MessageAnalysisService {
         );
     }
 
-    private MessageAnalysis analyzeForecast(
-        ForecastMatch forecastMatch,
-        String text
-    ) {
+    private MessageAnalysis analyzeForecast(ForecastMatch forecastMatch, String text) {
 
         String deduplicationKey = deduplicationService.buildForecastDeduplicationKey(forecastMatch);
 

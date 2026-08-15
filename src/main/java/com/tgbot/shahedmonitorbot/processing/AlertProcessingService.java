@@ -13,10 +13,10 @@ public class AlertProcessingService {
     private final TelegramSenderService senderService;
 
     public AlertProcessingService(
-            MonitorFilterService monitorFilterService,
-            DeduplicationService deduplicationService,
-            AlertMessageFormatter formatter,
-            TelegramSenderService senderService
+        MonitorFilterService monitorFilterService,
+        DeduplicationService deduplicationService,
+        AlertMessageFormatter formatter,
+        TelegramSenderService senderService
     ) {
         this.monitorFilterService = monitorFilterService;
         this.deduplicationService = deduplicationService;
