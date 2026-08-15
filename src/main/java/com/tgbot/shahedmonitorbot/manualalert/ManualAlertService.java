@@ -28,7 +28,7 @@ public class ManualAlertService {
 
     public void sendAlert(ManualAlertType type) {
 
-        alertDeliveryService.send("DEBUG: sendAlert()");
+        // alertDeliveryService.send("DEBUG: sendAlert()");
 
         updateMonitoringFromManual(type);
         sendWithReason(type);
@@ -36,7 +36,7 @@ public class ManualAlertService {
 
     public void sendApiAlert(ManualAlertType type) {
 
-        alertDeliveryService.send("DEBUG: sendApiAlert()");
+        // alertDeliveryService.send("DEBUG: sendApiAlert()");
 
         sendWithReason(type);
     }
@@ -71,7 +71,7 @@ public class ManualAlertService {
 
             AlertReason reason = alertReasonAnalyzerService.analyze();
 
-            alertDeliveryService.send("DEBUG\n" + reason);
+            // alertDeliveryService.send("DEBUG\n" + reason);
 
             send(type, reason);
 
@@ -89,6 +89,6 @@ public class ManualAlertService {
 
     public void sendDebug(String text) {
         
-        alertDeliveryService.send("DEBUG\n\n" + text);
+        // alertDeliveryService.send("DEBUG\n\n" + text);
     }
 }
