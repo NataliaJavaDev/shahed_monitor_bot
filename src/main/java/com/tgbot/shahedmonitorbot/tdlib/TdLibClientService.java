@@ -2,8 +2,13 @@ package com.tgbot.shahedmonitorbot.tdlib;
 
 import org.springframework.stereotype.Service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class TdLibClientService {
+
+    private static final Logger log = LoggerFactory.getLogger(TdLibClientService.class);
 
     private final TdJsonLibrary tdJsonLibrary;
     private final int clientId;
@@ -12,7 +17,7 @@ public class TdLibClientService {
         this.tdJsonLibrary = loader.getLibrary();
 
         this.clientId = tdJsonLibrary.td_create_client_id();
-        System.out.println("TDLib client created: " + clientId);
+        log.info("TDLib client created: {}", clientId);
 
         send("""
                 {

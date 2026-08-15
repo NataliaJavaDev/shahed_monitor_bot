@@ -3,6 +3,7 @@ package com.tgbot.shahedmonitorbot.util;
 public class TextNormalizer {
 
     public static String normalize(String text) {
+        
         if (text == null) {
             return "";
         }

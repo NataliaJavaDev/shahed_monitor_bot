@@ -5,6 +5,9 @@ import com.tgbot.shahedmonitorbot.monitoring.history.RecentHistoryBootstrapServi
 import com.tgbot.shahedmonitorbot.tdlib.history.TdLibHistoryRequestService;
 
 import jakarta.annotation.PostConstruct;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 
@@ -18,16 +21,18 @@ public class TdLibAuthorizationService {
     private final TdLibHistoryRequestService tdLibHistoryRequestService;
     private final TdLibStatusService tdLibStatusService;
     private final RecentHistoryBootstrapService recentHistoryBootstrapService;
+
+    private static final Logger log = LoggerFactory.getLogger(TdLibAuthorizationService.class);
     
 
     public TdLibAuthorizationService(
-            TdLibClientService tdLibClientService,
-            AppProperties appProperties,
-            TdLibUpdateHandler tdLibUpdateHandler,
-            TemporaryHistoryExportService temporaryHistoryExportService,
-            TdLibHistoryRequestService tdLibHistoryRequestService,
-            TdLibStatusService tdLibStatusService,
-            RecentHistoryBootstrapService recentHistoryBootstrapService
+        TdLibClientService tdLibClientService,
+        AppProperties appProperties,
+        TdLibUpdateHandler tdLibUpdateHandler,
+        TemporaryHistoryExportService temporaryHistoryExportService,
+        TdLibHistoryRequestService tdLibHistoryRequestService,
+        TdLibStatusService tdLibStatusService,
+        RecentHistoryBootstrapService recentHistoryBootstrapService
     ) {
         this.tdLibClientService = tdLibClientService;
         this.appProperties = appProperties;
@@ -61,18 +66,13 @@ public class TdLibAuthorizationService {
             tdLibHistoryRequestService.handle(update);
 
             if (update.contains("\"@type\":\"error\"")) {
-                System.out.println("TDLIB ERROR:");
-                System.out.println(update);
-            }
-
-            if (update.contains("GET_CHATS")) {
-                System.out.println("GET_CHATS_RESPONSE received");
+                log.error("TDLib error: {}", update);
             }
 
             if (update.contains("\"@type\":\"chats\"")) {
-                System.out.println("TDLIB_CHATS_LIST received");
-                requestChatDetails(update);
+                log.info("TDLib chats loaded");
 
+                requestChatDetails(update);
                 recentHistoryBootstrapService.bootstrap();
             }
 
@@ -97,7 +97,7 @@ public class TdLibAuthorizationService {
                 String code = appProperties.tdlib().authCode();
 
                 if (code == null || code.isBlank()) {
-                    System.out.println("TDLib waits for auth code, but TDLIB_AUTH_CODE is empty.");
+                    log.warn("TDLib is waiting for authentication code, but TDLIB_AUTH_CODE is empty");
                     continue;
                 }
 
@@ -112,7 +112,7 @@ public class TdLibAuthorizationService {
             if (update.contains("\"authorizationStateReady\"")) {
                 tdLibStatusService.markReady();
 
-                System.out.println("TDLib authorization ready!");
+                log.info("TDLib authorization ready");
                 requestChats();
                 // temporaryHistoryExportService.startExport();
             }
@@ -123,12 +123,13 @@ public class TdLibAuthorizationService {
 
                 tdLibStatusService.markNotReady();
 
-                System.out.println("TDLib authorization is not ready.");
+                log.warn("TDLib authorization is not ready");
             }
         }
     }
 
     private void sendTdlibParameters() {
+
         var tdlib = appProperties.tdlib();
 
         tdLibClientService.send("""
@@ -154,6 +155,7 @@ public class TdLibAuthorizationService {
     }
 
     private void sendPhoneNumber() {
+        
         var tdlib = appProperties.tdlib();
 
         tdLibClientService.send("""
@@ -166,7 +168,7 @@ public class TdLibAuthorizationService {
 
     private void requestChats() {
 
-        System.out.println("Requesting chats...");
+        log.debug("Requesting TDLib chats");
 
         tdLibClientService.send("""
             {
@@ -197,7 +199,7 @@ public class TdLibAuthorizationService {
         String ids = update.substring(start + 1, end);
 
         if (ids.isBlank()) {
-            System.out.println("No chats found.");
+            log.warn("TDLib returned no chats");
             return;
         }
 

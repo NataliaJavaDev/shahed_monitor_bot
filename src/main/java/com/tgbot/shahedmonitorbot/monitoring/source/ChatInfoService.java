@@ -11,6 +11,7 @@ public class ChatInfoService {
     private final Map<String, String> titles = new ConcurrentHashMap<>();
 
     public void saveTitle(String chatId, String title) {
+        
         if (chatId == null || chatId.isBlank()) {
             return;
         }

@@ -10,14 +10,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class UnknownSourceCandidateService {
 
-    private final Map<String, UnknownSourceCandidate> candidates =
-            new ConcurrentHashMap<>();
+    private final Map<String, UnknownSourceCandidate> candidates = new ConcurrentHashMap<>();
 
-    public void register(
-            String chatId,
-            String title,
-            String text
-    ) {
+    public void register(String chatId, String title, String text) {
 
         if (chatId == null || chatId.isBlank()) {
             return;
@@ -55,13 +50,13 @@ public class UnknownSourceCandidateService {
         return candidates.values().stream()
                 .sorted(
                         (first, second) ->
-                                second.lastSeenAt()
-                                        .compareTo(first.lastSeenAt())
+                            second.lastSeenAt().compareTo(first.lastSeenAt())
                 )
                 .toList();
     }
 
     public UnknownSourceCandidate findByChatId(String chatId) {
+
         if (chatId == null || chatId.isBlank()) {
             return null;
         }
@@ -78,6 +73,7 @@ public class UnknownSourceCandidateService {
     }
 
     private String safeTitle(String title) {
+        
         if (title == null || title.isBlank()) {
             return "Невідоме джерело";
         }
@@ -86,6 +82,7 @@ public class UnknownSourceCandidateService {
     }
 
     private String safeText(String text) {
+
         if (text == null || text.isBlank()) {
             return "[без тексту]";
         }

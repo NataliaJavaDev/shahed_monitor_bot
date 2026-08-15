@@ -12,17 +12,11 @@ public class HistoryRequest {
     private final LocalDateTime from;
     private long oldestMessageId;
 
-    private final CompletableFuture<List<TdHistoryMessage>> future =
-            new CompletableFuture<>();
+    private final CompletableFuture<List<TdHistoryMessage>> future = new CompletableFuture<>();
+    private final List<TdHistoryMessage> messages = new ArrayList<>();
 
-    private final List<TdHistoryMessage> messages =
-            new ArrayList<>();
-
-    public HistoryRequest(
-            String requestId,
-            String chatId,
-            LocalDateTime from
-    ) {
+    public HistoryRequest(String requestId, String chatId, LocalDateTime from) {
+        
         this.requestId = requestId;
         this.chatId = chatId;
         this.from = from;

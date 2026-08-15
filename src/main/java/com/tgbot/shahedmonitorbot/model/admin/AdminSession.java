@@ -3,7 +3,6 @@ package com.tgbot.shahedmonitorbot.model.admin;
 public class AdminSession {
 
     private AdminSessionState state = AdminSessionState.IDLE;
-
     private String pendingSourceId;
 
     public AdminSessionState getState() {

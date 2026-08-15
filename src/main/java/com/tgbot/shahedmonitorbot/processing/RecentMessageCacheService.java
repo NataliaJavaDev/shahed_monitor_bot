@@ -15,27 +15,19 @@ import com.tgbot.shahedmonitorbot.tdlib.history.TdHistoryMessage;
 
 @Service
 public class RecentMessageCacheService {
-    private final Map<String, Deque<TdHistoryMessage>> cache =
-        new ConcurrentHashMap<>();
 
-    public void add(
-        String chatId,
-        TdHistoryMessage message
-    ) {
-        Deque<TdHistoryMessage> messages =
-        cache.computeIfAbsent(
-                chatId,
-                id -> new ConcurrentLinkedDeque<>()
-        );
+    private final Map<String, Deque<TdHistoryMessage>> cache = new ConcurrentHashMap<>();
+
+    public void add(String chatId, TdHistoryMessage message) {
+
+        Deque<TdHistoryMessage> messages = cache.computeIfAbsent(chatId, id -> new ConcurrentLinkedDeque<>());
 
         messages.addLast(message);
-
         cleanup(messages);
     }
 
-    private void cleanup(
-            Deque<TdHistoryMessage> messages
-    ) {
+    private void cleanup(Deque<TdHistoryMessage> messages) {
+
         LocalDateTime limit = LocalDateTime.now().minusHours(2);
 
         while (!messages.isEmpty()
@@ -47,15 +39,10 @@ public class RecentMessageCacheService {
         }
     }
 
-    public Map<String, List<TdHistoryMessage>> getHistory(
-            Duration lookback
-    ) {
+    public Map<String, List<TdHistoryMessage>> getHistory(Duration lookback) {
 
-        LocalDateTime limit =
-                LocalDateTime.now().minus(lookback);
-
-        Map<String, List<TdHistoryMessage>> result =
-                new HashMap<>();
+        LocalDateTime limit = LocalDateTime.now().minus(lookback);
+        Map<String, List<TdHistoryMessage>> result = new HashMap<>();
 
         cache.forEach((chatId, messages) -> {
 

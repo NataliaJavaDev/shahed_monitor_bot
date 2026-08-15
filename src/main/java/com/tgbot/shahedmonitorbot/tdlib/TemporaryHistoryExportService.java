@@ -14,12 +14,16 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class TemporaryHistoryExportService {
 
+    private static final Logger log = LoggerFactory.getLogger(TemporaryHistoryExportService.class);
+
     private static final String EXPORT_EXTRA_PREFIX = "HISTORY_EXPORT:";
-    private static final DateTimeFormatter FILE_FORMAT =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm");
+    private static final DateTimeFormatter FILE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm");
 
     private final TdLibClientService tdLibClientService;
     private final AppProperties appProperties;
@@ -30,14 +34,13 @@ public class TemporaryHistoryExportService {
     private final ZoneId zoneId = ZoneId.of("Europe/Kyiv");
 
     private final Path exportDirectory = Path.of("exports").resolve(
-            "history_%s__%s".formatted(
-                    from.format(FILE_FORMAT),
-                    to.format(FILE_FORMAT)
-            )
+        "history_%s__%s".formatted(
+            from.format(FILE_FORMAT),
+            to.format(FILE_FORMAT)
+        )
     );
 
     private final Path analysisDirectory = Path.of("exports").resolve("analysis");
-
     private boolean started = false;
 
     public TemporaryHistoryExportService(
@@ -51,6 +54,7 @@ public class TemporaryHistoryExportService {
     }
 
     public void startExport() {
+
         if (started) {
             return;
         }
@@ -61,7 +65,7 @@ public class TemporaryHistoryExportService {
             Files.createDirectories(exportDirectory);
             Files.createDirectories(analysisDirectory);
         } catch (IOException e) {
-            System.out.println("Failed to prepare export directory: " + e.getMessage());
+            log.error("Failed to prepare history export directories", e);
             return;
         }
 
@@ -70,18 +74,20 @@ public class TemporaryHistoryExportService {
         }
 
         appProperties.monitor().sources().stream()
-                .filter(source -> Boolean.TRUE.equals(source.active()))
-                .forEach(source -> requestHistory(source.chatId(), 0));
+            .filter(source -> Boolean.TRUE.equals(source.active()))
+            .forEach(source -> requestHistory(source.chatId(), 0));
 
         System.out.println("History export started -> " + exportDirectory.toAbsolutePath());
     }
 
     public void handle(String update) {
+
         if (update == null || !update.contains("\"@type\":\"messages\"")) {
             return;
         }
 
         try {
+
             JsonNode root = objectMapper.readTree(update);
             String extra = root.path("@extra").asText("");
 
@@ -90,7 +96,6 @@ public class TemporaryHistoryExportService {
             }
 
             String chatId = extra.substring(EXPORT_EXTRA_PREFIX.length());
-
             JsonNode messages = root.path("messages");
 
             if (!messages.isArray() || messages.isEmpty()) {
@@ -136,7 +141,7 @@ public class TemporaryHistoryExportService {
             }
 
         } catch (Exception e) {
-            System.out.println("Failed to handle history export update: " + e.getMessage());
+            log.error("Failed to handle history export update", e);
         }
     }
 
@@ -160,6 +165,7 @@ public class TemporaryHistoryExportService {
     }
 
     private String extractText(JsonNode message) {
+
         JsonNode content = message.path("content");
         String contentType = content.path("@type").asText();
 
@@ -174,33 +180,22 @@ public class TemporaryHistoryExportService {
         return "";
     }
 
-    private void appendMessage(
-            String chatId,
-            LocalDateTime messageTime,
-            String text
-    ) throws IOException {
+    private void appendMessage(String chatId, LocalDateTime messageTime, String text) throws IOException {
+
         Path filePath = exportDirectory.resolve(fileNameForChat(chatId));
 
         String block = """
-                [%s]
-                chatId=%s
+                [%s]   chatId=%s
 
                 %s
-
                 ----------------------------------------
-
                 """.formatted(
                 messageTime,
                 chatId,
                 text
         );
 
-        Files.writeString(
-                filePath,
-                block,
-                StandardOpenOption.CREATE,
-                StandardOpenOption.APPEND
-        );
+        Files.writeString(filePath, block, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
     }
 
     private String fileNameForChat(String chatId) {
@@ -213,12 +208,12 @@ public class TemporaryHistoryExportService {
     }
 
     private String sanitizeFileName(String value) {
+
         if (value == null || value.isBlank()) {
             return "unknown";
         }
 
-        return value
-                .replaceAll("[\\\\/:*?\"<>|]", "_")
+        return value.replaceAll("[\\\\/:*?\"<>|]", "_")
                 .replaceAll("\\s+", " ")
                 .trim();
     }

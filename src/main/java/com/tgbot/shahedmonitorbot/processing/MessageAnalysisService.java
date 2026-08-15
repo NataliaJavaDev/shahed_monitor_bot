@@ -47,8 +47,8 @@ public class MessageAnalysisService {
     }
 
     public MessageAnalysis analyze(String chatId, String text) {
-        PreprocessedMessage preprocessed =
-                messagePreprocessorService.preprocess(text);
+
+        PreprocessedMessage preprocessed = messagePreprocessorService.preprocess(text);
 
         if (preprocessed.cleanedText() == null) {
             return null;
@@ -61,7 +61,6 @@ public class MessageAnalysisService {
         }
 
         MessageIntent intent = messageIntentDetectorService.detect(cleanedText);
-
         Optional<MonitorMatch> match = monitorFilterService.findMatch(cleanedText);
 
         boolean contextRestored = false;
@@ -118,19 +117,13 @@ public class MessageAnalysisService {
             boolean contextRestored,
             String text
     ) {
-        MessageIntent finalIntent =
-                resolveFinalIntent(intent, initialMatch, contextRestored);
 
-        ContextResolution resolution =
-                contextResolverService.resolve(chatId, initialMatch);
-
+        MessageIntent finalIntent = resolveFinalIntent(intent, initialMatch, contextRestored);
+        ContextResolution resolution = contextResolverService.resolve(chatId, initialMatch);
         MonitorMatch finalMatch = resolution.match();
+        String deduplicationKey = deduplicationService.buildDeduplicationKey(finalMatch);
 
-        String deduplicationKey =
-                deduplicationService.buildDeduplicationKey(finalMatch);
-
-        boolean duplicate =
-                deduplicationService.isDuplicate(finalMatch);
+        boolean duplicate = deduplicationService.isDuplicate(finalMatch);
 
         if (!duplicate && shouldSaveContext(finalMatch, finalIntent)) {
             eventContextService.saveContext(chatId, finalMatch);
@@ -161,6 +154,7 @@ public class MessageAnalysisService {
             MonitorMatch match,
             MessageIntent intent
     ) {
+
         if (match == null) {
             return false;
         }
@@ -184,6 +178,7 @@ public class MessageAnalysisService {
             MonitorMatch match,
             boolean contextRestored
     ) {
+        
         if (contextRestored) {
             return detectedIntent;
         }
@@ -201,11 +196,9 @@ public class MessageAnalysisService {
     ) {
         return threatDetectorService.findThreat(text)
                 .map(threatMatch -> {
-                    String deduplicationKey =
-                            deduplicationService.buildThreatDeduplicationKey(threatMatch);
+                    String deduplicationKey = deduplicationService.buildThreatDeduplicationKey(threatMatch);
 
-                    boolean duplicate =
-                            deduplicationService.isDuplicate(threatMatch);
+                    boolean duplicate = deduplicationService.isDuplicate(threatMatch);
 
                     return new MessageAnalysis(
                             null,
@@ -226,10 +219,8 @@ public class MessageAnalysisService {
         GlobalThreatMatch globalThreatMatch,
         String text
     ) {
-        String deduplicationKey =
-                deduplicationService.buildGlobalThreatDeduplicationKey(
-                        globalThreatMatch
-                );
+
+        String deduplicationKey = deduplicationService.buildGlobalThreatDeduplicationKey(globalThreatMatch);
 
         boolean duplicate = deduplicationService.isDuplicate(globalThreatMatch);
 
@@ -250,13 +241,10 @@ public class MessageAnalysisService {
         ForecastMatch forecastMatch,
         String text
     ) {
-        String deduplicationKey =
-                deduplicationService.buildForecastDeduplicationKey(
-                        forecastMatch
-                );
 
-        boolean duplicate =
-                deduplicationService.isDuplicate(forecastMatch);
+        String deduplicationKey = deduplicationService.buildForecastDeduplicationKey(forecastMatch);
+
+        boolean duplicate = deduplicationService.isDuplicate(forecastMatch);
 
         return new MessageAnalysis(
                 null,

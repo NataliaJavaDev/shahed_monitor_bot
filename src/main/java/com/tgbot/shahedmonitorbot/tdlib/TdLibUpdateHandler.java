@@ -19,9 +19,13 @@ import com.tgbot.shahedmonitorbot.tdlib.history.TdHistoryMessage;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class TdLibUpdateHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(TdLibUpdateHandler.class);
 
     private final ObjectMapper objectMapper;
     private final AppProperties appProperties;
@@ -67,16 +71,16 @@ public class TdLibUpdateHandler {
     public void handle(String update) {
 
         try {
-            JsonNode root = objectMapper.readTree(update);
 
+            JsonNode root = objectMapper.readTree(update);
             String type = root.path("@type").asText();
 
             if ("updateNewChat".equals(type)) {
                 JsonNode chat = root.path("chat");
 
                 chatInfoService.saveTitle(
-                        chat.path("id").asText(),
-                        chat.path("title").asText()
+                    chat.path("id").asText(),
+                    chat.path("title").asText()
                 );
 
                 return;
@@ -84,8 +88,8 @@ public class TdLibUpdateHandler {
 
             if ("updateChatTitle".equals(type)) {
                 chatInfoService.saveTitle(
-                        root.path("chat_id").asText(),
-                        root.path("title").asText()
+                    root.path("chat_id").asText(),
+                    root.path("title").asText()
                 );
 
                 return;
@@ -101,7 +105,6 @@ public class TdLibUpdateHandler {
             }
 
             JsonNode message = root.path("message");
-
             String chatId = message.path("chat_id").asText();
             TdMessageContent content = extractContent(message);
             String text = content.text();
@@ -113,19 +116,18 @@ public class TdLibUpdateHandler {
             recentMessageCacheService.add(
                 chatId,
                 new TdHistoryMessage(
-                        message.path("id").asLong(),
-                        LocalDateTime.ofInstant(
-                                Instant.ofEpochSecond(
-                                        message.path("date").asLong()
-                                ),
-                                ZoneId.of("Europe/Kyiv")
+                    message.path("id").asLong(),
+                    LocalDateTime.ofInstant(
+                        Instant.ofEpochSecond(
+                            message.path("date").asLong()
                         ),
-                        text
+                        ZoneId.of("Europe/Kyiv")
+                    ),
+                    text
                 )
             );
 
-            if (appProperties.monitor().ignoredChatIds() != null
-                    && appProperties.monitor().ignoredChatIds().contains(chatId)) {
+            if (appProperties.monitor().ignoredChatIds() != null && appProperties.monitor().ignoredChatIds().contains(chatId)) {
                 return;
             }
 
@@ -133,21 +135,16 @@ public class TdLibUpdateHandler {
 
             if (source == null) {
                 unknownSourceCandidateService.register(
-                        chatId,
-                        chatInfoService.getTitle(chatId),
-                        text
+                    chatId,
+                    chatInfoService.getTitle(chatId),
+                    text
                 );
 
-                System.out.println("""
-                        UNKNOWN CHAT DETECTED
-                        CHAT_ID: %s
-                        TITLE: %s
-                        TEXT: %s
-                        """.formatted(
-                        chatId,
-                        chatInfoService.getTitle(chatId),
-                        text
-                ));
+                log.warn("Unknown chat detected. ChatId: {}, Title: {}, Text: {}",
+                    chatId,
+                    chatInfoService.getTitle(chatId),
+                    text
+                );
 
                 return;
             }
@@ -164,27 +161,18 @@ public class TdLibUpdateHandler {
                 return;
             }
 
-            if (analysis.duplicate()
-                    && !canSendDuplicateUpdate(analysis.intent())) {
+            if (analysis.duplicate() && !canSendDuplicateUpdate(analysis.intent())) {
                 return;
             }
-
-            // telegramSenderService.sendToChat(
-            //         appProperties.telegram().targetChannelId(),
-            //         alertMessageFormatter.format(
-            //                 source.title(),
-            //                 text
-            //         )
-            // );
 
             if (content.photoFileId() != null) {
                 pendingPhotoMessageService.save(
                         content.photoFileId(),
                         new PendingPhotoMessage(
-                                chatId,
-                                source.title(),
-                                text,
-                                analysis
+                            chatId,
+                            source.title(),
+                            text,
+                            analysis
                         )
                 );
 
@@ -196,16 +184,14 @@ public class TdLibUpdateHandler {
             telegramSenderService.sendToChat(
                 appProperties.telegram().targetChannelId(),
                 analysisMessageFormatter.formatDebug(
-                        analysis,
-                        source.title(),
-                        analysis.originalMessage()
+                    analysis,
+                    source.title(),
+                    analysis.originalMessage()
                 )
             );
 
         } catch (Exception e) {
-            System.out.println(
-                    "Failed to handle TDLib update: " + e.getMessage()
-            );
+            log.error("Failed to handle TDLib update", e);
         }
     }
 
@@ -220,47 +206,29 @@ public class TdLibUpdateHandler {
     }
 
     private TdMessageContent extractContent(JsonNode message) {
-        JsonNode content = message.path("content");
 
+        JsonNode content = message.path("content");
         String contentType = content.path("@type").asText();
 
         if ("messageText".equals(contentType)) {
-            String text = content
-                    .path("text")
-                    .path("text")
-                    .asText("");
+            String text = content.path("text").path("text").asText("");
 
-            return new TdMessageContent(
-                    text,
-                    null
-            );
+            return new TdMessageContent(text, null);
         }
 
         if ("messagePhoto".equals(contentType)) {
-            String text = content
-                    .path("caption")
-                    .path("text")
-                    .asText("");
-
-            JsonNode sizes = content
-                    .path("photo")
-                    .path("sizes");
-
+            String text = content.path("caption").path("text").asText("");
+            JsonNode sizes = content.path("photo").path("sizes");
             Integer photoFileId = findLargestPhotoFileId(sizes);
 
-            return new TdMessageContent(
-                    text,
-                    photoFileId
-            );
+            return new TdMessageContent(text, photoFileId);
         }
 
-        return new TdMessageContent(
-                "",
-                null
-        );
+        return new TdMessageContent("", null);
     }
 
     private Integer findLargestPhotoFileId(JsonNode sizes) {
+
         if (!sizes.isArray() || sizes.isEmpty()) {
             return null;
         }
@@ -284,17 +252,14 @@ public class TdLibUpdateHandler {
             return null;
         }
 
-        int fileId = largestSize
-                .path("photo")
-                .path("id")
-                .asInt(0);
+        int fileId = largestSize.path("photo").path("id").asInt(0);
 
         return fileId > 0 ? fileId : null;
     }
 
     private void handleFileUpdate(JsonNode root) {
-        JsonNode file = root.path("file");
 
+        JsonNode file = root.path("file");
         int fileId = file.path("id").asInt(0);
 
         if (fileId == 0) {
@@ -324,13 +289,13 @@ public class TdLibUpdateHandler {
         pendingPhotoMessageService.remove(fileId);
 
         telegramSenderService.sendPhotoToChat(
-                appProperties.telegram().targetChannelId(),
-                localPath,
-                analysisMessageFormatter.formatDebug(
-                        pending.analysis(),
-                        pending.sourceTitle(),
-                        pending.originalText()
-                )
+            appProperties.telegram().targetChannelId(),
+            localPath,
+            analysisMessageFormatter.formatDebug(
+                pending.analysis(),
+                pending.sourceTitle(),
+                pending.originalText()
+            )
         );
     }
 }

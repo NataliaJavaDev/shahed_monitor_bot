@@ -19,8 +19,7 @@ import org.telegram.telegrambots.meta.api.objects.InputFile;
 @Service
 public class TelegramSenderService {
 
-    private static final Logger log =
-            LoggerFactory.getLogger(TelegramSenderService.class);
+    private static final Logger log = LoggerFactory.getLogger(TelegramSenderService.class);
 
     private final TelegramClient telegramClient;
     private final AppProperties properties;
@@ -34,16 +33,15 @@ public class TelegramSenderService {
     }
 
     public void send(String text) {
+
         sendToChat(
                 properties.telegram().targetChannelId(),
                 text
         );
     }
 
-    public void sendToChat(
-            String chatId,
-            String text
-    ) {
+    public void sendToChat(String chatId, String text) {
+
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
                 .text(text)
@@ -57,6 +55,7 @@ public class TelegramSenderService {
             String text,
             InlineKeyboardMarkup keyboard
     ) {
+
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
                 .text(text)
@@ -71,6 +70,7 @@ public class TelegramSenderService {
             String text,
             ReplyKeyboardMarkup keyboard
     ) {
+
         SendMessage message = SendMessage.builder()
                 .chatId(chatId)
                 .text(text)
@@ -86,6 +86,7 @@ public class TelegramSenderService {
             String text,
             InlineKeyboardMarkup keyboard
     ) {
+
         if (chatId == null
                 || chatId.isBlank()
                 || messageId == null) {
@@ -122,8 +123,7 @@ public class TelegramSenderService {
             String callbackQueryId,
             String text
     ) {
-        if (callbackQueryId == null
-                || callbackQueryId.isBlank()) {
+        if (callbackQueryId == null || callbackQueryId.isBlank()) {
             return;
         }
 
@@ -150,6 +150,7 @@ public class TelegramSenderService {
         String photoPath,
         String caption
     ) {
+        
         SendPhoto photo = SendPhoto.builder()
                 .chatId(chatId)
                 .photo(new InputFile(new File(photoPath)))

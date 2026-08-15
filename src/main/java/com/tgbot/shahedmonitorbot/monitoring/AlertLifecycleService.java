@@ -8,16 +8,12 @@ public class AlertLifecycleService {
     private final MonitoringStateService monitoringStateService;
 
     public AlertLifecycleService(
-            MonitoringStateService monitoringStateService
+        MonitoringStateService monitoringStateService
     ) {
         this.monitoringStateService = monitoringStateService;
     }
 
-    /*
-     * ----------------------------
-     * API control
-     * ----------------------------
-     */
+    //  API control
 
     public boolean isApiControlEnabled() {
         return monitoringStateService.isApiControlEnabled();
@@ -35,11 +31,7 @@ public class AlertLifecycleService {
         monitoringStateService.toggleApiControl();
     }
 
-    /*
-     * ----------------------------
-     * Monitoring state
-     * ----------------------------
-     */
+    //  Monitoring state
 
     public boolean isMonitoringEnabled() {
         return monitoringStateService.isMonitoringEnabled();
@@ -73,11 +65,8 @@ public class AlertLifecycleService {
         monitoringStateService.disableMonitoringManually();
     }
 
-    /*
-     * ----------------------------
-     * Info
-     * ----------------------------
-     */
+
+    //  Info
 
     public String getApiControlStatus() {
         return monitoringStateService.getApiControlStatus();

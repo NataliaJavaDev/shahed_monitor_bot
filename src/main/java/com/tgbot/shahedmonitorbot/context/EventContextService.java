@@ -13,8 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class EventContextService {
 
-    private final Map<String, ContextEntry> eventContexts =
-            new ConcurrentHashMap<>();
+    private final Map<String, ContextEntry> eventContexts = new ConcurrentHashMap<>();
 
     private final Duration contextTtl;
 
@@ -26,6 +25,7 @@ public class EventContextService {
     }
 
     public void saveContext(String chatId, MonitorMatch match) {
+
         if (chatId == null || chatId.isBlank() || match == null) {
             return;
         }
@@ -39,6 +39,7 @@ public class EventContextService {
     }
 
     public Optional<MonitorMatch> getContext(String chatId) {
+
         if (chatId == null || chatId.isBlank()) {
             return Optional.empty();
         }
@@ -58,6 +59,7 @@ public class EventContextService {
     }
 
     public void clearContext(String chatId) {
+
         if (chatId == null || chatId.isBlank()) {
             return;
         }
@@ -70,6 +72,7 @@ public class EventContextService {
     }
 
     private boolean isExpired(ContextEntry contextEntry) {
+        
         Instant expiresAt = contextEntry.savedAt().plus(contextTtl);
 
         return !Instant.now().isBefore(expiresAt);

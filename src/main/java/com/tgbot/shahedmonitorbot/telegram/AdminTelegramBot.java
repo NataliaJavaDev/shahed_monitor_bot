@@ -10,16 +10,20 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class AdminTelegramBot implements LongPollingUpdateConsumer {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminTelegramBot.class);
 
     private final AdminCommandHandler adminCommandHandler;
     private final AppProperties properties;
 
     public AdminTelegramBot(
-            AdminCommandHandler adminCommandHandler,
-            AppProperties properties
+        AdminCommandHandler adminCommandHandler,
+        AppProperties properties
     ) {
         this.adminCommandHandler = adminCommandHandler;
         this.properties = properties;
@@ -28,13 +32,9 @@ public class AdminTelegramBot implements LongPollingUpdateConsumer {
     @PostConstruct
     public void registerBot() throws Exception {
 
-        TelegramBotsLongPollingApplication application =
-                new TelegramBotsLongPollingApplication();
+        TelegramBotsLongPollingApplication application = new TelegramBotsLongPollingApplication();
 
-        application.registerBot(
-                properties.telegram().botToken(),
-                this
-        );
+        application.registerBot(properties.telegram().botToken(),this);
     }
 
     @Override
@@ -60,86 +60,49 @@ public class AdminTelegramBot implements LongPollingUpdateConsumer {
             return;
         }
 
-        Long userId =
-                update.getMessage().getFrom().getId();
+        Long userId = update.getMessage().getFrom().getId();
+        Long chatId = update.getMessage().getChatId();
+        String text = update.getMessage().getText();
 
-        Long chatId =
-                update.getMessage().getChatId();
-
-        String text =
-                update.getMessage().getText();
-
-        System.out.println(
-                "NEW UPDATE FROM USER "
-                        + userId
-                        + " IN CHAT "
-                        + chatId
-                        + ": "
-                        + text
+        log.debug("New update from user {} in chat {}: {}",
+            userId,
+            chatId,
+            text
         );
 
-        if (chatId.toString().equals(
-                properties.telegram().targetChannelId()
-        )) {
-            System.out.println(
-                    "Ignored message from target channel/group: "
-                            + text
-            );
+        if (chatId.toString().equals(properties.telegram().targetChannelId())) {
+            log.debug("Ignored message from target channel/group: {}", chatId);
             return;
         }
 
-        adminCommandHandler.handle(
-                userId,
-                chatId.toString(),
-                text
-        );
+        adminCommandHandler.handle(userId, chatId.toString(), text);
     }
 
     private void handleCallbackQuery(
-            CallbackQuery callbackQuery
+        CallbackQuery callbackQuery
     ) {
 
         if (callbackQuery.getMessage() == null) {
             return;
         }
 
-        Long userId =
-                callbackQuery.getFrom().getId();
+        Long userId = callbackQuery.getFrom().getId();
+        String chatId = callbackQuery.getMessage().getChatId().toString();
+        Integer messageId = callbackQuery.getMessage().getMessageId();
+        String callbackData = callbackQuery.getData();
 
-        String chatId =
-                callbackQuery
-                        .getMessage()
-                        .getChatId()
-                        .toString();
-
-        Integer messageId =
-                callbackQuery
-                        .getMessage()
-                        .getMessageId();
-
-        String callbackData =
-                callbackQuery.getData();
-
-        if (callbackData == null
-                || callbackData.isBlank()) {
+        if (callbackData == null || callbackData.isBlank()) {
             return;
         }
 
-        System.out.println(
-                "NEW CALLBACK FROM USER "
-                        + userId
-                        + " IN CHAT "
-                        + chatId
-                        + ": "
-                        + callbackData
-        );
+        log.debug("New callback from user {} in chat {}: {}", userId, chatId, callbackData);
 
         adminCommandHandler.handleCallback(
-                userId,
-                chatId,
-                messageId,
-                callbackQuery.getId(),
-                callbackData
+            userId,
+            chatId,
+            messageId,
+            callbackQuery.getId(),
+            callbackData
         );
     }
 }

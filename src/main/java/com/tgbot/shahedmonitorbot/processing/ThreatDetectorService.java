@@ -24,15 +24,6 @@ public class ThreatDetectorService {
 
         String normalizedText = TextNormalizer.normalize(text);
 
-        // TODO:
-        // Тимчасова заглушка.
-        // До реалізації окремого GLOBAL_FORECAST
-        // не пропускаємо локальні повідомлення
-        // виду "на <місто>", "над <місто>" тощо.
-        if (containsLocalDirection(normalizedText)) {
-            return Optional.empty();
-        }
-
         return appProperties.monitor().messageIntents()
                 .stream()
                 .filter(intentConfig ->
@@ -48,14 +39,5 @@ public class ThreatDetectorService {
                         alias,
                         THREAT_CATEGORY
                 ));
-    }
-
-    private boolean containsLocalDirection(String text) {
-
-        return text.contains(" на ")
-                || text.contains(" над ")
-                || text.contains(" повз ")
-                || text.contains(" до ")
-                || text.contains(" курс на ");
     }
 }

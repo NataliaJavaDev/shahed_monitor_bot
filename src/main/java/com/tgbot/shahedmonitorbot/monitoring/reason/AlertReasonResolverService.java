@@ -12,12 +12,9 @@ import java.util.Set;
 @Service
 public class AlertReasonResolverService {
 
-    public AlertReason resolve(
-            List<AlertReasonItem> items
-    ) {
+    public AlertReason resolve(List<AlertReasonItem> items) {
 
-        Map<String, LinkedHashSet<String>> grouped =
-                new LinkedHashMap<>();
+        Map<String, LinkedHashSet<String>> grouped = new LinkedHashMap<>();
 
         for (AlertReasonItem item : items) {
 
@@ -25,24 +22,14 @@ public class AlertReasonResolverService {
                 continue;
             }
 
-            grouped
-                    .computeIfAbsent(
-                            item.category(),
-                            key -> new LinkedHashSet<>()
-                    )
-                    .addAll(item.threats());
+            grouped.computeIfAbsent(item.category(), key -> new LinkedHashSet<>())
+                .addAll(item.threats());
         }
 
-        List<AlertReasonItem> result =
-                new ArrayList<>();
+        List<AlertReasonItem> result = new ArrayList<>();
 
         grouped.forEach((category, threats) ->
-                result.add(
-                        new AlertReasonItem(
-                                category,
-                                Set.copyOf(threats)
-                        )
-                )
+            result.add(new AlertReasonItem(category, Set.copyOf(threats)))
         );
 
         return new AlertReason(result);

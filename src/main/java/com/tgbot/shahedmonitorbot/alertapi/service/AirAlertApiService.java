@@ -46,6 +46,7 @@ public class AirAlertApiService {
     }
 
     public void checkAlerts() {
+        
         try {
             RegionAlertDto[] alerts = client.fetchAlerts();
 

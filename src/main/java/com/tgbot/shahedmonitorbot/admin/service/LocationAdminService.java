@@ -39,6 +39,7 @@ public class LocationAdminService {
     }
 
     public String getCategory(String location) {
+
         String normalizedLocation = TextNormalizer.normalize(location);
         return aliasToCategory.getOrDefault(normalizedLocation, normalizedLocation);
     }
@@ -48,6 +49,7 @@ public class LocationAdminService {
     }
 
     public boolean addLocation(String location, String category) {
+
         String normalizedLocation = TextNormalizer.normalize(location);
         String normalizedCategory = TextNormalizer.normalize(category);
 
@@ -69,8 +71,8 @@ public class LocationAdminService {
     }
 
     public boolean removeLocation(String location) {
+        
         String normalizedLocation = TextNormalizer.normalize(location);
-
         String category = aliasToCategory.remove(normalizedLocation);
 
         if (category == null) {

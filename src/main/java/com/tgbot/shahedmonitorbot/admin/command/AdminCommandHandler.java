@@ -1,26 +1,17 @@
 package com.tgbot.shahedmonitorbot.admin.command;
 
-import com.tgbot.shahedmonitorbot.admin.enums.AdminButton;
-import com.tgbot.shahedmonitorbot.admin.enums.AdminCommand;
-import com.tgbot.shahedmonitorbot.admin.enums.AdminMessage;
+import com.tgbot.shahedmonitorbot.admin.enums.*;
 import com.tgbot.shahedmonitorbot.admin.menu.AdminMenuService;
-import com.tgbot.shahedmonitorbot.admin.service.AdminAccessService;
-import com.tgbot.shahedmonitorbot.admin.service.AdminSessionService;
-import com.tgbot.shahedmonitorbot.admin.service.DirectionAdminService;
-import com.tgbot.shahedmonitorbot.admin.service.LocationAdminService;
-import com.tgbot.shahedmonitorbot.admin.service.TargetAdminService;
+import com.tgbot.shahedmonitorbot.admin.service.*;
 import com.tgbot.shahedmonitorbot.alertapi.formatter.ApiAlertStatusFormatter;
 import com.tgbot.shahedmonitorbot.alertapi.service.AirAlertApiService;
-import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
-import com.tgbot.shahedmonitorbot.manualalert.ManualAlertType;
+import com.tgbot.shahedmonitorbot.manualalert.*;
 import com.tgbot.shahedmonitorbot.model.admin.AdminSessionState;
 import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
-import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSource;
-import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
-import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidate;
-import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateService;
+import com.tgbot.shahedmonitorbot.monitoring.source.*;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import com.tgbot.shahedmonitorbot.tdlib.TdLibStatusService;
+
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;

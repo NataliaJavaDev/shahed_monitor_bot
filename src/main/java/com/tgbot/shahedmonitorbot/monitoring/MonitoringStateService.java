@@ -7,23 +7,21 @@ public class MonitoringStateService {
 
     private volatile boolean apiControlEnabled = true;
 
-    /*
-     * Стан, встановлений API тривог.
-     */
+    //  Стан, встановлений API тривог.
+
     private volatile boolean apiMonitoringEnabled = false;
 
-    /*
-     * Аварійний ручний стан.
-     */
+    //  Аварійний ручний стан.
+
     private volatile boolean manualMonitoringEnabled = false;
 
     public boolean isApiControlEnabled() {
         return apiControlEnabled;
     }
 
-    /*
-     * Фінальний стан активного моніторингу.
-     */
+
+    //  Фінальний стан активного моніторингу.
+
     public boolean isMonitoringEnabled() {
         return apiMonitoringEnabled || manualMonitoringEnabled;
     }
@@ -41,16 +39,15 @@ public class MonitoringStateService {
     }
 
     public void disableApiControl() {
+
         apiControlEnabled = false;
 
-        /*
-         * Після вимкнення API-керування старий API-стан
-         * не повинен утримувати моніторинг увімкненим.
-         */
+        //  Після вимкнення API-керування старий API-станне повинен утримувати моніторинг увімкненим.
         apiMonitoringEnabled = false;
     }
 
     public void toggleApiControl() {
+
         if (apiControlEnabled) {
             disableApiControl();
         } else {
@@ -59,6 +56,7 @@ public class MonitoringStateService {
     }
 
     public void enableMonitoringFromApi() {
+
         if (!apiControlEnabled) {
             return;
         }
@@ -67,6 +65,7 @@ public class MonitoringStateService {
     }
 
     public void disableMonitoringFromApi() {
+
         if (!apiControlEnabled) {
             return;
         }
@@ -83,9 +82,7 @@ public class MonitoringStateService {
     }
 
     public String getApiControlStatus() {
-        return apiControlEnabled
-                ? "УВІМКНЕНО"
-                : "ВИМКНЕНО";
+        return apiControlEnabled ? "УВІМКНЕНО" : "ВИМКНЕНО";
     }
 
     public String getMonitoringActivationSource() {

@@ -9,7 +9,7 @@ import com.tgbot.shahedmonitorbot.processing.PreprocessedMessage;
 import com.tgbot.shahedmonitorbot.processing.RecentMessageCacheService;
 import com.tgbot.shahedmonitorbot.tdlib.history.TdHistoryMessage;
 import org.springframework.stereotype.Service;
-import com.tgbot.shahedmonitorbot.alert.AlertDeliveryService;
+// import com.tgbot.shahedmonitorbot.alert.AlertDeliveryService;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -24,20 +24,20 @@ public class AlertReasonAnalyzerService {
     private final AlertReasonResolverService alertReasonResolverService;
     private final MessagePreprocessorService messagePreprocessorService;
     private final TargetAdminService targetAdminService;
-    private final AlertDeliveryService alertDeliveryService;
+    // private final AlertDeliveryService alertDeliveryService;
     private final RecentMessageCacheService recentMessageCacheService;
 
     public AlertReasonAnalyzerService(
             AlertReasonResolverService alertReasonResolverService,
             MessagePreprocessorService messagePreprocessorService,
             TargetAdminService targetAdminService,
-            AlertDeliveryService alertDeliveryService,
+            // AlertDeliveryService alertDeliveryService,
             RecentMessageCacheService recentMessageCacheService
     ) {
         this.alertReasonResolverService = alertReasonResolverService;
         this.messagePreprocessorService = messagePreprocessorService;
         this.targetAdminService = targetAdminService;
-        this.alertDeliveryService = alertDeliveryService;
+        // this.alertDeliveryService = alertDeliveryService;
         this.recentMessageCacheService = recentMessageCacheService;
     }
 
@@ -46,10 +46,7 @@ public class AlertReasonAnalyzerService {
     }
 
     public AlertReason analyze(Duration lookback) {
-
-        return analyzeHistory(
-            recentMessageCacheService.getHistory(lookback)
-        );
+        return analyzeHistory(recentMessageCacheService.getHistory(lookback));
     }
 
     private AlertReason analyzeHistory(
@@ -62,22 +59,13 @@ public class AlertReasonAnalyzerService {
 
             for (TdHistoryMessage historyMessage : messages) {
 
-                PreprocessedMessage preprocessed =
-                        messagePreprocessorService.preprocess(
-                                historyMessage.text()
-                        );
+                PreprocessedMessage preprocessed = messagePreprocessorService.preprocess(historyMessage.text());
 
                 if (preprocessed.cleanedText() == null) {
                     continue;
                 }
 
                 String normalizedText = preprocessed.cleanedText();
-
-//                 alertDeliveryService.send("""
-// NORMALIZED
-
-// %s
-// """.formatted(normalizedText));
 
                 targetAdminService.getTargets()
                     .stream()

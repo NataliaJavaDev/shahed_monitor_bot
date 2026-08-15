@@ -10,8 +10,8 @@ import java.util.Optional;
 public class MarkerDetectorService {
 
     public Optional<String> findMatchedMarker(
-            String text,
-            List<String> markers
+        String text,
+        List<String> markers
     ) {
 
         if (text == null || text.isBlank()) {
@@ -22,9 +22,9 @@ public class MarkerDetectorService {
 
         return markers.stream()
                 .filter(marker ->
-                        normalizedText.contains(
-                                TextNormalizer.normalize(marker)
-                        )
+                    normalizedText.contains(
+                        TextNormalizer.normalize(marker)
+                    )
                 )
                 .findFirst();
     }

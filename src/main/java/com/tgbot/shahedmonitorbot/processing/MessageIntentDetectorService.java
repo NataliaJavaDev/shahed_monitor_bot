@@ -40,6 +40,7 @@ public class MessageIntentDetectorService {
     }
 
     private MessageIntent toMessageIntent(String value) {
+        
         if (value == null || value.isBlank()) {
             return MessageIntent.UNKNOWN;
         }
@@ -55,6 +56,7 @@ public class MessageIntentDetectorService {
             String normalizedText,
             AppProperties.MessageIntentConfig intentConfig
     ) {
+
         if (intentConfig.aliases() == null || intentConfig.aliases().isEmpty()) {
             return false;
         }

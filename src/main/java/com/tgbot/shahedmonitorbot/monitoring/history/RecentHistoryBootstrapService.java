@@ -12,8 +12,7 @@ import java.util.List;
 @Service
 public class RecentHistoryBootstrapService {
 
-    private static final Duration LOOKBACK =
-            Duration.ofHours(2);
+    private static final Duration LOOKBACK = Duration.ofHours(2);
 
     private final TdLibHistoryRequestService historyService;
     private final MonitoredSourceService monitoredSourceService;

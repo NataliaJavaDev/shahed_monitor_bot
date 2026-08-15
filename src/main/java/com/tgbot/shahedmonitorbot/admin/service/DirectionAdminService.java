@@ -21,6 +21,7 @@ public class DirectionAdminService {
     }
 
     public boolean addDirection(String direction) {
+
         String normalized = TextNormalizer.normalize(direction);
 
         if (normalized.isBlank() || directions.contains(normalized)) {
@@ -32,6 +33,7 @@ public class DirectionAdminService {
     }
 
     public boolean removeDirection(String direction) {
+        
         String normalized = TextNormalizer.normalize(direction);
         return directions.remove(normalized);
     }

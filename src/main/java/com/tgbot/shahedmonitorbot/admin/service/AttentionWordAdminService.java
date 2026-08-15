@@ -39,11 +39,13 @@ public class AttentionWordAdminService {
     }
 
     public String getCategory(String attentionWord) {
+
         String normalizedAttentionWord = TextNormalizer.normalize(attentionWord);
         return aliasToCategory.getOrDefault(normalizedAttentionWord, normalizedAttentionWord);
     }
 
     public boolean containsAttentionWord(String text) {
+
         String normalizedText = TextNormalizer.normalize(text);
 
         return aliasToCategory.keySet().stream()
@@ -51,6 +53,7 @@ public class AttentionWordAdminService {
     }
 
     public String findAttentionWord(String text) {
+
         String normalizedText = TextNormalizer.normalize(text);
 
         return aliasToCategory.keySet().stream()
@@ -64,6 +67,7 @@ public class AttentionWordAdminService {
     }
 
     public boolean addAttentionWord(String attentionWord, String category) {
+
         String normalizedAttentionWord = TextNormalizer.normalize(attentionWord);
         String normalizedCategory = TextNormalizer.normalize(category);
 
@@ -85,8 +89,8 @@ public class AttentionWordAdminService {
     }
 
     public boolean removeAttentionWord(String attentionWord) {
-        String normalizedAttentionWord = TextNormalizer.normalize(attentionWord);
 
+        String normalizedAttentionWord = TextNormalizer.normalize(attentionWord);
         String category = aliasToCategory.remove(normalizedAttentionWord);
 
         if (category == null) {

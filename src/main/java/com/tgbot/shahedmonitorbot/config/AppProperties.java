@@ -25,6 +25,7 @@ public record AppProperties(
         List<AttentionWordConfig> attentionWords,
         List<String> globalThreatMarkers,
         List<String> forecastMarkers,
+        List<String> noiseMarkers,
         List<Source> sources,
         List<String> ignoredChatIds
     ) {

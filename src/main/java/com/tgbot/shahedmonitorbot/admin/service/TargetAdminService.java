@@ -47,6 +47,7 @@ public class TargetAdminService {
     }
 
     public List<String> getAliasesByCategory(String category) {
+
         String normalizedCategory = TextNormalizer.normalize(category);
 
         return List.copyOf(
@@ -55,6 +56,7 @@ public class TargetAdminService {
     }
 
     public String getCategory(String target) {
+
         String normalizedTarget = TextNormalizer.normalize(target);
         return aliasToCategory.getOrDefault(normalizedTarget, normalizedTarget);
     }
@@ -64,13 +66,13 @@ public class TargetAdminService {
     }
 
     public boolean addTarget(String target, String category) {
+
         String normalizedTarget = TextNormalizer.normalize(target);
         String normalizedCategory = TextNormalizer.normalize(category);
 
-        if (
-                normalizedTarget.isBlank()
-                        || normalizedCategory.isBlank()
-                        || aliasToCategory.containsKey(normalizedTarget)
+        if (normalizedTarget.isBlank()
+                || normalizedCategory.isBlank()
+                || aliasToCategory.containsKey(normalizedTarget)
         ) {
             return false;
         }
@@ -85,8 +87,8 @@ public class TargetAdminService {
     }
 
     public boolean removeTarget(String target) {
-        String normalizedTarget = TextNormalizer.normalize(target);
 
+        String normalizedTarget = TextNormalizer.normalize(target);
         String category = aliasToCategory.remove(normalizedTarget);
 
         if (category == null) {
@@ -108,8 +110,7 @@ public class TargetAdminService {
 
     public String getDisplayName(String category) {
 
-        String normalizedCategory =
-                TextNormalizer.normalize(category);
+        String normalizedCategory = TextNormalizer.normalize(category);
 
         return categoryToDisplayName.getOrDefault(
                 normalizedCategory,

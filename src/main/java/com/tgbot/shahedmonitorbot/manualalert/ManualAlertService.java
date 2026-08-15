@@ -31,7 +31,6 @@ public class ManualAlertService {
         alertDeliveryService.send("DEBUG: sendAlert()");
 
         updateMonitoringFromManual(type);
-
         sendWithReason(type);
     }
 
@@ -42,14 +41,9 @@ public class ManualAlertService {
         sendWithReason(type);
     }
 
-    private void send(
-            ManualAlertType type,
-            AlertReason reason
-    ) {
+    private void send(ManualAlertType type, AlertReason reason) {
 
-        alertDeliveryService.send(
-                formatter.format(type, reason)
-        );
+        alertDeliveryService.send(formatter.format(type, reason));
     }
 
     private void updateMonitoringFromManual(
@@ -57,20 +51,16 @@ public class ManualAlertService {
     ) {
 
         if (type == ManualAlertType.ALERT) {
-            monitoringStateService
-                    .enableMonitoringManually();
+            monitoringStateService.enableMonitoringManually();
             return;
         }
 
         if (type == ManualAlertType.ALL_CLEAR) {
-            monitoringStateService
-                    .disableMonitoringManually();
+            monitoringStateService.disableMonitoringManually();
         }
     }
 
-    private void sendWithReason(
-        ManualAlertType type
-    ) {
+    private void sendWithReason(ManualAlertType type) {
 
         if (type != ManualAlertType.ALERT) {
             send(type, null);
@@ -81,9 +71,7 @@ public class ManualAlertService {
 
             AlertReason reason = alertReasonAnalyzerService.analyze();
 
-            alertDeliveryService.send(
-                    "DEBUG\n" + reason
-            );
+            alertDeliveryService.send("DEBUG\n" + reason);
 
             send(type, reason);
 
@@ -95,13 +83,12 @@ public class ManualAlertService {
             %s
             """.formatted(e));
 
-                send(type, null);
+            send(type, null);
         }
     }
 
     public void sendDebug(String text) {
-        alertDeliveryService.send(
-                "DEBUG\n\n" + text
-        );
+        
+        alertDeliveryService.send("DEBUG\n\n" + text);
     }
 }

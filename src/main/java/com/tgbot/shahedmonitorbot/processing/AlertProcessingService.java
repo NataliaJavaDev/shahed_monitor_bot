@@ -25,29 +25,24 @@ public class AlertProcessingService {
     }
 
     public void process(String sourceName, String text) {
-        System.out.println("PROCESSING TEXT: " + text);
 
         if (text == null || text.isBlank()) {
-            System.out.println("TEXT IS EMPTY");
             return;
         }
 
         var match = monitorFilterService.findMatch(text);
-        System.out.println("IS RELEVANT: " + match.isPresent());
 
         if (match.isEmpty()) {
             return;
         }
 
         boolean duplicate = deduplicationService.isDuplicate(match.get());
-        System.out.println("IS DUPLICATE: " + duplicate);
 
         if (duplicate) {
             return;
         }
 
         String message = formatter.format(sourceName, text);
-        System.out.println("FORMATTED MESSAGE: " + message);
 
         senderService.send(message);
     }

@@ -15,5 +15,4 @@ public class ShahedMonitorBotApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(ShahedMonitorBotApplication.class, args);
 	}
-
 }

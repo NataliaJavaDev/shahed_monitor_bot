@@ -28,24 +28,18 @@ public class MonitorFilterService {
     }
 
     public Optional<MonitorMatch> findMatch(String text) {
+
         if (text == null || text.isBlank()) {
             return Optional.empty();
         }
 
         String normalizedText = TextNormalizer.normalize(text);
 
-        String matchedTarget = findFirstMatch(
-                normalizedText,
-                targetAdminService.getTargets()
-        );
+        String matchedTarget = findFirstMatch(normalizedText, targetAdminService.getTargets());
 
-        String matchedLocation = findFirstMatch(
-                normalizedText,
-                locationAdminService.getLocations()
-        );
+        String matchedLocation = findFirstMatch(normalizedText, locationAdminService.getLocations());
 
-        boolean hasAttentionWord =
-                attentionWordAdminService.findAttentionWord(text) != null;
+        boolean hasAttentionWord = attentionWordAdminService.findAttentionWord(text) != null;
 
         if (matchedTarget != null && matchedLocation != null) {
             return Optional.of(new MonitorMatch(
@@ -91,6 +85,7 @@ public class MonitorFilterService {
     }
 
     private String findDirectionToLocation(String normalizedText, String matchedLocation) {
+
         if (matchedLocation == null) {
             return null;
         }
@@ -107,6 +102,7 @@ public class MonitorFilterService {
     }
 
     private String findFirstMatch(String normalizedText, List<String> values) {
+        
         if (values == null || values.isEmpty()) {
             return null;
         }

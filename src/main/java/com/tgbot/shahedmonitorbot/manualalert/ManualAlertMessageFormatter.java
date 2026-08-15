@@ -11,7 +11,6 @@ public class ManualAlertMessageFormatter {
             ManualAlertType type,
             AlertReason reason
     ) {
-
         return switch (type) {
 
             case ALERT -> """

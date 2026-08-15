@@ -26,29 +26,22 @@ public class TdLibHistoryRequestService {
 
     private final TdLibClientService tdLibClientService;
     private final ObjectMapper objectMapper;
+    private final Map<String, HistoryRequest> activeRequests = new ConcurrentHashMap<>();
 
-    private final Map<String, HistoryRequest> activeRequests =
-            new ConcurrentHashMap<>();
+    public TdLibHistoryRequestService(TdLibClientService tdLibClientService, ObjectMapper objectMapper) {
 
-    public TdLibHistoryRequestService(
-            TdLibClientService tdLibClientService,
-            ObjectMapper objectMapper
-    ) {
         this.tdLibClientService = tdLibClientService;
         this.objectMapper = objectMapper;
     }
 
-    public CompletableFuture<List<TdHistoryMessage>> requestHistory(
-            String chatId,
-            Duration lookback
-    ) {
+    public CompletableFuture<List<TdHistoryMessage>> requestHistory(String chatId, Duration lookback) {
 
         String requestId = UUID.randomUUID().toString();
 
         HistoryRequest request = new HistoryRequest(
-                requestId,
-                chatId,
-                LocalDateTime.now(KYIV_ZONE).minus(lookback)
+            requestId,
+            chatId,
+            LocalDateTime.now(KYIV_ZONE).minus(lookback)
         );
 
         activeRequests.put(requestId, request);
@@ -56,8 +49,7 @@ public class TdLibHistoryRequestService {
 
         CompletableFuture<List<TdHistoryMessage>> future = request.getFuture();
 
-        future
-            .orTimeout(60, TimeUnit.SECONDS)
+        future.orTimeout(60, TimeUnit.SECONDS)
             .whenComplete((r, ex) -> {
                 if (ex != null) {
                     activeRequests.remove(requestId);
@@ -72,20 +64,18 @@ public class TdLibHistoryRequestService {
         Duration lookback
     ) {
 
-        CompletableFuture<Map<String, List<TdHistoryMessage>>> future =
-                CompletableFuture.completedFuture(new HashMap<>());
+        CompletableFuture<Map<String, List<TdHistoryMessage>>> future = CompletableFuture.completedFuture(new HashMap<>());
 
         for (String chatId : chatIds) {
 
             future = future.thenCompose(result ->
+                requestHistory(chatId, lookback)
+                    .thenApply(messages -> {
 
-                    requestHistory(chatId, lookback)
-                            .thenApply(messages -> {
+                        result.put(chatId, messages);
 
-                                result.put(chatId, messages);
-
-                                return result;
-                            })
+                        return result;
+                    })
             );
         }
 
@@ -99,8 +89,7 @@ public class TdLibHistoryRequestService {
 
         try {
 
-            if (update == null
-                    || !update.contains("\"@type\":\"messages\"")) {
+            if (update == null || !update.contains("\"@type\":\"messages\"")) {
                 return;
             }
 
@@ -122,11 +111,9 @@ public class TdLibHistoryRequestService {
 
             JsonNode messages = root.path("messages");
 
-            if (!messages.isArray()
-                    || messages.isEmpty()) {
+            if (!messages.isArray() || messages.isEmpty()) {
 
                 finishRequest(request);
-
                 return;
             }
 
@@ -134,27 +121,21 @@ public class TdLibHistoryRequestService {
 
             for (JsonNode message : messages) {
 
-                long messageId =
-                        message.path("id").asLong();
+                long messageId = message.path("id").asLong();
 
-                if (request.getOldestMessageId() == 0
-                        || messageId < request.getOldestMessageId()) {
-
+                if (request.getOldestMessageId() == 0 || messageId < request.getOldestMessageId()) {
                     request.setOldestMessageId(messageId);
                 }
 
                 LocalDateTime messageTime =
                         LocalDateTime.ofInstant(
-                                Instant.ofEpochSecond(
-                                        message.path("date").asLong()
-                                ),
-                                KYIV_ZONE
+                            Instant.ofEpochSecond(message.path("date").asLong()),
+                            KYIV_ZONE
                         );
 
                 if (messageTime.isBefore(request.getFrom())) {
 
                     reachedFromTime = true;
-
                     break;
                 }
 
@@ -164,26 +145,17 @@ public class TdLibHistoryRequestService {
                     continue;
                 }
 
-                request.getMessages().add(
-                        new TdHistoryMessage(
-                                messageId,
-                                messageTime,
-                                text
-                        )
-                );
+                request.getMessages()
+                    .add(new TdHistoryMessage(messageId, messageTime, text));
             }
 
             if (reachedFromTime) {
 
                 finishRequest(request);
-
                 return;
             }
 
-            requestHistoryPage(
-                    request,
-                    request.getOldestMessageId()
-            );
+            requestHistoryPage(request, request.getOldestMessageId());
 
         } catch (Exception e) {
 
@@ -224,44 +196,35 @@ public class TdLibHistoryRequestService {
     }
 
     private void failRequest(
-            HistoryRequest request,
-            Exception e
+        HistoryRequest request,
+        Exception e
     ) {
 
         if (request == null) {
-
             return;
         }
 
         activeRequests.remove(request.getRequestId());
-
-        request.getFuture()
-            .completeExceptionally(e);
+        request.getFuture().completeExceptionally(e);
     }
 
     private String extractText(JsonNode message) {
 
         JsonNode content = message.path("content");
-
-        String contentType =
-                content.path("@type").asText();
+        String contentType = content.path("@type").asText();
 
         if ("messageText".equals(contentType)) {
 
-            return content
-                    .path("text")
+            return content.path("text")
                     .path("text")
                     .asText("");
-
         }
 
         if ("messagePhoto".equals(contentType)) {
 
-            return content
-                    .path("caption")
+            return content.path("caption")
                     .path("text")
                     .asText("");
-
         }
 
         return "";
