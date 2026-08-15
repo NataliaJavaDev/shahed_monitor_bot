@@ -198,7 +198,7 @@ public class TdLibUpdateHandler {
                 analysisMessageFormatter.formatDebug(
                         analysis,
                         source.title(),
-                        text
+                        analysis.originalMessage()
                 )
             );
 
