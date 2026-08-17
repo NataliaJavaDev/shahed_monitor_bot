@@ -294,7 +294,7 @@ public class TdLibUpdateHandler {
             analysisMessageFormatter.formatDebug(
                 pending.analysis(),
                 pending.sourceTitle(),
-                pending.originalText()
+                pending.analysis().originalMessage()
             )
         );
     }

@@ -18,11 +18,21 @@ public class ThreatDetectorService {
     }
 
     public Optional<ThreatMatch> findThreat(String text) {
+
         if (text == null || text.isBlank()) {
             return Optional.empty();
         }
 
         String normalizedText = TextNormalizer.normalize(text);
+
+        // TODO:
+        // Тимчасово не пропускаємо локальні повідомлення
+        // до THREAT_DETECTED.
+        // Після реалізації повноцінної логіки GLOBAL_FORECAST
+        // цей фільтр потрібно переглянути.
+        if (containsLocalDirection(normalizedText)) {
+            return Optional.empty();
+        }
 
         return appProperties.monitor().messageIntents()
                 .stream()
@@ -39,5 +49,13 @@ public class ThreatDetectorService {
                         alias,
                         THREAT_CATEGORY
                 ));
+    }
+
+    private boolean containsLocalDirection(String text) {
+        return text.contains(" на ")
+            || text.contains(" над ")
+            || text.contains(" повз ")
+            || text.contains(" до ")
+            || text.contains(" курс на ");
     }
 }

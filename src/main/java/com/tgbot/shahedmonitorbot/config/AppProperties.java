@@ -2,6 +2,9 @@ package com.tgbot.shahedmonitorbot.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import com.tgbot.shahedmonitorbot.config.AppProperties.AlertApi;
+import com.tgbot.shahedmonitorbot.config.AppProperties.Tdlib;
+
 import java.util.List;
 
 @ConfigurationProperties(prefix = "app")
@@ -27,7 +30,8 @@ public record AppProperties(
         List<String> forecastMarkers,
         List<String> noiseMarkers,
         List<Source> sources,
-        List<String> ignoredChatIds
+        List<String> ignoredChatIds,
+        Integer duplicateTtlMinutes
     ) {
     }
 
