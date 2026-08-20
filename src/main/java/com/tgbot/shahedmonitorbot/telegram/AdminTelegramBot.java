@@ -70,7 +70,9 @@ public class AdminTelegramBot implements LongPollingUpdateConsumer {
             text
         );
 
-        if (chatId.toString().equals(properties.telegram().targetChannelId())) {
+        if (chatId.toString().equals(properties.telegram().targetChannelId())
+            || chatId.toString().equals(properties.telegram().debugChannelId())
+        ) {
             log.debug("Ignored message from target channel/group: {}", chatId);
             return;
         }
@@ -78,9 +80,7 @@ public class AdminTelegramBot implements LongPollingUpdateConsumer {
         adminCommandHandler.handle(userId, chatId.toString(), text);
     }
 
-    private void handleCallbackQuery(
-        CallbackQuery callbackQuery
-    ) {
+    private void handleCallbackQuery(CallbackQuery callbackQuery) {
 
         if (callbackQuery.getMessage() == null) {
             return;
@@ -90,6 +90,14 @@ public class AdminTelegramBot implements LongPollingUpdateConsumer {
         String chatId = callbackQuery.getMessage().getChatId().toString();
         Integer messageId = callbackQuery.getMessage().getMessageId();
         String callbackData = callbackQuery.getData();
+
+        if (chatId.equals(properties.telegram().targetChannelId())
+            || chatId.equals(properties.telegram().debugChannelId())
+        ) {
+
+            log.debug("Ignored callback from target/debug channel/group: {}", chatId);
+            return;
+        }
 
         if (callbackData == null || callbackData.isBlank()) {
             return;

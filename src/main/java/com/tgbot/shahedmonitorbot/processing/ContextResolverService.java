@@ -13,24 +13,25 @@ public class ContextResolverService {
     }
 
     public ContextResolution resolve(String chatId, MonitorMatch initialMatch) {
+        
         if (initialMatch.matchType() != MatchType.LOCATION_ONLY) {
             return new ContextResolution(initialMatch, false);
         }
 
         return eventContextService.getContext(chatId)
-                .filter(previous -> previous.targetCategory() != null)
-                .filter(previous -> !previous.targetCategory().isBlank())
-                .map(previous -> new ContextResolution(
-                        new MonitorMatch(
-                                previous.matchedTarget(),
-                                previous.targetCategory(),
-                                initialMatch.direction(),
-                                initialMatch.matchedLocation(),
-                                initialMatch.locationCategory(),
-                                MatchType.TARGET_AND_LOCATION
-                        ),
-                        true
-                ))
-                .orElse(new ContextResolution(initialMatch, false));
+            .filter(previous -> previous.targetCategory() != null)
+            .filter(previous -> !previous.targetCategory().isBlank())
+            .map(previous -> new ContextResolution(
+                    new MonitorMatch(
+                        previous.matchedTarget(),
+                        previous.targetCategory(),
+                        initialMatch.direction(),
+                        initialMatch.matchedLocation(),
+                        initialMatch.locationCategory(),
+                        MatchType.TARGET_AND_LOCATION
+                    ),
+                    true
+            ))
+            .orElse(new ContextResolution(initialMatch, false));
     }
 }

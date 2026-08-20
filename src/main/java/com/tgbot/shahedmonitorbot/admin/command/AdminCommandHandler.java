@@ -84,16 +84,12 @@ public class AdminCommandHandler {
         this.tdLibStatusService = tdLibStatusService;
     }
 
-    public void handle(
-            Long userId,
-            String chatId,
-            String text
-    ) {
+    public void handle(Long userId, String chatId, String text) {
 
         if (!accessService.isAdmin(userId)) {
             senderService.sendToChat(
-                    chatId,
-                    AdminMessage.NO_ACCESS.text()
+                chatId,
+                AdminMessage.NO_ACCESS.text()
             );
             return;
         }
@@ -104,15 +100,10 @@ public class AdminCommandHandler {
 
         text = normalizeCommand(text);
 
-        boolean isCommand =
-                AdminCommand.fromText(text) != null;
+        boolean isCommand = AdminCommand.fromText(text) != null;
+        boolean isButton = AdminButton.fromText(text) != null;
 
-        boolean isButton =
-                AdminButton.fromText(text) != null;
-
-        if (!isCommand
-                && !isButton
-                && handleSession(userId, chatId, text)) {
+        if (!isCommand && !isButton && handleSession(userId, chatId, text)) {
             return;
         }
 
@@ -146,96 +137,61 @@ public class AdminCommandHandler {
             return;
         }
 
-        if (callbackData == null
-                || callbackData.isBlank()) {
-            senderService.answerCallback(
-                    callbackQueryId,
-                    "Некоректна дія"
-            );
+        if (callbackData == null || callbackData.isBlank()) {
+
+            senderService.answerCallback(callbackQueryId, "Некоректна дія");
             return;
         }
 
-        if (callbackData.startsWith(
-                SOURCE_ENABLE_CALLBACK
-        )) {
-            String sourceId =
-                    callbackData.substring(
-                            SOURCE_ENABLE_CALLBACK.length()
-                    );
+        if (callbackData.startsWith(SOURCE_ENABLE_CALLBACK)) {
 
-            enableSource(
-                    chatId,
-                    messageId,
-                    callbackQueryId,
-                    sourceId
-            );
+            String sourceId = callbackData.substring(SOURCE_ENABLE_CALLBACK.length());
+
+            enableSource(chatId, messageId, callbackQueryId, sourceId);
             return;
         }
 
-        if (callbackData.startsWith(
-                SOURCE_IGNORE_CALLBACK
-        )) {
-            String sourceId =
-                    callbackData.substring(
-                            SOURCE_IGNORE_CALLBACK.length()
-                    );
+        if (callbackData.startsWith(SOURCE_IGNORE_CALLBACK)) {
 
-            ignoreSource(
-                    chatId,
-                    messageId,
-                    callbackQueryId,
-                    sourceId
-            );
+            String sourceId = callbackData.substring(SOURCE_IGNORE_CALLBACK.length());
+
+            ignoreSource(chatId, messageId, callbackQueryId, sourceId);
             return;
         }
 
-        senderService.answerCallback(
-                callbackQueryId,
-                "Невідома дія"
-        );
+        senderService.answerCallback(callbackQueryId, "Невідома дія");
     }
 
-    private boolean handleSession(
-            Long userId,
-            String chatId,
-            String text
-    ) {
+    private boolean handleSession(Long userId, String chatId, String text) {
 
-        AdminSessionState state =
-                sessionService.getState(userId);
+        AdminSessionState state = sessionService.getState(userId);
 
-        if (state
-                == AdminSessionState.WAITING_FOR_NEW_TARGET) {
+        if (state == AdminSessionState.WAITING_FOR_NEW_TARGET) {
             addTarget(userId, chatId, text);
             return true;
         }
 
-        if (state
-                == AdminSessionState.WAITING_FOR_REMOVE_TARGET) {
+        if (state == AdminSessionState.WAITING_FOR_REMOVE_TARGET) {
             removeTarget(userId, chatId, text);
             return true;
         }
 
-        if (state
-                == AdminSessionState.WAITING_FOR_NEW_LOCATION) {
+        if (state == AdminSessionState.WAITING_FOR_NEW_LOCATION) {
             addLocation(userId, chatId, text);
             return true;
         }
 
-        if (state
-                == AdminSessionState.WAITING_FOR_REMOVE_LOCATION) {
+        if (state == AdminSessionState.WAITING_FOR_REMOVE_LOCATION) {
             removeLocation(userId, chatId, text);
             return true;
         }
 
-        if (state
-                == AdminSessionState.WAITING_FOR_NEW_DIRECTION) {
+        if (state == AdminSessionState.WAITING_FOR_NEW_DIRECTION) {
             addDirection(userId, chatId, text);
             return true;
         }
 
-        if (state
-                == AdminSessionState.WAITING_FOR_REMOVE_DIRECTION) {
+        if (state == AdminSessionState.WAITING_FOR_REMOVE_DIRECTION) {
             removeDirection(userId, chatId, text);
             return true;
         }
@@ -243,14 +199,9 @@ public class AdminCommandHandler {
         return false;
     }
 
-    private boolean handleCommand(
-            Long userId,
-            String chatId,
-            String text
-    ) {
+    private boolean handleCommand(Long userId, String chatId, String text) {
 
-        AdminCommand command =
-                AdminCommand.fromText(text);
+        AdminCommand command = AdminCommand.fromText(text);
 
         if (command == null) {
             return false;
@@ -273,14 +224,9 @@ public class AdminCommandHandler {
         return false;
     }
 
-    private boolean handleButton(
-            Long userId,
-            String chatId,
-            String text
-    ) {
+    private boolean handleButton(Long userId, String chatId, String text) {
 
-        AdminButton button =
-                AdminButton.fromText(text);
+        AdminButton button = AdminButton.fromText(text);
 
         if (button == null) {
             return false;
@@ -483,14 +429,9 @@ public class AdminCommandHandler {
         );
     }
 
-    private void addTarget(
-            Long userId,
-            String chatId,
-            String target
-    ) {
+    private void addTarget(Long userId, String chatId, String target) {
 
-        boolean added =
-                targetAdminService.addTarget(target);
+        boolean added = targetAdminService.addTarget(target);
 
         sessionService.reset(userId);
 
@@ -507,14 +448,9 @@ public class AdminCommandHandler {
         }
     }
 
-    private void removeTarget(
-            Long userId,
-            String chatId,
-            String target
-    ) {
+    private void removeTarget(Long userId, String chatId, String target) {
 
-        boolean removed =
-                targetAdminService.removeTarget(target);
+        boolean removed = targetAdminService.removeTarget(target);
 
         sessionService.reset(userId);
 
@@ -531,14 +467,9 @@ public class AdminCommandHandler {
         }
     }
 
-    private void addLocation(
-            Long userId,
-            String chatId,
-            String location
-    ) {
+    private void addLocation(Long userId, String chatId, String location) {
 
-        boolean added =
-                locationAdminService.addLocation(location);
+        boolean added = locationAdminService.addLocation(location);
 
         sessionService.reset(userId);
 
@@ -555,14 +486,9 @@ public class AdminCommandHandler {
         }
     }
 
-    private void removeLocation(
-            Long userId,
-            String chatId,
-            String location
-    ) {
+    private void removeLocation(Long userId, String chatId, String location) {
 
-        boolean removed =
-                locationAdminService.removeLocation(location);
+        boolean removed = locationAdminService.removeLocation(location);
 
         sessionService.reset(userId);
 
@@ -579,10 +505,7 @@ public class AdminCommandHandler {
         }
     }
 
-    private void requestAddTarget(
-            Long userId,
-            String chatId
-    ) {
+    private void requestAddTarget(Long userId, String chatId) {
 
         sessionService.setState(
                 userId,
@@ -595,10 +518,7 @@ public class AdminCommandHandler {
         );
     }
 
-    private void requestRemoveTarget(
-            Long userId,
-            String chatId
-    ) {
+    private void requestRemoveTarget(Long userId, String chatId) {
 
         sessionService.setState(
                 userId,
@@ -611,10 +531,7 @@ public class AdminCommandHandler {
         );
     }
 
-    private void requestAddLocation(
-            Long userId,
-            String chatId
-    ) {
+    private void requestAddLocation(Long userId, String chatId) {
 
         sessionService.setState(
                 userId,
@@ -627,10 +544,7 @@ public class AdminCommandHandler {
         );
     }
 
-    private void requestRemoveLocation(
-            Long userId,
-            String chatId
-    ) {
+    private void requestRemoveLocation(Long userId, String chatId) {
 
         sessionService.setState(
                 userId,
@@ -643,11 +557,7 @@ public class AdminCommandHandler {
         );
     }
 
-    private void sendManualAlert(
-            String chatId,
-            ManualAlertType type,
-            AdminMessage successMessage
-    ) {
+    private void sendManualAlert(String chatId, ManualAlertType type, AdminMessage successMessage) {
 
         manualAlertService.sendAlert(type);
 
@@ -688,14 +598,9 @@ public class AdminCommandHandler {
         );
     }
 
-    private void addDirection(
-            Long userId,
-            String chatId,
-            String direction
-    ) {
+    private void addDirection(Long userId, String chatId, String direction) {
 
-        boolean added =
-                directionAdminService.addDirection(direction);
+        boolean added = directionAdminService.addDirection(direction);
 
         sessionService.reset(userId);
 
@@ -712,14 +617,9 @@ public class AdminCommandHandler {
         }
     }
 
-    private void removeDirection(
-            Long userId,
-            String chatId,
-            String direction
-    ) {
+    private void removeDirection(Long userId, String chatId, String direction) {
 
-        boolean removed =
-                directionAdminService.removeDirection(direction);
+        boolean removed = directionAdminService.removeDirection(direction);
 
         sessionService.reset(userId);
 
@@ -736,10 +636,7 @@ public class AdminCommandHandler {
         }
     }
 
-    private void requestAddDirection(
-            Long userId,
-            String chatId
-    ) {
+    private void requestAddDirection(Long userId, String chatId) {
 
         sessionService.setState(
                 userId,
@@ -752,10 +649,7 @@ public class AdminCommandHandler {
         );
     }
 
-    private void requestRemoveDirection(
-            Long userId,
-            String chatId
-    ) {
+    private void requestRemoveDirection(Long userId, String chatId) {
 
         sessionService.setState(
                 userId,
@@ -777,8 +671,7 @@ public class AdminCommandHandler {
 
     private void sendBotStatus(String chatId) {
 
-        boolean monitoringEnabled =
-                monitoringStateService.isMonitoringEnabled();
+        boolean monitoringEnabled = monitoringStateService.isMonitoringEnabled();
 
         String tdLibStatus =
                 tdLibStatusService.isReady()
@@ -853,8 +746,7 @@ public class AdminCommandHandler {
 
     private void sendActiveSources(String chatId) {
 
-        List<MonitoredSource> sources =
-                monitoredSourceService.getActiveSources();
+        List<MonitoredSource> sources = monitoredSourceService.getActiveSources();
 
         if (sources.isEmpty()) {
             senderService.sendToChat(
@@ -875,8 +767,7 @@ public class AdminCommandHandler {
              index < sources.size();
              index++) {
 
-            MonitoredSource source =
-                    sources.get(index);
+            MonitoredSource source = sources.get(index);
 
             String message = """
                     📡 Джерело %d/%d (активне)
@@ -907,8 +798,7 @@ public class AdminCommandHandler {
 
     private void sendNewSources(String chatId) {
 
-        List<UnknownSourceCandidate> candidates =
-                unknownSourceCandidateService.getAll();
+        List<UnknownSourceCandidate> candidates = unknownSourceCandidateService.getAll();
 
         if (candidates.isEmpty()) {
             senderService.sendToChat(
@@ -925,12 +815,9 @@ public class AdminCommandHandler {
                         + ")"
         );
 
-        for (int index = 0;
-             index < candidates.size();
-             index++) {
+        for (int index = 0; index < candidates.size(); index++) {
 
-            UnknownSourceCandidate candidate =
-                    candidates.get(index);
+            UnknownSourceCandidate candidate = candidates.get(index);
 
             String message = """
                     📡 Джерело %d/%d (нове)
@@ -971,8 +858,7 @@ public class AdminCommandHandler {
 
     private void sendIgnoredSources(String chatId) {
 
-        List<MonitoredSource> sources =
-                monitoredSourceService.getIgnoredSources();
+        List<MonitoredSource> sources = monitoredSourceService.getIgnoredSources();
 
         if (sources.isEmpty()) {
             senderService.sendToChat(
@@ -989,12 +875,9 @@ public class AdminCommandHandler {
                         + ")"
         );
 
-        for (int index = 0;
-             index < sources.size();
-             index++) {
+        for (int index = 0; index < sources.size(); index++) {
 
-            MonitoredSource source =
-                    sources.get(index);
+            MonitoredSource source = sources.get(index);
 
             String message = """
                     📡 Джерело %d/%d (ігнороване)
@@ -1024,27 +907,23 @@ public class AdminCommandHandler {
     }
 
     private void enableSource(
-            String adminChatId,
-            Integer messageId,
-            String callbackQueryId,
-            String sourceId
+        String adminChatId,
+        Integer messageId,
+        String callbackQueryId,
+        String sourceId
     ) {
 
-        UnknownSourceCandidate candidate =
-                unknownSourceCandidateService
-                        .findByChatId(sourceId);
+        UnknownSourceCandidate candidate = unknownSourceCandidateService.findByChatId(sourceId);
 
         /*
          * NEW → ACTIVE
          */
         if (candidate != null) {
 
-            boolean added =
-                    monitoredSourceService
-                            .addActiveSource(
-                                    candidate.chatId(),
-                                    candidate.title()
-                            );
+            boolean added = monitoredSourceService.addActiveSource(
+                candidate.chatId(),
+                candidate.title()
+            );
 
             if (added) {
 
@@ -1085,9 +964,7 @@ public class AdminCommandHandler {
         /*
          * IGNORED → ACTIVE
          */
-        MonitoredSource source =
-                monitoredSourceService
-                        .findByChatId(sourceId);
+        MonitoredSource source = monitoredSourceService.findByChatId(sourceId);
 
         if (source == null) {
             senderService.answerCallback(
@@ -1097,9 +974,7 @@ public class AdminCommandHandler {
             return;
         }
 
-        boolean enabled =
-                monitoredSourceService
-                        .enableSource(sourceId);
+        boolean enabled = monitoredSourceService.enableSource(sourceId);
 
         if (enabled) {
 
@@ -1145,21 +1020,17 @@ public class AdminCommandHandler {
             String sourceId
     ) {
 
-        UnknownSourceCandidate candidate =
-                unknownSourceCandidateService
-                        .findByChatId(sourceId);
+        UnknownSourceCandidate candidate = unknownSourceCandidateService.findByChatId(sourceId);
 
         /*
          * NEW → IGNORED
          */
         if (candidate != null) {
 
-            boolean added =
-                    monitoredSourceService
-                            .addIgnoredSource(
-                                    candidate.chatId(),
-                                    candidate.title()
-                            );
+            boolean added = monitoredSourceService.addIgnoredSource(
+                candidate.chatId(),
+                candidate.title()
+            );
 
             if (added) {
 
@@ -1200,9 +1071,7 @@ public class AdminCommandHandler {
         /*
          * ACTIVE → IGNORED
          */
-        MonitoredSource source =
-                monitoredSourceService
-                        .findByChatId(sourceId);
+        MonitoredSource source = monitoredSourceService.findByChatId(sourceId);
 
         if (source == null) {
             senderService.answerCallback(
@@ -1212,9 +1081,7 @@ public class AdminCommandHandler {
             return;
         }
 
-        boolean ignored =
-                monitoredSourceService
-                        .ignoreSource(sourceId);
+        boolean ignored = monitoredSourceService.ignoreSource(sourceId);
 
         if (ignored) {
 
@@ -1253,25 +1120,19 @@ public class AdminCommandHandler {
         );
     }
 
-    private InlineKeyboardMarkup singleButtonKeyboard(
-            String text,
-            String callbackData
-    ) {
+    private InlineKeyboardMarkup singleButtonKeyboard(String text, String callbackData) {
 
         InlineKeyboardButton button =
-                InlineKeyboardButton.builder()
-                        .text(text)
-                        .callbackData(callbackData)
-                        .build();
+            InlineKeyboardButton.builder()
+                .text(text)
+                .callbackData(callbackData)
+                .build();
 
-        InlineKeyboardRow row =
-                new InlineKeyboardRow();
+        InlineKeyboardRow row = new InlineKeyboardRow();
 
         row.add(button);
 
-        return InlineKeyboardMarkup.builder()
-                .keyboard(List.of(row))
-                .build();
+        return InlineKeyboardMarkup.builder().keyboard(List.of(row)).build();
     }
 
     private InlineKeyboardMarkup twoButtonKeyboard(
@@ -1282,31 +1143,26 @@ public class AdminCommandHandler {
     ) {
 
         InlineKeyboardButton firstButton =
-                InlineKeyboardButton.builder()
-                        .text(firstText)
-                        .callbackData(firstCallback)
-                        .build();
+            InlineKeyboardButton.builder()
+                .text(firstText)
+                .callbackData(firstCallback)
+                .build();
 
         InlineKeyboardButton secondButton =
-                InlineKeyboardButton.builder()
-                        .text(secondText)
-                        .callbackData(secondCallback)
-                        .build();
+            InlineKeyboardButton.builder()
+                .text(secondText)
+                .callbackData(secondCallback)
+                .build();
 
-        InlineKeyboardRow row =
-                new InlineKeyboardRow();
+        InlineKeyboardRow row = new InlineKeyboardRow();
 
         row.add(firstButton);
         row.add(secondButton);
 
-        return InlineKeyboardMarkup.builder()
-                .keyboard(List.of(row))
-                .build();
+        return InlineKeyboardMarkup.builder().keyboard(List.of(row)).build();
     }
 
-    private String formatInstant(
-            java.time.Instant instant
-    ) {
+    private String formatInstant(java.time.Instant instant) {
 
         if (instant == null) {
             return "невідомо";

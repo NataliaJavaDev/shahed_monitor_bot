@@ -21,10 +21,7 @@ public class ForecastDetectorService {
 
     public Optional<ForecastMatch> findForecast(String text) {
         return markerDetectorService
-                .findMatchedMarker(
-                        text,
-                        appProperties.monitor().forecastMarkers()
-                )
+                .findMatchedMarker(text, appProperties.monitor().forecastMarkers())
                 .map(ForecastMatch::new);
     }
 }

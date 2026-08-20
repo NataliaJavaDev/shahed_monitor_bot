@@ -167,17 +167,24 @@ public class TdLibUpdateHandler {
 
             if (content.photoFileId() != null) {
                 pendingPhotoMessageService.save(
-                        content.photoFileId(),
-                        new PendingPhotoMessage(
-                            chatId,
-                            source.title(),
-                            text,
-                            analysis
-                        )
+                    content.photoFileId(),
+                    new PendingPhotoMessage(
+                        chatId,
+                        source.title(),
+                        text,
+                        analysis
+                    )
                 );
 
                 tdLibClientService.downloadFile(content.photoFileId());
+                return;
+            }
 
+            if (analysis.intent() == MessageIntent.GLOBAL_THREAT
+                || analysis.intent() == MessageIntent.FORECAST
+            ) {
+
+                sendSpecialAnalysis(analysis, source.title());
                 return;
             }
 
@@ -232,7 +239,7 @@ public class TdLibUpdateHandler {
 
             return new TdMessageContent(text, photoFileId);
         }
-
+        
         return new TdMessageContent("", null);
     }
 
@@ -282,7 +289,6 @@ public class TdLibUpdateHandler {
         }
 
         JsonNode local = file.path("local");
-
         boolean downloaded = local.path("is_downloading_completed").asBoolean(false);
 
         if (!downloaded) {
@@ -298,13 +304,13 @@ public class TdLibUpdateHandler {
         pendingPhotoMessageService.remove(fileId);
 
         telegramSenderService.sendPhotoToChat(
-        appProperties.telegram().targetChannelId(),
-        localPath,
-        alertMessageFormatter.format(
+            appProperties.telegram().targetChannelId(),
+            localPath,
+            alertMessageFormatter.format(
                 pending.sourceTitle(),
                 pending.analysis().originalMessage()
-        )
-);
+            )
+        );
 
         telegramSenderService.sendPhotoToChat(
             appProperties.telegram().debugChannelId(),
@@ -314,6 +320,26 @@ public class TdLibUpdateHandler {
                 pending.sourceTitle(),
                 pending.chatId(),
                 pending.analysis().originalMessage()
+            )
+        );
+    }
+
+    private void sendSpecialAnalysis(MessageAnalysis analysis, String sourceTitle) {
+
+        telegramSenderService.sendToChat(
+            appProperties.telegram().targetChannelId(),
+            alertMessageFormatter.format(
+                sourceTitle,
+                analysis.originalMessage()
+            )
+        );
+
+        telegramSenderService.sendToChat(
+            appProperties.telegram().debugChannelId(),
+            analysisMessageFormatter.formatDebug(
+                analysis,
+                sourceTitle,
+                analysis.originalMessage()
             )
         );
     }
