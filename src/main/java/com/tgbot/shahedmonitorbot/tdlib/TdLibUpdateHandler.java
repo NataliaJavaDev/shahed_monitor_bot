@@ -7,7 +7,7 @@ import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.monitoring.source.ChatInfoService;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
 import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateService;
-// import com.tgbot.shahedmonitorbot.processing.AlertMessageFormatter;
+import com.tgbot.shahedmonitorbot.processing.AlertMessageFormatter;
 import com.tgbot.shahedmonitorbot.processing.MessageAnalysis;
 import com.tgbot.shahedmonitorbot.processing.MessageAnalysisService;
 import com.tgbot.shahedmonitorbot.processing.MessageIntent;
@@ -33,7 +33,7 @@ public class TdLibUpdateHandler {
     private final MonitoredSourceService monitoredSourceService;
     private final UnknownSourceCandidateService unknownSourceCandidateService;
     private final AnalysisMessageFormatter analysisMessageFormatter;
-    // private final AlertMessageFormatter alertMessageFormatter;
+    private final AlertMessageFormatter alertMessageFormatter;
     private final TelegramSenderService telegramSenderService;
     private final MessageAnalysisService messageAnalysisService;
     private final RecentMessageCacheService recentMessageCacheService;
@@ -47,7 +47,7 @@ public class TdLibUpdateHandler {
             MonitoredSourceService monitoredSourceService,
             UnknownSourceCandidateService unknownSourceCandidateService,
             AnalysisMessageFormatter analysisMessageFormatter,
-            // AlertMessageFormatter alertMessageFormatter,
+            AlertMessageFormatter alertMessageFormatter,
             TelegramSenderService telegramSenderService,
             MessageAnalysisService messageAnalysisService,
             RecentMessageCacheService recentMessageCacheService,
@@ -60,7 +60,7 @@ public class TdLibUpdateHandler {
         this.monitoredSourceService = monitoredSourceService;
         this.unknownSourceCandidateService = unknownSourceCandidateService;
         this.analysisMessageFormatter = analysisMessageFormatter;
-        // this.alertMessageFormatter = alertMessageFormatter;
+        this.alertMessageFormatter = alertMessageFormatter;
         this.telegramSenderService = telegramSenderService;
         this.messageAnalysisService = messageAnalysisService;
         this.recentMessageCacheService = recentMessageCacheService;
@@ -183,9 +183,18 @@ public class TdLibUpdateHandler {
 
             telegramSenderService.sendToChat(
                 appProperties.telegram().targetChannelId(),
-                analysisMessageFormatter.formatDebug(
+                alertMessageFormatter.format(
+                    source.title(),
+                    analysis.originalMessage()
+                )
+            );
+
+            telegramSenderService.sendToChat(
+                appProperties.telegram().debugChannelId(),
+                analysisMessageFormatter.format(
                     analysis,
                     source.title(),
+                    chatId,
                     analysis.originalMessage()
                 )
             );
@@ -289,11 +298,21 @@ public class TdLibUpdateHandler {
         pendingPhotoMessageService.remove(fileId);
 
         telegramSenderService.sendPhotoToChat(
-            appProperties.telegram().targetChannelId(),
+        appProperties.telegram().targetChannelId(),
+        localPath,
+        alertMessageFormatter.format(
+                pending.sourceTitle(),
+                pending.analysis().originalMessage()
+        )
+);
+
+        telegramSenderService.sendPhotoToChat(
+            appProperties.telegram().debugChannelId(),
             localPath,
-            analysisMessageFormatter.formatDebug(
+            analysisMessageFormatter.format(
                 pending.analysis(),
                 pending.sourceTitle(),
+                pending.chatId(),
                 pending.analysis().originalMessage()
             )
         );
