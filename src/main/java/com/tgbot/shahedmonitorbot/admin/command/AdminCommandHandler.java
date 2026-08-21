@@ -582,10 +582,7 @@ public class AdminCommandHandler {
     }
 
     private void sendAlertStatus(String chatId) {
-
-        senderService.sendToChat(chatId,
-            apiAlertStatusFormatter.format(airAlertApiService.getLastStatus())
-        );
+        senderService.sendToChat(chatId, apiAlertStatusFormatter.format(airAlertApiService.getLastStatus()));
     }
 
     private void sendActiveSources(String chatId) {
@@ -593,10 +590,7 @@ public class AdminCommandHandler {
         List<MonitoredSource> sources = monitoredSourceService.getActiveSources();
 
         if (sources.isEmpty()) {
-            senderService.sendToChat(
-                    chatId,
-                    "📡 Активних джерел поки немає."
-            );
+            senderService.sendToChat(chatId, "📡 Активних джерел поки немає.");
             return;
         }
 
@@ -708,12 +702,7 @@ public class AdminCommandHandler {
         }
     }
 
-    private void enableSource(
-        String adminChatId,
-        Integer messageId,
-        String callbackQueryId,
-        String sourceId
-    ) {
+    private void enableSource(String adminChatId, Integer messageId, String callbackQueryId, String sourceId) {
 
         UnknownSourceCandidate candidate = unknownSourceCandidateService.findByChatId(sourceId);
 
@@ -799,12 +788,7 @@ public class AdminCommandHandler {
         senderService.answerCallback(callbackQueryId, "Стан уже актуальний");
     }
 
-    private void ignoreSource(
-        String adminChatId,
-        Integer messageId,
-        String callbackQueryId,
-        String sourceId
-    ) {
+    private void ignoreSource(String adminChatId, Integer messageId, String callbackQueryId, String sourceId) {
 
         UnknownSourceCandidate candidate = unknownSourceCandidateService.findByChatId(sourceId);
 
@@ -897,12 +881,7 @@ public class AdminCommandHandler {
         return InlineKeyboardMarkup.builder().keyboard(List.of(row)).build();
     }
 
-    private InlineKeyboardMarkup twoButtonKeyboard(
-        String firstText,
-        String firstCallback,
-        String secondText,
-        String secondCallback
-    ) {
+    private InlineKeyboardMarkup twoButtonKeyboard(String firstText, String firstCallback, String secondText, String secondCallback) {
 
         InlineKeyboardButton firstButton = InlineKeyboardButton.builder().text(firstText).callbackData(firstCallback).build();
         InlineKeyboardButton secondButton = InlineKeyboardButton.builder().text(secondText).callbackData(secondCallback).build();
