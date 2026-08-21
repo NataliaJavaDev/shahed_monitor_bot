@@ -15,6 +15,7 @@ import com.tgbot.shahedmonitorbot.processing.RecentMessageCacheService;
 import com.tgbot.shahedmonitorbot.sender.AnalysisMessageFormatter;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import com.tgbot.shahedmonitorbot.tdlib.history.TdHistoryMessage;
+import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -39,6 +40,7 @@ public class TdLibUpdateHandler {
     private final RecentMessageCacheService recentMessageCacheService;
     private final PendingPhotoMessageService pendingPhotoMessageService;
     private final TdLibClientService tdLibClientService;
+    private final MonitoringStateService monitoringStateService;
 
     public TdLibUpdateHandler(
             ObjectMapper objectMapper,
@@ -52,7 +54,8 @@ public class TdLibUpdateHandler {
             MessageAnalysisService messageAnalysisService,
             RecentMessageCacheService recentMessageCacheService,
             PendingPhotoMessageService pendingPhotoMessageService,
-            TdLibClientService tdLibClientService
+            TdLibClientService tdLibClientService,
+            MonitoringStateService monitoringStateService
     ) {
         this.objectMapper = objectMapper;
         this.appProperties = appProperties;
@@ -66,6 +69,7 @@ public class TdLibUpdateHandler {
         this.recentMessageCacheService = recentMessageCacheService;
         this.pendingPhotoMessageService = pendingPhotoMessageService;
         this.tdLibClientService = tdLibClientService;
+        this.monitoringStateService = monitoringStateService;
     }
 
     public void handle(String update) {
@@ -166,8 +170,12 @@ public class TdLibUpdateHandler {
             }
 
             if (content.photoFileId() != null) {
-                pendingPhotoMessageService.save(
-                    content.photoFileId(),
+
+                if (!monitoringStateService.isMonitoringEnabled()) {
+                    return;
+                }
+
+                pendingPhotoMessageService.save(content.photoFileId(),
                     new PendingPhotoMessage(
                         chatId,
                         source.title(),
