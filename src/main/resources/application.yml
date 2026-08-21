@@ -773,7 +773,6 @@ app:
     api-key: ${UKRAINE_ALARM_API_KEY}
     alarm-region-id: ${ALARM_REGION_ID}
     high-risk-region-id: "711"
-    danger-region-ids: ${DANGER_REGION_IDS}
     polling-delay-ms: 30000
 
   tdlib:

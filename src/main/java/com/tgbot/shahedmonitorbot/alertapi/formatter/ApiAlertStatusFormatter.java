@@ -11,28 +11,22 @@ public class ApiAlertStatusFormatter {
         DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     public String format(ApiAlertStatus status) {
+
         StringBuilder builder = new StringBuilder();
 
         builder.append("📡 Статус тривоги\n\n");
 
         builder.append("Звичайна тривога по району: ")
-                .append(status.districtAlertActive() ? "є" : "немає")
-                .append("\n");
+            .append(status.districtAlertActive() ? "є" : "немає")
+            .append("\n");
 
         builder.append("Підвищена небезпека: ")
-                .append(status.activeDangerRegionNames().isEmpty() ? "немає" : "є")
-                .append("\n");
+            .append(status.highRiskActive() ? "є" : "немає")
+            .append("\n");
 
-        if (!status.activeDangerRegionNames().isEmpty()) {
-            builder.append("\nАктивні близькі регіони:\n");
-
-            for (String regionName : status.activeDangerRegionNames()) {
-                builder.append("• ").append(regionName).append("\n");
-            }
-        }
 
         builder.append("\nОстання перевірка API: ")
-                .append(status.checkedAt().format(DATE_TIME_FORMATTER));
+            .append(status.checkedAt().format(DATE_TIME_FORMATTER));
 
         return builder.toString();
     }

@@ -13,8 +13,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
 
 @Service
 public class AirAlertApiService {
@@ -26,18 +24,15 @@ public class AirAlertApiService {
     private final ManualAlertService manualAlertService;
     private final AlertLifecycleService alertLifecycleService;
 
-    private ApiAlertStatus lastStatus = new ApiAlertStatus(
-            false,
-            false,
-            List.of(),
-            LocalDateTime.now(KYIV_ZONE)
-    );
+    private ApiAlertStatus lastStatus = new ApiAlertStatus(false,
+        false,
+        LocalDateTime.now(KYIV_ZONE));
 
     public AirAlertApiService(
-            AirAlertApiClient client,
-            AppProperties properties,
-            ManualAlertService manualAlertService,
-            AlertLifecycleService alertLifecycleService
+        AirAlertApiClient client,
+        AppProperties properties,
+        ManualAlertService manualAlertService,
+        AlertLifecycleService alertLifecycleService
     ) {
         this.client = client;
         this.properties = properties;
@@ -48,6 +43,7 @@ public class AirAlertApiService {
     public void checkAlerts() {
         
         try {
+
             RegionAlertDto[] alerts = client.fetchAlerts();
 
             if (alerts == null) {
@@ -80,10 +76,7 @@ public class AirAlertApiService {
         }
     }
 
-    private void processDistrictAlertChange(
-        ApiAlertStatus previousStatus,
-        ApiAlertStatus currentStatus
-    ) {
+    private void processDistrictAlertChange(ApiAlertStatus previousStatus, ApiAlertStatus currentStatus) {
     
         boolean wasActive = previousStatus.districtAlertActive();
         boolean isActive = currentStatus.districtAlertActive();
@@ -95,25 +88,17 @@ public class AirAlertApiService {
         if (isActive) {
     
             updateMonitoringFromApi(ManualAlertType.ALERT);
-    
-            manualAlertService.sendApiAlert(
-                    ManualAlertType.ALERT
-            );
+            manualAlertService.sendApiAlert(ManualAlertType.ALERT);
     
             return;
         }
     
         updateMonitoringFromApi(ManualAlertType.ALL_CLEAR);
-    
-        manualAlertService.sendApiAlert(
-                ManualAlertType.ALL_CLEAR
-        );
+        manualAlertService.sendApiAlert(ManualAlertType.ALL_CLEAR);
     }
 
-    private void processHighRiskChange(
-            ApiAlertStatus previousStatus,
-            ApiAlertStatus currentStatus
-    ) {
+    private void processHighRiskChange(ApiAlertStatus previousStatus, ApiAlertStatus currentStatus) {
+
         boolean wasActive = previousStatus.highRiskActive();
         boolean isActive = currentStatus.highRiskActive();
 
@@ -121,93 +106,60 @@ public class AirAlertApiService {
          * HIGH_RISK надсилається тільки тоді,
          * коли активується громада з high-risk-region-id,
          * тобто 711.
-         *
-         * Зміни інших danger-region-ids
-         * повідомлень у групу не створюють.
          */
         if (!wasActive && isActive) {
-            manualAlertService.sendApiAlert(
-                    ManualAlertType.HIGH_RISK
-            );
+            manualAlertService.sendApiAlert(ManualAlertType.HIGH_RISK);
         }
     }
 
-    private void updateMonitoringFromApi(
-            ManualAlertType type
-    ) {
-
-        if (!alertLifecycleService.isApiControlEnabled()) {
-            return;
-        }
+    private void updateMonitoringFromApi(ManualAlertType type) {
 
         if (type == ManualAlertType.ALERT) {
-            alertLifecycleService
-                    .enableMonitoringFromApi();
+            alertLifecycleService.enableMonitoringFromApi();
             return;
         }
 
         if (type == ManualAlertType.ALL_CLEAR) {
-            alertLifecycleService
-                    .disableMonitoringFromApi();
+            alertLifecycleService.disableMonitoringFromApi();
         }
     }
 
     private ApiAlertStatus detectAlertStatus(RegionAlertDto[] alerts) {
+
         boolean districtAlertActive = Arrays.stream(alerts)
-                .anyMatch(alert ->
-                        properties.alertApi()
-                                .alarmRegionId()
-                                .equals(alert.regionId())
-                );
+            .anyMatch(alert ->
+                properties.alertApi()
+                    .alarmRegionId()
+                    .equals(alert.regionId())
+            );
 
         boolean highRiskActive = Arrays.stream(alerts)
-                .anyMatch(alert ->
-                        properties.alertApi()
-                                .highRiskRegionId()
-                                .equals(alert.regionId())
-                );
-
-        List<String> activeDangerRegionNames = Arrays.stream(alerts)
-                .filter(alert ->
-                        properties.alertApi()
-                                .dangerRegionIds()
-                                .contains(alert.regionId())
-                )
-                .map(RegionAlertDto::regionName)
-                .filter(regionName ->
-                        regionName != null && !regionName.isBlank()
-                )
-                .distinct()
-                .sorted(Comparator.naturalOrder())
-                .toList();
+            .anyMatch(alert ->
+                properties.alertApi()
+                    .highRiskRegionId()
+                    .equals(alert.regionId())
+            );
 
         return new ApiAlertStatus(
                 districtAlertActive,
                 highRiskActive,
-                activeDangerRegionNames,
                 LocalDateTime.now(KYIV_ZONE)
         );
     }
 
-    private boolean hasStatusChanged(
-            ApiAlertStatus previousStatus,
-            ApiAlertStatus currentStatus
-    ) {
+    private boolean hasStatusChanged(ApiAlertStatus previousStatus, ApiAlertStatus currentStatus) {
         return previousStatus.districtAlertActive()
                 != currentStatus.districtAlertActive()
                 || previousStatus.highRiskActive()
-                != currentStatus.highRiskActive()
-                || !previousStatus.activeDangerRegionNames()
-                        .equals(currentStatus.activeDangerRegionNames());
+                != currentStatus.highRiskActive();
     }
 
     private String formatStatusForLog(ApiAlertStatus status) {
+
         return "districtAlertActive="
                 + status.districtAlertActive()
                 + ", highRiskActive="
-                + status.highRiskActive()
-                + ", activeDangerRegions="
-                + status.activeDangerRegionNames();
+                + status.highRiskActive();
     }
 
     public ApiAlertStatus getLastStatus() {

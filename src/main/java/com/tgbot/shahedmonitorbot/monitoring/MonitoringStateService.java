@@ -1,104 +1,84 @@
 package com.tgbot.shahedmonitorbot.monitoring;
 
+import com.tgbot.shahedmonitorbot.enums.MonitoringControlMode;
 import org.springframework.stereotype.Service;
 
 @Service
 public class MonitoringStateService {
 
-    private volatile boolean apiControlEnabled = true;
+    private volatile MonitoringControlMode controlMode = MonitoringControlMode.AUTO;
+    private volatile boolean monitoringEnabled = false;
 
-    //  Стан, встановлений API тривог.
-
-    private volatile boolean apiMonitoringEnabled = false;
-
-    //  Аварійний ручний стан.
-
-    private volatile boolean manualMonitoringEnabled = false;
-
-    public boolean isApiControlEnabled() {
-        return apiControlEnabled;
-    }
-
-
-    //  Фінальний стан активного моніторингу.
-
+    /**
+     * Фінальний стан активного моніторингу.
+     */
     public boolean isMonitoringEnabled() {
-        return apiMonitoringEnabled || manualMonitoringEnabled;
+        return monitoringEnabled;
     }
 
-    public boolean isApiMonitoringEnabled() {
-        return apiMonitoringEnabled;
+    public MonitoringControlMode getControlMode() {
+        return controlMode;
     }
 
-    public boolean isManualMonitoringEnabled() {
-        return manualMonitoringEnabled;
+    public boolean isAutoMode() {
+        return controlMode == MonitoringControlMode.AUTO;
     }
 
-    public void enableApiControl() {
-        apiControlEnabled = true;
+    public boolean isManualMode() {
+        return controlMode == MonitoringControlMode.MANUAL;
     }
 
-    public void disableApiControl() {
-
-        apiControlEnabled = false;
-
-        //  Після вимкнення API-керування старий API-станне повинен утримувати моніторинг увімкненим.
-        apiMonitoringEnabled = false;
-    }
-
-    public void toggleApiControl() {
-
-        if (apiControlEnabled) {
-            disableApiControl();
-        } else {
-            enableApiControl();
-        }
-    }
-
+    /**
+     * API може керувати моніторингом тільки в AUTO.
+     */
     public void enableMonitoringFromApi() {
 
-        if (!apiControlEnabled) {
+        if (!isAutoMode()) {
             return;
         }
 
-        apiMonitoringEnabled = true;
+        monitoringEnabled = true;
     }
 
+    /**
+     * API може керувати моніторингом тільки в AUTO.
+     */
     public void disableMonitoringFromApi() {
 
-        if (!apiControlEnabled) {
+        if (!isAutoMode()) {
             return;
         }
 
-        apiMonitoringEnabled = false;
+        monitoringEnabled = false;
     }
 
+    /**
+     * Ручне ввімкнення переводить систему в MANUAL.
+     */
     public void enableMonitoringManually() {
-        manualMonitoringEnabled = true;
+
+        controlMode = MonitoringControlMode.MANUAL;
+        monitoringEnabled = true;
     }
 
+    /**
+     * Ручне вимкнення завжди повертає систему в AUTO.
+     */
     public void disableMonitoringManually() {
-        manualMonitoringEnabled = false;
-    }
 
-    public String getApiControlStatus() {
-        return apiControlEnabled ? "УВІМКНЕНО" : "ВИМКНЕНО";
+        monitoringEnabled = false;
+        controlMode = MonitoringControlMode.AUTO;
     }
 
     public String getMonitoringActivationSource() {
 
-        if (apiMonitoringEnabled && manualMonitoringEnabled) {
-            return "API + ручне керування";
+        if (!monitoringEnabled) {
+            return "неактивний";
         }
 
-        if (manualMonitoringEnabled) {
-            return "ручне керування";
-        }
-
-        if (apiMonitoringEnabled) {
-            return "API";
-        }
-
-        return "неактивний";
+        return switch (controlMode) {
+            case AUTO -> "API";
+            case MANUAL -> "ручне керування";
+        };
     }
 }

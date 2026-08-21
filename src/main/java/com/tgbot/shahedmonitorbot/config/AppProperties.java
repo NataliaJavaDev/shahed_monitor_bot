@@ -68,7 +68,6 @@ public record AppProperties(
             String apiKey,
             String alarmRegionId,
             String highRiskRegionId,
-            List<String> dangerRegionIds,
             Long pollingDelayMs
     ) {}
 
