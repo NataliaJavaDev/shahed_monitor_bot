@@ -227,19 +227,20 @@ public class TdLibUpdateHandler {
         String contentType = content.path("@type").asText();
 
         if ("messageText".equals(contentType)) {
-            String text = content.path("text").path("text").asText("");
 
+            String text = content.path("text").path("text").asText("");
             return new TdMessageContent(text, null);
         }
 
         if ("messagePhoto".equals(contentType)) {
+
             String text = content.path("caption").path("text").asText("");
             JsonNode sizes = content.path("photo").path("sizes");
             Integer photoFileId = findLargestPhotoFileId(sizes);
 
             return new TdMessageContent(text, photoFileId);
         }
-        
+
         return new TdMessageContent("", null);
     }
 
@@ -301,27 +302,36 @@ public class TdLibUpdateHandler {
             return;
         }
 
-        pendingPhotoMessageService.remove(fileId);
-
-        telegramSenderService.sendPhotoToChat(
-            appProperties.telegram().targetChannelId(),
+        boolean productionSent = telegramSenderService.sendPhotoToChat(appProperties.telegram().targetChannelId(),
             localPath,
-            alertMessageFormatter.format(
+            alertMessageFormatter.format(pending.sourceTitle(), pending.analysis().originalMessage())
+        );
+
+        boolean debugSent = telegramSenderService.sendPhotoToChat(appProperties.telegram().debugChannelId(),
+            localPath,
+            analysisMessageFormatter.formatDebug(pending.analysis(),
                 pending.sourceTitle(),
                 pending.analysis().originalMessage()
             )
         );
 
-        telegramSenderService.sendPhotoToChat(
-            appProperties.telegram().debugChannelId(),
-            localPath,
-            analysisMessageFormatter.format(
-                pending.analysis(),
-                pending.sourceTitle(),
-                pending.chatId(),
-                pending.analysis().originalMessage()
-            )
-        );
+        if (productionSent && debugSent) {
+
+            pendingPhotoMessageService.remove(fileId);
+
+            try {
+
+                java.nio.file.Files.deleteIfExists(java.nio.file.Path.of(localPath));
+                log.info("Downloaded Telegram photo deleted: {}", localPath);
+
+            } catch (Exception exception) {
+
+                log.error("Failed to delete downloaded Telegram photo: {}",
+                    localPath,
+                    exception
+                );
+            }
+        }
     }
 
     private void sendSpecialAnalysis(MessageAnalysis analysis, String sourceTitle) {
