@@ -16,11 +16,6 @@ public class MarkerDetectorService {
         }
 
         String normalizedText = TextNormalizer.normalize(text);
-
-        return markers.stream()
-                .filter(marker ->
-                    normalizedText.contains(TextNormalizer.normalize(marker))
-                )
-                .findFirst();
+        return markers.stream().filter(marker -> normalizedText.contains(TextNormalizer.normalize(marker))).findFirst();
     }
 }

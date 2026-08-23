@@ -9,10 +9,11 @@ import java.util.List;
 
 @ConfigurationProperties(prefix = "app")
 public record AppProperties(
-        Telegram telegram,
-        Monitor monitor,
-        AlertApi alertApi,
-        Tdlib tdlib
+    Telegram telegram,
+    Monitor monitor,
+    AlertApi alertApi,
+    Tdlib tdlib,
+    Dictionary dictionary
 ) {
 
     public record Telegram(
@@ -64,20 +65,24 @@ public record AppProperties(
     ) {}
 
     public record AlertApi(
-            String baseUrl,
-            String apiKey,
-            String alarmRegionId,
-            String highRiskRegionId,
-            Long pollingDelayMs
+        String baseUrl,
+        String apiKey,
+        String alarmRegionId,
+        String highRiskRegionId,
+        Long pollingDelayMs
     ) {}
 
     public record Tdlib(
-            Integer apiId,
-            String apiHash,
-            String phoneNumber,
-            String databaseDirectory,
-            String filesDirectory,
-            String libraryPath,
-            String authCode
+        Integer apiId,
+        String apiHash,
+        String phoneNumber,
+        String databaseDirectory,
+        String filesDirectory,
+        String libraryPath,
+        String authCode
+    ) {}
+
+    public record Dictionary(
+        String file
     ) {}
 }

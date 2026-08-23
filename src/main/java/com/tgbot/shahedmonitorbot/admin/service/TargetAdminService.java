@@ -17,14 +17,15 @@ public class TargetAdminService {
     private final Map<String, String> categoryToDisplayName = new LinkedHashMap<>();
 
     public TargetAdminService(AppProperties properties) {
+
         properties.monitor().targetCategories().forEach(category -> {
             String categoryName = category.category();
 
             categoryToDisplayName.put(
-                    categoryName,
-                    category.displayName() != null
-                            ? category.displayName()
-                            : categoryName
+                categoryName,
+                category.displayName() != null
+                    ? category.displayName()
+                    : categoryName
             );
 
             if (category.aliases() == null || category.aliases().isEmpty()) {
@@ -33,7 +34,7 @@ public class TargetAdminService {
             }
 
             category.aliases().forEach(alias ->
-                    addTarget(alias, categoryName)
+                addTarget(alias, categoryName)
             );
         });
     }
@@ -49,10 +50,7 @@ public class TargetAdminService {
     public List<String> getAliasesByCategory(String category) {
 
         String normalizedCategory = TextNormalizer.normalize(category);
-
-        return List.copyOf(
-                categoryToAliases.getOrDefault(normalizedCategory, List.of())
-        );
+        return List.copyOf(categoryToAliases.getOrDefault(normalizedCategory, List.of()));
     }
 
     public String getCategory(String target) {
@@ -70,18 +68,12 @@ public class TargetAdminService {
         String normalizedTarget = TextNormalizer.normalize(target);
         String normalizedCategory = TextNormalizer.normalize(category);
 
-        if (normalizedTarget.isBlank()
-                || normalizedCategory.isBlank()
-                || aliasToCategory.containsKey(normalizedTarget)
-        ) {
+        if (normalizedTarget.isBlank() || normalizedCategory.isBlank() || aliasToCategory.containsKey(normalizedTarget)) {
             return false;
         }
 
         aliasToCategory.put(normalizedTarget, normalizedCategory);
-
-        categoryToAliases
-                .computeIfAbsent(normalizedCategory, key -> new ArrayList<>())
-                .add(normalizedTarget);
+        categoryToAliases.computeIfAbsent(normalizedCategory, key -> new ArrayList<>()).add(normalizedTarget);
 
         return true;
     }
@@ -111,10 +103,6 @@ public class TargetAdminService {
     public String getDisplayName(String category) {
 
         String normalizedCategory = TextNormalizer.normalize(category);
-
-        return categoryToDisplayName.getOrDefault(
-                normalizedCategory,
-                normalizedCategory
-        );
+        return categoryToDisplayName.getOrDefault(normalizedCategory, normalizedCategory);
     }
 }

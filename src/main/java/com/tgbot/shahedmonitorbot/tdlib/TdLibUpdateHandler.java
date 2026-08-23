@@ -3,6 +3,7 @@ package com.tgbot.shahedmonitorbot.tdlib;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tgbot.shahedmonitorbot.admin.enums.SourceStatus;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.monitoring.source.ChatInfoService;
 import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
@@ -16,6 +17,7 @@ import com.tgbot.shahedmonitorbot.sender.AnalysisMessageFormatter;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import com.tgbot.shahedmonitorbot.tdlib.history.TdHistoryMessage;
 import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
+import com.tgbot.shahedmonitorbot.admin.enums.SourceStatus;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -155,7 +157,7 @@ public class TdLibUpdateHandler {
 
             unknownSourceCandidateService.remove(chatId);
 
-            if (!source.active()) {
+            if (source.status() != SourceStatus.ACTIVE) {
                 return;
             }
 

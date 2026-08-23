@@ -12,19 +12,17 @@ public class GlobalThreatDetectorService {
     private final AppProperties appProperties;
 
     public GlobalThreatDetectorService(
-            MarkerDetectorService markerDetectorService,
-            AppProperties appProperties
+        MarkerDetectorService markerDetectorService,
+        AppProperties appProperties
     ) {
         this.markerDetectorService = markerDetectorService;
         this.appProperties = appProperties;
     }
 
     public Optional<GlobalThreatMatch> findGlobalThreat(String text) {
-        return markerDetectorService
-                .findMatchedMarker(
-                        text,
-                        appProperties.monitor().globalThreatMarkers()
-                )
-                .map(GlobalThreatMatch::new);
+        return markerDetectorService.findMatchedMarker(
+            text,
+            appProperties.monitor().globalThreatMarkers()
+        ).map(GlobalThreatMatch::new);
     }
 }

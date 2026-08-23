@@ -1,43 +1,48 @@
 package com.tgbot.shahedmonitorbot.monitoring.source;
 
-import com.tgbot.shahedmonitorbot.config.AppProperties;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryJsonService;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryStorage;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DynamicConfig;
+import com.tgbot.shahedmonitorbot.admin.enums.SourceStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class MonitoredSourceService {
 
-    private final List<MonitoredSource> sources = new ArrayList<>();
+    private final DictionaryStorage storage;
+    private final DictionaryJsonService jsonService;
 
-    public MonitoredSourceService(AppProperties appProperties) {
-
-        var configuredSources = appProperties.monitor().sources();
-
-        if (configuredSources == null) {
-            return;
-        }
-
-        configuredSources.forEach(source ->
-                sources.add(new MonitoredSource(
-                    source.chatId(),
-                    source.title(),
-                    Boolean.TRUE.equals(source.active())
-                ))
-        );
+    public MonitoredSourceService(
+        DictionaryStorage storage,
+        DictionaryJsonService jsonService
+    ) {
+        this.storage = storage;
+        this.jsonService = jsonService;
     }
 
     public synchronized List<MonitoredSource> getAllSources() {
-        return List.copyOf(sources);
+
+        return List.copyOf(storage.get().sources());
     }
 
     public synchronized List<MonitoredSource> getActiveSources() {
-        return sources.stream().filter(MonitoredSource::active).toList();
+
+        return storage.get()
+            .sources()
+            .stream()
+            .filter(source -> source.status() == SourceStatus.ACTIVE)
+            .toList();
     }
 
     public synchronized List<MonitoredSource> getIgnoredSources() {
-        return sources.stream().filter(source -> !source.active()).toList();
+
+        return storage.get()
+            .sources()
+            .stream()
+            .filter(source -> source.status() == SourceStatus.IGNORED)
+            .toList();
     }
 
     public synchronized MonitoredSource findByChatId(String chatId) {
@@ -46,10 +51,12 @@ public class MonitoredSourceService {
             return null;
         }
 
-        return sources.stream()
-                .filter(source -> source.chatId().equals(chatId))
-                .findFirst()
-                .orElse(null);
+        return storage.get()
+            .sources()
+            .stream()
+            .filter(source -> source.chatId().equals(chatId))
+            .findFirst()
+            .orElse(null);
     }
 
     public synchronized boolean isKnown(String chatId) {
@@ -59,12 +66,12 @@ public class MonitoredSourceService {
     public synchronized boolean isMonitored(String chatId) {
 
         MonitoredSource source = findByChatId(chatId);
-        return source != null && source.active();
+        return source != null && source.status() == SourceStatus.ACTIVE;
     }
 
-    public synchronized boolean addSource(String chatId, String title, boolean active) {
+    public synchronized boolean addSource(String chatId, String title, SourceStatus status) {
 
-        if (chatId == null || chatId.isBlank()) {
+        if (chatId == null || chatId.isBlank() || status == null) {
             return false;
         }
 
@@ -72,54 +79,61 @@ public class MonitoredSourceService {
             return false;
         }
 
-        sources.add(new MonitoredSource(chatId, safeTitle(title), active));
+        List<MonitoredSource> sources = new java.util.ArrayList<>(storage.get().sources());
+
+        sources.add(new MonitoredSource(chatId, safeTitle(title), status));
+        replaceSources(sources);
+
         return true;
     }
 
-    public synchronized boolean addSource(String chatId, String title) {
-        return addSource(chatId, title, true);
-    }
-
     public synchronized boolean addActiveSource(String chatId, String title) {
-        return addSource(chatId, title, true);
+        return addSource(chatId, title, SourceStatus.ACTIVE);
     }
 
     public synchronized boolean addIgnoredSource(String chatId, String title) {
-        return addSource(chatId, title, false);
+        return addSource(chatId, title, SourceStatus.IGNORED);
     }
 
     public synchronized boolean enableSource(String chatId) {
-        return changeActiveState(chatId, true);
+        return changeStatus(chatId, SourceStatus.ACTIVE);
     }
 
     public synchronized boolean ignoreSource(String chatId) {
-        return changeActiveState(chatId, false);
+        return changeStatus(chatId, SourceStatus.IGNORED);
     }
 
-    private boolean changeActiveState(String chatId, boolean active) {
+    private boolean changeStatus(String chatId, SourceStatus status) {
+
+        List<MonitoredSource> sources = new java.util.ArrayList<>(storage.get().sources());
 
         for (int index = 0; index < sources.size(); index++) {
+
             MonitoredSource current = sources.get(index);
 
             if (!current.chatId().equals(chatId)) {
                 continue;
             }
 
-            if (current.active() == active) {
+            if (current.status() == status) {
                 return false;
             }
 
-            sources.set(index, new MonitoredSource(
-                                    current.chatId(),
-                                    current.title(),
-                                    active
-                                )
-            );
-
+            sources.set(index, new MonitoredSource(current.chatId(), current.title(), status));
+            replaceSources(sources);
+            
             return true;
         }
 
         return false;
+    }
+
+    private void replaceSources(List<MonitoredSource> sources) {
+
+        DynamicConfig current = storage.get();
+
+        storage.replace(new DynamicConfig(current.dictionaries(), List.copyOf(sources)));
+        jsonService.save();
     }
 
     private String safeTitle(String title) {

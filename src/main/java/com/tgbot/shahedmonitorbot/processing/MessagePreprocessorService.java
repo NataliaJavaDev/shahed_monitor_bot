@@ -33,19 +33,16 @@ public class MessagePreprocessorService {
 
         boolean tooLongForLocalAnalysis = cleanedText.length() > MAX_TEXT_LENGTH_FOR_LOCAL_ANALYSIS;
 
-        return new PreprocessedMessage(
-                cleanedText,
-                tooLongForLocalAnalysis
-        );
+        return new PreprocessedMessage(cleanedText, tooLongForLocalAnalysis);
     }
 
     private String cleanupCommonNoise(String text) {
 
         List<String> cleanedLines = Arrays.stream(text.split("\\R"))
-                .map(String::trim)
-                .filter(line -> !line.isBlank())
-                .filter(line -> !isCommonNoiseLine(line))
-                .toList();
+            .map(String::trim)
+            .filter(line -> !line.isBlank())
+            .filter(line -> !isCommonNoiseLine(line))
+            .toList();
 
         return TextNormalizer.normalize(
             String.join("\n", cleanedLines)
@@ -59,9 +56,9 @@ public class MessagePreprocessorService {
         return normalizedLine.startsWith("http://")
             || normalizedLine.startsWith("https://")
             || appProperties.monitor().noiseMarkers()
-                    .stream()
-                    .map(TextNormalizer::normalize)
-                    .anyMatch(normalizedLine::contains)
+                .stream()
+                .map(TextNormalizer::normalize)
+                .anyMatch(normalizedLine::contains)
             || normalizedLine.matches(".*\\b\\d{16}\\b.*");
     }
 }

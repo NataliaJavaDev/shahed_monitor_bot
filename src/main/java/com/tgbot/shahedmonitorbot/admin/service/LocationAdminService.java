@@ -16,6 +16,7 @@ public class LocationAdminService {
     private final Map<String, List<String>> categoryToAliases = new LinkedHashMap<>();
 
     public LocationAdminService(AppProperties properties) {
+
         properties.monitor().locationCategories().forEach(category -> {
             String categoryName = category.category();
 
@@ -24,9 +25,7 @@ public class LocationAdminService {
                 return;
             }
 
-            category.aliases().forEach(alias ->
-                    addLocation(alias, categoryName)
-            );
+            category.aliases().forEach(alias ->addLocation(alias, categoryName));
         });
     }
 
@@ -53,19 +52,12 @@ public class LocationAdminService {
         String normalizedLocation = TextNormalizer.normalize(location);
         String normalizedCategory = TextNormalizer.normalize(category);
 
-        if (
-                normalizedLocation.isBlank()
-                        || normalizedCategory.isBlank()
-                        || aliasToCategory.containsKey(normalizedLocation)
-        ) {
+        if (normalizedLocation.isBlank() || normalizedCategory.isBlank() || aliasToCategory.containsKey(normalizedLocation)) {
             return false;
         }
 
         aliasToCategory.put(normalizedLocation, normalizedCategory);
-
-        categoryToAliases
-                .computeIfAbsent(normalizedCategory, key -> new ArrayList<>())
-                .add(normalizedLocation);
+        categoryToAliases.computeIfAbsent(normalizedCategory, key -> new ArrayList<>()).add(normalizedLocation);
 
         return true;
     }
@@ -82,6 +74,7 @@ public class LocationAdminService {
         List<String> aliases = categoryToAliases.get(category);
 
         if (aliases != null) {
+            
             aliases.remove(normalizedLocation);
 
             if (aliases.isEmpty()) {

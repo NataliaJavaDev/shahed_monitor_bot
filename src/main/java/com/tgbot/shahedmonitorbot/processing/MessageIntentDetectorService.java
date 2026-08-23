@@ -12,14 +12,15 @@ public class MessageIntentDetectorService {
     private final AttentionWordAdminService attentionWordAdminService;
 
     public MessageIntentDetectorService(
-            AppProperties appProperties,
-            AttentionWordAdminService attentionWordAdminService
+        AppProperties appProperties,
+        AttentionWordAdminService attentionWordAdminService
     ) {
         this.appProperties = appProperties;
         this.attentionWordAdminService = attentionWordAdminService;
     }
 
     public MessageIntent detect(String text) {
+
         if (text == null || text.isBlank()) {
             return MessageIntent.UNKNOWN;
         }
@@ -31,12 +32,12 @@ public class MessageIntentDetectorService {
         String normalizedText = TextNormalizer.normalize(text);
 
         return appProperties.monitor().messageIntents()
-                .stream()
-                .filter(intentConfig -> matchesAnyAlias(normalizedText, intentConfig))
-                .map(AppProperties.MessageIntentConfig::intent)
-                .map(this::toMessageIntent)
-                .findFirst()
-                .orElse(MessageIntent.UNKNOWN);
+            .stream()
+            .filter(intentConfig -> matchesAnyAlias(normalizedText, intentConfig))
+            .map(AppProperties.MessageIntentConfig::intent)
+            .map(this::toMessageIntent)
+            .findFirst()
+            .orElse(MessageIntent.UNKNOWN);
     }
 
     private MessageIntent toMessageIntent(String value) {
@@ -52,18 +53,12 @@ public class MessageIntentDetectorService {
         }
     }
 
-    private boolean matchesAnyAlias(
-            String normalizedText,
-            AppProperties.MessageIntentConfig intentConfig
-    ) {
+    private boolean matchesAnyAlias(String normalizedText, AppProperties.MessageIntentConfig intentConfig) {
 
         if (intentConfig.aliases() == null || intentConfig.aliases().isEmpty()) {
             return false;
         }
 
-        return intentConfig.aliases()
-                .stream()
-                .map(TextNormalizer::normalize)
-                .anyMatch(normalizedText::contains);
+        return intentConfig.aliases().stream().map(TextNormalizer::normalize).anyMatch(normalizedText::contains);
     }
 }

@@ -4,6 +4,9 @@ app:
     target-channel-id: "${TARGET_CHANNEL_ID}"
     debug-channel-id: "${DEBUG_CHANNEL_ID}"
 
+  dictionary:
+    file: data/dictionaries.json
+
   monitor:
     duplicate-ttl-minutes: 5
     context-ttl: 15m

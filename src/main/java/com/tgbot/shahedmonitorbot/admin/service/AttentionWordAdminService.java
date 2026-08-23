@@ -16,6 +16,7 @@ public class AttentionWordAdminService {
     private final Map<String, List<String>> categoryToAliases = new LinkedHashMap<>();
 
     public AttentionWordAdminService(AppProperties properties) {
+
         properties.monitor().attentionWords().forEach(category -> {
             String categoryName = category.category();
 
@@ -24,9 +25,7 @@ public class AttentionWordAdminService {
                 return;
             }
 
-            category.aliases().forEach(alias ->
-                    addAttentionWord(alias, categoryName)
-            );
+            category.aliases().forEach(alias -> addAttentionWord(alias, categoryName));
         });
     }
 
@@ -47,9 +46,7 @@ public class AttentionWordAdminService {
     public boolean containsAttentionWord(String text) {
 
         String normalizedText = TextNormalizer.normalize(text);
-
-        return aliasToCategory.keySet().stream()
-                .anyMatch(normalizedText::contains);
+        return aliasToCategory.keySet().stream().anyMatch(normalizedText::contains);
     }
 
     public String findAttentionWord(String text) {
@@ -57,9 +54,9 @@ public class AttentionWordAdminService {
         String normalizedText = TextNormalizer.normalize(text);
 
         return aliasToCategory.keySet().stream()
-                .filter(normalizedText::contains)
-                .findFirst()
-                .orElse(null);
+            .filter(normalizedText::contains)
+            .findFirst()
+            .orElse(null);
     }
 
     public boolean addAttentionWord(String attentionWord) {
@@ -71,19 +68,12 @@ public class AttentionWordAdminService {
         String normalizedAttentionWord = TextNormalizer.normalize(attentionWord);
         String normalizedCategory = TextNormalizer.normalize(category);
 
-        if (
-                normalizedAttentionWord.isBlank()
-                        || normalizedCategory.isBlank()
-                        || aliasToCategory.containsKey(normalizedAttentionWord)
-        ) {
+        if (normalizedAttentionWord.isBlank() || normalizedCategory.isBlank() || aliasToCategory.containsKey(normalizedAttentionWord)) {
             return false;
         }
 
         aliasToCategory.put(normalizedAttentionWord, normalizedCategory);
-
-        categoryToAliases
-                .computeIfAbsent(normalizedCategory, key -> new ArrayList<>())
-                .add(normalizedAttentionWord);
+        categoryToAliases.computeIfAbsent(normalizedCategory, key -> new ArrayList<>()).add(normalizedAttentionWord);
 
         return true;
     }

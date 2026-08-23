@@ -28,31 +28,28 @@ public class UnknownSourceCandidateService {
 
             if (existing == null) {
                 return new UnknownSourceCandidate(
-                        id,
-                        safeTitle(title),
-                        safeText(text),
-                        now,
-                        now
+                    id,
+                    safeTitle(title),
+                    safeText(text),
+                    now,
+                    now
                 );
             }
 
             return new UnknownSourceCandidate(
-                    existing.chatId(),
-                    safeTitle(title),
-                    safeText(text),
-                    existing.firstSeenAt(),
-                    now
+                existing.chatId(),
+                safeTitle(title),
+                safeText(text),
+                existing.firstSeenAt(),
+                now
             );
         });
     }
 
     public List<UnknownSourceCandidate> getAll() {
         return candidates.values().stream()
-                .sorted(
-                        (first, second) ->
-                            second.lastSeenAt().compareTo(first.lastSeenAt())
-                )
-                .toList();
+            .sorted((first, second) -> second.lastSeenAt().compareTo(first.lastSeenAt()))
+            .toList();
     }
 
     public UnknownSourceCandidate findByChatId(String chatId) {
@@ -88,7 +85,7 @@ public class UnknownSourceCandidateService {
         }
 
         return text.length() > 220
-                ? text.substring(0, 220) + "..."
-                : text;
+            ? text.substring(0, 220) + "..."
+            : text;
     }
 }

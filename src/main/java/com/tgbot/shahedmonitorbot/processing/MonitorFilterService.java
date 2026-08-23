@@ -16,10 +16,10 @@ public class MonitorFilterService {
     private final AttentionWordAdminService attentionWordAdminService;
 
     public MonitorFilterService(
-            TargetAdminService targetAdminService,
-            LocationAdminService locationAdminService,
-            DirectionAdminService directionAdminService,
-            AttentionWordAdminService attentionWordAdminService
+        TargetAdminService targetAdminService,
+        LocationAdminService locationAdminService,
+        DirectionAdminService directionAdminService,
+        AttentionWordAdminService attentionWordAdminService
     ) {
         this.targetAdminService = targetAdminService;
         this.locationAdminService = locationAdminService;
@@ -40,24 +40,23 @@ public class MonitorFilterService {
 
         if (matchedTarget != null && matchedLocation != null) {
             return Optional.of(new MonitorMatch(
-                    matchedTarget,
-                    targetAdminService.getCategory(matchedTarget),
-                    null,
-                    matchedLocation,
-                    locationAdminService.getCategory(matchedLocation),
-                    MatchType.TARGET_AND_LOCATION
+                matchedTarget,
+                targetAdminService.getCategory(matchedTarget),
+                null,
+                matchedLocation,
+                locationAdminService.getCategory(matchedLocation),
+                MatchType.TARGET_AND_LOCATION
             ));
         }
 
-        if (matchedLocation != null
-                && (isOnlyLocation(normalizedText, matchedLocation) || hasAttentionWord)) {
+        if (matchedLocation != null && (isOnlyLocation(normalizedText, matchedLocation) || hasAttentionWord)) {
             return Optional.of(new MonitorMatch(
-                    null,
-                    null,
-                    null,
-                    matchedLocation,
-                    locationAdminService.getCategory(matchedLocation),
-                    MatchType.LOCATION_ONLY
+                null,
+                null,
+                null,
+                matchedLocation,
+                locationAdminService.getCategory(matchedLocation),
+                MatchType.LOCATION_ONLY
             ));
         }
 
@@ -65,12 +64,12 @@ public class MonitorFilterService {
 
         if (matchedDirection != null && matchedLocation != null) {
             return Optional.of(new MonitorMatch(
-                    null,
-                    null,
-                    matchedDirection,
-                    matchedLocation,
-                    locationAdminService.getCategory(matchedLocation),
-                    MatchType.DIRECTION_AND_LOCATION
+                null,
+                null,
+                matchedDirection,
+                matchedLocation,
+                locationAdminService.getCategory(matchedLocation),
+                MatchType.DIRECTION_AND_LOCATION
             ));
         }
 
@@ -90,10 +89,8 @@ public class MonitorFilterService {
         String normalizedLocation = TextNormalizer.normalize(matchedLocation);
 
         return directionAdminService.getDirections()
-                .stream()
-                .filter(direction ->
-                        normalizedText.equals(direction + " " + normalizedLocation)
-                )
+            .stream()
+            .filter(direction -> normalizedText.equals(direction + " " + normalizedLocation))
                 .findFirst()
                 .orElse(null);
     }
@@ -104,9 +101,6 @@ public class MonitorFilterService {
             return null;
         }
 
-        return values.stream()
-                .filter(normalizedText::contains)
-                .findFirst()
-                .orElse(null);
+        return values.stream().filter(normalizedText::contains).findFirst().orElse(null);
     }
 }

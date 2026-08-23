@@ -12,16 +12,14 @@ public class ForecastDetectorService {
     private final AppProperties appProperties;
 
     public ForecastDetectorService(
-            MarkerDetectorService markerDetectorService,
-            AppProperties appProperties
+        MarkerDetectorService markerDetectorService,
+        AppProperties appProperties
     ) {
         this.markerDetectorService = markerDetectorService;
         this.appProperties = appProperties;
     }
 
     public Optional<ForecastMatch> findForecast(String text) {
-        return markerDetectorService
-                .findMatchedMarker(text, appProperties.monitor().forecastMarkers())
-                .map(ForecastMatch::new);
+        return markerDetectorService.findMatchedMarker(text, appProperties.monitor().forecastMarkers()).map(ForecastMatch::new);
     }
 }
