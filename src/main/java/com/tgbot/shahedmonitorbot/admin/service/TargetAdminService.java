@@ -1,108 +1,191 @@
 package com.tgbot.shahedmonitorbot.admin.service;
 
-import com.tgbot.shahedmonitorbot.config.AppProperties;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryCategory;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryConfig;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryJsonService;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryStorage;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DynamicConfig;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class TargetAdminService {
 
-    private final Map<String, String> aliasToCategory = new LinkedHashMap<>();
-    private final Map<String, List<String>> categoryToAliases = new LinkedHashMap<>();
-    private final Map<String, String> categoryToDisplayName = new LinkedHashMap<>();
+    private final DictionaryStorage storage;
+    private final DictionaryJsonService jsonService;
 
-    public TargetAdminService(AppProperties properties) {
-
-        properties.monitor().targetCategories().forEach(category -> {
-            String categoryName = category.category();
-
-            categoryToDisplayName.put(
-                categoryName,
-                category.displayName() != null
-                    ? category.displayName()
-                    : categoryName
-            );
-
-            if (category.aliases() == null || category.aliases().isEmpty()) {
-                addTarget(categoryName, categoryName);
-                return;
-            }
-
-            category.aliases().forEach(alias ->
-                addTarget(alias, categoryName)
-            );
-        });
+    public TargetAdminService(
+        DictionaryStorage storage,
+        DictionaryJsonService jsonService
+    ) {
+        this.storage = storage;
+        this.jsonService = jsonService;
     }
 
-    public List<String> getTargets() {
-        return List.copyOf(aliasToCategory.keySet());
+    public synchronized List<String> getTargets() {
+
+        return storage.get()
+            .dictionaries()
+            .targets()
+            .stream()
+            .flatMap(category -> category.aliases().stream())
+            .toList();
     }
 
-    public List<String> getCategories() {
-        return List.copyOf(categoryToAliases.keySet());
+    public synchronized List<String> getCategories() {
+
+        return storage.get()
+            .dictionaries()
+            .targets()
+            .stream()
+            .map(DictionaryCategory::category)
+            .toList();
     }
 
-    public List<String> getAliasesByCategory(String category) {
+    public synchronized List<String> getAliasesByCategory(String category) {
 
         String normalizedCategory = TextNormalizer.normalize(category);
-        return List.copyOf(categoryToAliases.getOrDefault(normalizedCategory, List.of()));
+
+        return storage.get()
+            .dictionaries()
+            .targets()
+            .stream()
+            .filter(item -> TextNormalizer.normalize(item.category()).equals(normalizedCategory))
+            .findFirst()
+            .map(DictionaryCategory::aliases)
+            .map(List::copyOf)
+            .orElse(List.of());
     }
 
-    public String getCategory(String target) {
+    public synchronized String getCategory(String target) {
 
         String normalizedTarget = TextNormalizer.normalize(target);
-        return aliasToCategory.getOrDefault(normalizedTarget, normalizedTarget);
+
+        return storage.get()
+            .dictionaries()
+            .targets()
+            .stream()
+            .filter(category -> category.aliases()
+                .stream()
+                .map(TextNormalizer::normalize)
+                .anyMatch(normalizedTarget::equals)
+            )
+            .map(DictionaryCategory::category)
+            .findFirst()
+            .orElse(normalizedTarget);
     }
 
-    public boolean addTarget(String target) {
+    public synchronized boolean addTarget(String target) {
         return addTarget(target, target);
     }
 
-    public boolean addTarget(String target, String category) {
+    public synchronized boolean addTarget(String target, String category) {
 
         String normalizedTarget = TextNormalizer.normalize(target);
         String normalizedCategory = TextNormalizer.normalize(category);
 
-        if (normalizedTarget.isBlank() || normalizedCategory.isBlank() || aliasToCategory.containsKey(normalizedTarget)) {
+        if (normalizedTarget.isBlank() || normalizedCategory.isBlank()) {
             return false;
         }
 
-        aliasToCategory.put(normalizedTarget, normalizedCategory);
-        categoryToAliases.computeIfAbsent(normalizedCategory, key -> new ArrayList<>()).add(normalizedTarget);
+        List<DictionaryCategory> categories = new ArrayList<>(storage.get().dictionaries().targets());
+
+        boolean targetExists = categories.stream().anyMatch(item -> item.aliases()
+            .stream()
+            .map(TextNormalizer::normalize)
+            .anyMatch(normalizedTarget::equals)
+        );
+
+        if (targetExists) {
+            return false;
+        }
+
+        for (int index = 0; index < categories.size(); index++) {
+
+            DictionaryCategory current = categories.get(index);
+
+            if (!TextNormalizer.normalize(current.category()).equals(normalizedCategory)) {
+                continue;
+            }
+
+            List<String> aliases = new ArrayList<>(current.aliases());
+
+            aliases.add(normalizedTarget);
+            categories.set(index, new DictionaryCategory(current.category(), current.displayName(), List.copyOf(aliases)));
+            replaceTargets(categories);
+            return true;
+        }
+
+        categories.add(new DictionaryCategory(normalizedCategory, normalizedCategory, List.of(normalizedTarget)));
+        replaceTargets(categories);
 
         return true;
     }
 
-    public boolean removeTarget(String target) {
+    public synchronized boolean removeTarget(String target) {
 
         String normalizedTarget = TextNormalizer.normalize(target);
-        String category = aliasToCategory.remove(normalizedTarget);
 
-        if (category == null) {
-            return false;
-        }
+        List<DictionaryCategory> categories = new ArrayList<>(storage.get().dictionaries().targets());
 
-        List<String> aliases = categoryToAliases.get(category);
+        for (int index = 0; index < categories.size(); index++) {
 
-        if (aliases != null) {
-            aliases.remove(normalizedTarget);
+            DictionaryCategory current = categories.get(index);
+            List<String> aliases = new ArrayList<>(current.aliases());
+            boolean removed = aliases.removeIf(alias -> TextNormalizer.normalize(alias).equals(normalizedTarget));
+
+            if (!removed) {
+                continue;
+            }
 
             if (aliases.isEmpty()) {
-                categoryToAliases.remove(category);
+                categories.remove(index);
+            } else {
+                categories.set(index, new DictionaryCategory(current.category(), current.displayName(), List.copyOf(aliases)));
             }
+
+            replaceTargets(categories);
+            return true;
         }
 
-        return true;
+        return false;
     }
 
-    public String getDisplayName(String category) {
+    public synchronized String getDisplayName(String category) {
 
         String normalizedCategory = TextNormalizer.normalize(category);
-        return categoryToDisplayName.getOrDefault(normalizedCategory, normalizedCategory);
+
+        return storage.get()
+            .dictionaries()
+            .targets()
+            .stream()
+            .filter(item -> TextNormalizer.normalize(item.category()).equals(normalizedCategory))
+            .map(DictionaryCategory::displayName)
+            .filter(displayName -> displayName != null && !displayName.isBlank())
+            .findFirst()
+            .orElse(normalizedCategory);
+    }
+
+    private void replaceTargets(List<DictionaryCategory> targets) {
+
+        DynamicConfig current = storage.get();
+        DictionaryConfig currentDictionaries = current.dictionaries();
+
+        DictionaryConfig updatedDictionaries = new DictionaryConfig(
+            List.copyOf(targets),
+            currentDictionaries.locations(),
+            currentDictionaries.directions(),
+            currentDictionaries.attention(),
+            currentDictionaries.globalThreat(),
+            currentDictionaries.forecast(),
+            currentDictionaries.noise(),
+            currentDictionaries.messageIntents()
+        );
+
+        storage.replace(new DynamicConfig(updatedDictionaries, current.sources()));
+        jsonService.save();
     }
 }

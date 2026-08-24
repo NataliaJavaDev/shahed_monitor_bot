@@ -1,6 +1,9 @@
 package com.tgbot.shahedmonitorbot.admin.service;
 
-import com.tgbot.shahedmonitorbot.config.AppProperties;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryConfig;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryJsonService;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryStorage;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DynamicConfig;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;
 import org.springframework.stereotype.Service;
 
@@ -10,31 +13,72 @@ import java.util.List;
 @Service
 public class DirectionAdminService {
 
-    private final List<String> directions = new ArrayList<>();
+    private final DictionaryStorage storage;
+    private final DictionaryJsonService jsonService;
 
-    public DirectionAdminService(AppProperties properties) {
-        properties.monitor().directions().forEach(this::addDirection);
+    public DirectionAdminService(
+        DictionaryStorage storage,
+        DictionaryJsonService jsonService
+    ) {
+        this.storage = storage;
+        this.jsonService = jsonService;
     }
 
-    public List<String> getDirections() {
-        return List.copyOf(directions);
+    public synchronized List<String> getDirections() {
+        return List.copyOf(storage.get().dictionaries().directions());
     }
 
-    public boolean addDirection(String direction) {
+    public synchronized boolean addDirection(String direction) {
 
         String normalized = TextNormalizer.normalize(direction);
 
-        if (normalized.isBlank() || directions.contains(normalized)) {
+        if (normalized.isBlank()) {
+            return false;
+        }
+
+        List<String> directions = new ArrayList<>(storage.get().dictionaries().directions());
+
+        if (directions.contains(normalized)) {
             return false;
         }
 
         directions.add(normalized);
+        replaceDirections(directions);
+
         return true;
     }
 
-    public boolean removeDirection(String direction) {
-        
+    public synchronized boolean removeDirection(String direction) {
+
         String normalized = TextNormalizer.normalize(direction);
-        return directions.remove(normalized);
+        List<String> directions = new ArrayList<>(storage.get().dictionaries().directions());
+
+        if (!directions.remove(normalized)) {
+            return false;
+        }
+
+        replaceDirections(directions);
+
+        return true;
+    }
+
+    private void replaceDirections(List<String> directions) {
+
+        DynamicConfig current = storage.get();
+        DictionaryConfig currentDictionaries = current.dictionaries();
+
+        DictionaryConfig updatedDictionaries = new DictionaryConfig(
+            currentDictionaries.targets(),
+            currentDictionaries.locations(),
+            List.copyOf(directions),
+            currentDictionaries.attention(),
+            currentDictionaries.globalThreat(),
+            currentDictionaries.forecast(),
+            currentDictionaries.noise(),
+            currentDictionaries.messageIntents()
+        );
+
+        storage.replace(new DynamicConfig(updatedDictionaries, current.sources()));
+        jsonService.save();
     }
 }

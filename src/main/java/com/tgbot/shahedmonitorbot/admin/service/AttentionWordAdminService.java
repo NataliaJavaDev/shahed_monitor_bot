@@ -1,102 +1,183 @@
 package com.tgbot.shahedmonitorbot.admin.service;
 
-import com.tgbot.shahedmonitorbot.config.AppProperties;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryCategory;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryConfig;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryJsonService;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryStorage;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DynamicConfig;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class AttentionWordAdminService {
 
-    private final Map<String, String> aliasToCategory = new LinkedHashMap<>();
-    private final Map<String, List<String>> categoryToAliases = new LinkedHashMap<>();
+    private final DictionaryStorage storage;
+    private final DictionaryJsonService jsonService;
 
-    public AttentionWordAdminService(AppProperties properties) {
-
-        properties.monitor().attentionWords().forEach(category -> {
-            String categoryName = category.category();
-
-            if (category.aliases() == null || category.aliases().isEmpty()) {
-                addAttentionWord(categoryName, categoryName);
-                return;
-            }
-
-            category.aliases().forEach(alias -> addAttentionWord(alias, categoryName));
-        });
+    public AttentionWordAdminService(
+        DictionaryStorage storage,
+        DictionaryJsonService jsonService
+    ) {
+        this.storage = storage;
+        this.jsonService = jsonService;
     }
 
-    public List<String> getAttentionWords() {
-        return List.copyOf(aliasToCategory.keySet());
+    public synchronized List<String> getAttentionWords() {
+
+        return storage.get()
+            .dictionaries()
+            .attention()
+            .stream()
+            .flatMap(category -> category.aliases().stream())
+            .toList();
     }
 
-    public List<String> getCategories() {
-        return List.copyOf(categoryToAliases.keySet());
+    public synchronized List<String> getCategories() {
+
+        return storage.get()
+            .dictionaries()
+            .attention()
+            .stream()
+            .map(DictionaryCategory::category)
+            .toList();
     }
 
-    public String getCategory(String attentionWord) {
+    public synchronized String getCategory(String attentionWord) {
 
         String normalizedAttentionWord = TextNormalizer.normalize(attentionWord);
-        return aliasToCategory.getOrDefault(normalizedAttentionWord, normalizedAttentionWord);
+
+        return storage.get()
+            .dictionaries()
+            .attention()
+            .stream()
+            .filter(category -> category.aliases()
+                .stream()
+                .map(TextNormalizer::normalize)
+                .anyMatch(normalizedAttentionWord::equals)
+            )
+            .map(DictionaryCategory::category)
+            .findFirst()
+            .orElse(normalizedAttentionWord);
     }
 
-    public boolean containsAttentionWord(String text) {
+    public synchronized boolean containsAttentionWord(String text) {
 
         String normalizedText = TextNormalizer.normalize(text);
-        return aliasToCategory.keySet().stream().anyMatch(normalizedText::contains);
+
+        return getAttentionWords()
+            .stream()
+            .map(TextNormalizer::normalize)
+            .anyMatch(normalizedText::contains);
     }
 
-    public String findAttentionWord(String text) {
+    public synchronized String findAttentionWord(String text) {
 
         String normalizedText = TextNormalizer.normalize(text);
 
-        return aliasToCategory.keySet().stream()
+        return getAttentionWords()
+            .stream()
             .filter(normalizedText::contains)
             .findFirst()
             .orElse(null);
     }
 
-    public boolean addAttentionWord(String attentionWord) {
+    public synchronized boolean addAttentionWord(String attentionWord) {
         return addAttentionWord(attentionWord, attentionWord);
     }
 
-    public boolean addAttentionWord(String attentionWord, String category) {
+    public synchronized boolean addAttentionWord(String attentionWord, String category) {
 
         String normalizedAttentionWord = TextNormalizer.normalize(attentionWord);
         String normalizedCategory = TextNormalizer.normalize(category);
 
-        if (normalizedAttentionWord.isBlank() || normalizedCategory.isBlank() || aliasToCategory.containsKey(normalizedAttentionWord)) {
+        if (normalizedAttentionWord.isBlank() || normalizedCategory.isBlank()) {
             return false;
         }
 
-        aliasToCategory.put(normalizedAttentionWord, normalizedCategory);
-        categoryToAliases.computeIfAbsent(normalizedCategory, key -> new ArrayList<>()).add(normalizedAttentionWord);
+        List<DictionaryCategory> categories = new ArrayList<>(storage.get().dictionaries().attention());
+
+        boolean wordExists = categories.stream().anyMatch(item -> item.aliases()
+            .stream()
+            .map(TextNormalizer::normalize)
+            .anyMatch(normalizedAttentionWord::equals)
+        );
+
+        if (wordExists) {
+            return false;
+        }
+
+        for (int index = 0; index < categories.size(); index++) {
+
+            DictionaryCategory current = categories.get(index);
+
+            if (!TextNormalizer.normalize(current.category()).equals(normalizedCategory)) {
+                continue;
+            }
+
+            List<String> aliases = new ArrayList<>(current.aliases());
+
+            aliases.add(normalizedAttentionWord);
+            categories.set(index, new DictionaryCategory(current.category(), current.displayName(), List.copyOf(aliases)));
+            replaceAttention(categories);
+
+            return true;
+        }
+
+        categories.add(new DictionaryCategory(normalizedCategory, null, List.of(normalizedAttentionWord)));
+        replaceAttention(categories);
 
         return true;
     }
 
-    public boolean removeAttentionWord(String attentionWord) {
+    public synchronized boolean removeAttentionWord(String attentionWord) {
 
         String normalizedAttentionWord = TextNormalizer.normalize(attentionWord);
-        String category = aliasToCategory.remove(normalizedAttentionWord);
+        List<DictionaryCategory> categories = new ArrayList<>(storage.get().dictionaries().attention());
 
-        if (category == null) {
-            return false;
-        }
+        for (int index = 0; index < categories.size(); index++) {
 
-        List<String> aliases = categoryToAliases.get(category);
+            DictionaryCategory current = categories.get(index);
+            List<String> aliases = new ArrayList<>(current.aliases());
+            boolean removed = aliases.removeIf(alias -> TextNormalizer.normalize(alias).equals(normalizedAttentionWord));
 
-        if (aliases != null) {
-            aliases.remove(normalizedAttentionWord);
+            if (!removed) {
+                continue;
+            }
 
             if (aliases.isEmpty()) {
-                categoryToAliases.remove(category);
+                categories.remove(index);
+            } else {
+                categories.set(index,new DictionaryCategory(current.category(), current.displayName(), List.copyOf(aliases)));
             }
+
+            replaceAttention(categories);
+
+            return true;
         }
 
-        return true;
+        return false;
+    }
+
+    private void replaceAttention(List<DictionaryCategory> attention) {
+
+        DynamicConfig current = storage.get();
+        DictionaryConfig currentDictionaries = current.dictionaries();
+
+        DictionaryConfig updatedDictionaries = new DictionaryConfig(
+            currentDictionaries.targets(),
+            currentDictionaries.locations(),
+            currentDictionaries.directions(),
+            List.copyOf(attention),
+            currentDictionaries.globalThreat(),
+            currentDictionaries.forecast(),
+            currentDictionaries.noise(),
+            currentDictionaries.messageIntents()
+        );
+
+        storage.replace(new DynamicConfig(updatedDictionaries, current.sources()));
+        jsonService.save();
     }
 }
