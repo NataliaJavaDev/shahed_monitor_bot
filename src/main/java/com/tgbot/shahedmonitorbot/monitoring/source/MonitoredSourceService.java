@@ -7,6 +7,7 @@ import com.tgbot.shahedmonitorbot.admin.enums.SourceStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.ArrayList;
 
 @Service
 public class MonitoredSourceService {
@@ -24,12 +25,12 @@ public class MonitoredSourceService {
 
     public synchronized List<MonitoredSource> getAllSources() {
 
-        return List.copyOf(storage.get().sources());
+        return List.copyOf(getConfig().sources());
     }
 
     public synchronized List<MonitoredSource> getActiveSources() {
 
-        return storage.get()
+        return getConfig()
             .sources()
             .stream()
             .filter(source -> source.status() == SourceStatus.ACTIVE)
@@ -38,7 +39,7 @@ public class MonitoredSourceService {
 
     public synchronized List<MonitoredSource> getIgnoredSources() {
 
-        return storage.get()
+        return getConfig()
             .sources()
             .stream()
             .filter(source -> source.status() == SourceStatus.IGNORED)
@@ -51,7 +52,7 @@ public class MonitoredSourceService {
             return null;
         }
 
-        return storage.get()
+        return getConfig()
             .sources()
             .stream()
             .filter(source -> source.chatId().equals(chatId))
@@ -79,7 +80,7 @@ public class MonitoredSourceService {
             return false;
         }
 
-        List<MonitoredSource> sources = new java.util.ArrayList<>(storage.get().sources());
+        List<MonitoredSource> sources = new ArrayList<>(getConfig().sources());
 
         sources.add(new MonitoredSource(chatId, safeTitle(title), status));
         replaceSources(sources);
@@ -105,7 +106,7 @@ public class MonitoredSourceService {
 
     private boolean changeStatus(String chatId, SourceStatus status) {
 
-        List<MonitoredSource> sources = new java.util.ArrayList<>(storage.get().sources());
+        List<MonitoredSource> sources = new ArrayList<>(getConfig().sources());
 
         for (int index = 0; index < sources.size(); index++) {
 
@@ -121,7 +122,7 @@ public class MonitoredSourceService {
 
             sources.set(index, new MonitoredSource(current.chatId(), current.title(), status));
             replaceSources(sources);
-            
+
             return true;
         }
 
@@ -130,7 +131,7 @@ public class MonitoredSourceService {
 
     private void replaceSources(List<MonitoredSource> sources) {
 
-        DynamicConfig current = storage.get();
+        DynamicConfig current = getConfig();
 
         storage.replace(new DynamicConfig(current.dictionaries(), List.copyOf(sources)));
         jsonService.save();
@@ -143,5 +144,16 @@ public class MonitoredSourceService {
         }
 
         return title.trim();
+    }
+
+    private DynamicConfig getConfig() {
+
+        DynamicConfig config = storage.get();
+
+        if (config == null) {
+            throw new IllegalStateException("Dynamic configuration is not initialized");
+        }
+    
+        return config;
     }
 }
