@@ -1,21 +1,22 @@
 package com.tgbot.shahedmonitorbot.processing;
 
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryIntent;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryStorage;
 import com.tgbot.shahedmonitorbot.admin.service.AttentionWordAdminService;
-import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;
 import org.springframework.stereotype.Service;
 
 @Service
 public class MessageIntentDetectorService {
 
-    private final AppProperties appProperties;
+    private final DictionaryStorage storage;
     private final AttentionWordAdminService attentionWordAdminService;
 
     public MessageIntentDetectorService(
-        AppProperties appProperties,
+        DictionaryStorage storage,
         AttentionWordAdminService attentionWordAdminService
     ) {
-        this.appProperties = appProperties;
+        this.storage = storage;
         this.attentionWordAdminService = attentionWordAdminService;
     }
 
@@ -31,17 +32,19 @@ public class MessageIntentDetectorService {
 
         String normalizedText = TextNormalizer.normalize(text);
 
-        return appProperties.monitor().messageIntents()
+        return storage.get()
+            .dictionaries()
+            .messageIntents()
             .stream()
-            .filter(intentConfig -> matchesAnyAlias(normalizedText, intentConfig))
-            .map(AppProperties.MessageIntentConfig::intent)
+            .filter(intent -> matchesAnyAlias(normalizedText, intent))
+            .map(DictionaryIntent::intent)
             .map(this::toMessageIntent)
             .findFirst()
             .orElse(MessageIntent.UNKNOWN);
     }
 
     private MessageIntent toMessageIntent(String value) {
-        
+
         if (value == null || value.isBlank()) {
             return MessageIntent.UNKNOWN;
         }
@@ -53,12 +56,15 @@ public class MessageIntentDetectorService {
         }
     }
 
-    private boolean matchesAnyAlias(String normalizedText, AppProperties.MessageIntentConfig intentConfig) {
+    private boolean matchesAnyAlias(String normalizedText, DictionaryIntent intent) {
 
-        if (intentConfig.aliases() == null || intentConfig.aliases().isEmpty()) {
+        if (intent.aliases() == null || intent.aliases().isEmpty()) {
             return false;
         }
 
-        return intentConfig.aliases().stream().map(TextNormalizer::normalize).anyMatch(normalizedText::contains);
+        return intent.aliases()
+            .stream()
+            .map(TextNormalizer::normalize)
+            .anyMatch(normalizedText::contains);
     }
 }

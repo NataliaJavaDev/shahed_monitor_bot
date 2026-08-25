@@ -1,9 +1,8 @@
 package com.tgbot.shahedmonitorbot.processing;
 
-import org.springframework.stereotype.Service;
-
-import com.tgbot.shahedmonitorbot.config.AppProperties;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryStorage;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;
+import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
@@ -12,11 +11,10 @@ import java.util.List;
 public class MessagePreprocessorService {
 
     private static final int MAX_TEXT_LENGTH_FOR_LOCAL_ANALYSIS = 350;
+    private final DictionaryStorage storage;
 
-    private final AppProperties appProperties;
-
-    public MessagePreprocessorService(AppProperties appProperties) {
-        this.appProperties = appProperties;
+    public MessagePreprocessorService(DictionaryStorage storage) {
+        this.storage = storage;
     }
 
     public PreprocessedMessage preprocess(String text) {
@@ -44,18 +42,18 @@ public class MessagePreprocessorService {
             .filter(line -> !isCommonNoiseLine(line))
             .toList();
 
-        return TextNormalizer.normalize(
-            String.join("\n", cleanedLines)
-        );
+        return TextNormalizer.normalize(String.join("\n", cleanedLines));
     }
 
     private boolean isCommonNoiseLine(String line) {
-        
+
         String normalizedLine = TextNormalizer.normalize(line);
 
         return normalizedLine.startsWith("http://")
             || normalizedLine.startsWith("https://")
-            || appProperties.monitor().noiseMarkers()
+            || storage.get()
+                .dictionaries()
+                .noise()
                 .stream()
                 .map(TextNormalizer::normalize)
                 .anyMatch(normalizedLine::contains)

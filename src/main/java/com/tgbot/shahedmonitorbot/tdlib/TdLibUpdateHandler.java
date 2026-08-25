@@ -17,7 +17,6 @@ import com.tgbot.shahedmonitorbot.sender.AnalysisMessageFormatter;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
 import com.tgbot.shahedmonitorbot.tdlib.history.TdHistoryMessage;
 import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
-import com.tgbot.shahedmonitorbot.admin.enums.SourceStatus;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -132,10 +131,6 @@ public class TdLibUpdateHandler {
                     text
                 )
             );
-
-            if (appProperties.monitor().ignoredChatIds() != null && appProperties.monitor().ignoredChatIds().contains(chatId)) {
-                return;
-            }
 
             var source = monitoredSourceService.findByChatId(chatId);
 

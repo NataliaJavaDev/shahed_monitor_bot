@@ -2,7 +2,10 @@ package com.tgbot.shahedmonitorbot.tdlib;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tgbot.shahedmonitorbot.config.AppProperties;
+import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSource;
+import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -14,42 +17,33 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 @Service
 public class TemporaryHistoryExportService {
 
     private static final Logger log = LoggerFactory.getLogger(TemporaryHistoryExportService.class);
-
     private static final String EXPORT_EXTRA_PREFIX = "HISTORY_EXPORT:";
     private static final DateTimeFormatter FILE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm");
 
     private final TdLibClientService tdLibClientService;
-    private final AppProperties appProperties;
+    private final MonitoredSourceService monitoredSourceService;
     private final ObjectMapper objectMapper;
 
     private final LocalDateTime from = LocalDateTime.of(2026, 8, 8, 0, 0);
     private final LocalDateTime to = LocalDateTime.of(2026, 8, 10, 0, 0);
+
     private final ZoneId zoneId = ZoneId.of("Europe/Kyiv");
-
-    private final Path exportDirectory = Path.of("exports").resolve(
-        "history_%s__%s".formatted(
-            from.format(FILE_FORMAT),
-            to.format(FILE_FORMAT)
-        )
-    );
-
+    private final Path exportDirectory = Path.of("exports").resolve("history_%s__%s".formatted(from.format(FILE_FORMAT), to.format(FILE_FORMAT)));
     private final Path analysisDirectory = Path.of("exports").resolve("analysis");
+
     private boolean started = false;
 
     public TemporaryHistoryExportService(
-            TdLibClientService tdLibClientService,
-            AppProperties appProperties,
-            ObjectMapper objectMapper
+        TdLibClientService tdLibClientService,
+        MonitoredSourceService monitoredSourceService,
+        ObjectMapper objectMapper
     ) {
         this.tdLibClientService = tdLibClientService;
-        this.appProperties = appProperties;
+        this.monitoredSourceService = monitoredSourceService;
         this.objectMapper = objectMapper;
     }
 
@@ -69,14 +63,7 @@ public class TemporaryHistoryExportService {
             return;
         }
 
-        if (appProperties.monitor().sources() == null) {
-            return;
-        }
-
-        appProperties.monitor().sources().stream()
-            .filter(source -> Boolean.TRUE.equals(source.active()))
-            .forEach(source -> requestHistory(source.chatId(), 0));
-
+        monitoredSourceService.getActiveSources().forEach(source -> requestHistory(source.chatId(), 0));
         System.out.println("History export started -> " + exportDirectory.toAbsolutePath());
     }
 
@@ -106,13 +93,10 @@ public class TemporaryHistoryExportService {
             boolean shouldContinue = true;
 
             for (JsonNode message : messages) {
+
                 long messageId = message.path("id").asLong();
                 int unixDate = message.path("date").asInt();
-
-                LocalDateTime messageTime = LocalDateTime.ofInstant(
-                        Instant.ofEpochSecond(unixDate),
-                        zoneId
-                );
+                LocalDateTime messageTime = LocalDateTime.ofInstant(Instant.ofEpochSecond(unixDate), zoneId);
 
                 if (oldestMessageId == 0 || messageId < oldestMessageId) {
                     oldestMessageId = messageId;
@@ -146,21 +130,22 @@ public class TemporaryHistoryExportService {
     }
 
     private void requestHistory(String chatId, long fromMessageId) {
+
         tdLibClientService.send("""
-                {
-                  "@type": "getChatHistory",
-                  "@extra": "%s%s",
-                  "chat_id": %s,
-                  "from_message_id": %d,
-                  "offset": 0,
-                  "limit": 100,
-                  "only_local": false
-                }
-                """.formatted(
-                EXPORT_EXTRA_PREFIX,
-                chatId,
-                chatId,
-                fromMessageId
+            {
+              "@type": "getChatHistory",
+              "@extra": "%s%s",
+              "chat_id": %s,
+              "from_message_id": %d,
+              "offset": 0,
+              "limit": 100,
+              "only_local": false
+            }
+            """.formatted(
+            EXPORT_EXTRA_PREFIX,
+            chatId,
+            chatId,
+            fromMessageId
         ));
     }
 
@@ -170,11 +155,17 @@ public class TemporaryHistoryExportService {
         String contentType = content.path("@type").asText();
 
         if ("messageText".equals(contentType)) {
-            return content.path("text").path("text").asText("");
+            return content
+                .path("text")
+                .path("text")
+                .asText("");
         }
 
         if ("messagePhoto".equals(contentType)) {
-            return content.path("caption").path("text").asText("");
+            return content
+                .path("caption")
+                .path("text")
+                .asText("");
         }
 
         return "";
@@ -185,26 +176,29 @@ public class TemporaryHistoryExportService {
         Path filePath = exportDirectory.resolve(fileNameForChat(chatId));
 
         String block = """
-                [%s]   chatId=%s
+            [%s]   chatId=%s
 
-                %s
-                ----------------------------------------
-                """.formatted(
-                messageTime,
-                chatId,
-                text
+            %s
+            ----------------------------------------
+            """.formatted(
+            messageTime,
+            chatId,
+            text
         );
 
         Files.writeString(filePath, block, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
     }
 
     private String fileNameForChat(String chatId) {
-        return appProperties.monitor().sources().stream()
-                .filter(source -> source.chatId().equals(chatId))
-                .findFirst()
-                .map(AppProperties.Source::title)
-                .map(this::sanitizeFileName)
-                .orElse(chatId) + ".txt";
+
+        return monitoredSourceService
+            .getAllSources()
+            .stream()
+            .filter(source -> source.chatId().equals(chatId))
+            .map(MonitoredSource::title)
+            .map(this::sanitizeFileName)
+            .findFirst()
+            .orElse(chatId) + ".txt";
     }
 
     private String sanitizeFileName(String value) {
@@ -214,7 +208,7 @@ public class TemporaryHistoryExportService {
         }
 
         return value.replaceAll("[\\\\/:*?\"<>|]", "_")
-                .replaceAll("\\s+", " ")
-                .trim();
+            .replaceAll("\\s+", " ")
+            .trim();
     }
 }

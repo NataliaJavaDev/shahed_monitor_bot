@@ -1,7 +1,7 @@
 package com.tgbot.shahedmonitorbot.processing;
 
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryStorage;
 import org.springframework.stereotype.Service;
-import com.tgbot.shahedmonitorbot.config.AppProperties;
 
 import java.util.Optional;
 
@@ -9,20 +9,17 @@ import java.util.Optional;
 public class GlobalThreatDetectorService {
 
     private final MarkerDetectorService markerDetectorService;
-    private final AppProperties appProperties;
+    private final DictionaryStorage storage;
 
     public GlobalThreatDetectorService(
         MarkerDetectorService markerDetectorService,
-        AppProperties appProperties
+        DictionaryStorage storage
     ) {
         this.markerDetectorService = markerDetectorService;
-        this.appProperties = appProperties;
+        this.storage = storage;
     }
 
     public Optional<GlobalThreatMatch> findGlobalThreat(String text) {
-        return markerDetectorService.findMatchedMarker(
-            text,
-            appProperties.monitor().globalThreatMarkers()
-        ).map(GlobalThreatMatch::new);
+        return markerDetectorService.findMatchedMarker(text, storage.get().dictionaries().globalThreat()).map(GlobalThreatMatch::new);
     }
 }

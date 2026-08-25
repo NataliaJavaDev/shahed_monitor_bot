@@ -1,6 +1,7 @@
 package com.tgbot.shahedmonitorbot.processing;
 
-import com.tgbot.shahedmonitorbot.config.AppProperties;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryStorage;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryIntent;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;
 import org.springframework.stereotype.Service;
 
@@ -10,11 +11,10 @@ import java.util.Optional;
 public class ThreatDetectorService {
 
     private static final String THREAT_CATEGORY = "Глобальна загроза";
+    private final DictionaryStorage storage;
 
-    private final AppProperties appProperties;
-
-    public ThreatDetectorService(AppProperties appProperties) {
-        this.appProperties = appProperties;
+    public ThreatDetectorService(DictionaryStorage storage) {
+        this.storage = storage;
     }
 
     public Optional<ThreatMatch> findThreat(String text) {
@@ -34,24 +34,19 @@ public class ThreatDetectorService {
             return Optional.empty();
         }
 
-        return appProperties.monitor().messageIntents()
-                .stream()
-                .filter(intentConfig ->
-                        MessageIntent.THREAT_DETECTED.name()
-                                .equals(intentConfig.intent())
-                )
-                .flatMap(intentConfig -> intentConfig.aliases().stream())
-                .filter(alias ->
-                        normalizedText.contains(TextNormalizer.normalize(alias))
-                )
-                .findFirst()
-                .map(alias -> new ThreatMatch(
-                        alias,
-                        THREAT_CATEGORY
-                ));
+        return storage.get()
+            .dictionaries()
+            .messageIntents()
+            .stream()
+            .filter(intent -> MessageIntent.THREAT_DETECTED.name().equals(intent.intent()))
+            .flatMap(intent -> intent.aliases().stream())
+            .filter(alias -> normalizedText.contains( TextNormalizer.normalize(alias)))
+            .findFirst()
+            .map(alias -> new ThreatMatch(alias, THREAT_CATEGORY));
     }
 
     private boolean containsLocalDirection(String text) {
+
         return text.contains(" на ")
             || text.contains(" над ")
             || text.contains(" повз ")

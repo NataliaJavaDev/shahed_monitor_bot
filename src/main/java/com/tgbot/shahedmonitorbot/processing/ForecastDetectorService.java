@@ -1,7 +1,7 @@
 package com.tgbot.shahedmonitorbot.processing;
 
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryStorage;
 import org.springframework.stereotype.Service;
-import com.tgbot.shahedmonitorbot.config.AppProperties;
 
 import java.util.Optional;
 
@@ -9,17 +9,17 @@ import java.util.Optional;
 public class ForecastDetectorService {
 
     private final MarkerDetectorService markerDetectorService;
-    private final AppProperties appProperties;
+    private final DictionaryStorage storage;
 
     public ForecastDetectorService(
         MarkerDetectorService markerDetectorService,
-        AppProperties appProperties
+        DictionaryStorage storage
     ) {
         this.markerDetectorService = markerDetectorService;
-        this.appProperties = appProperties;
+        this.storage = storage;
     }
 
     public Optional<ForecastMatch> findForecast(String text) {
-        return markerDetectorService.findMatchedMarker(text, appProperties.monitor().forecastMarkers()).map(ForecastMatch::new);
+        return markerDetectorService.findMatchedMarker(text, storage.get().dictionaries().forecast()).map(ForecastMatch::new);
     }
 }
