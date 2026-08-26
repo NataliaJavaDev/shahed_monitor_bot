@@ -7,8 +7,7 @@ import java.time.format.DateTimeFormatter;
 @Component
 public class ApiAlertStatusFormatter {
 
-    private static final DateTimeFormatter DATE_TIME_FORMATTER =
-        DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     public String format(ApiAlertStatus status) {
 

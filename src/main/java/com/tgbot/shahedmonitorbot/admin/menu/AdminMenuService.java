@@ -35,11 +35,18 @@ public class AdminMenuService {
 
         KeyboardRow row2 = new KeyboardRow();
         row2.add(AdminButton.DIRECTIONS.text());
+        row2.add(AdminButton.ATTENTION.text());
+        row2.add(AdminButton.NOISE.text());
 
         KeyboardRow row3 = new KeyboardRow();
-        row3.add(AdminButton.BACK.text());
+        row3.add(AdminButton.GLOBAL_THREAT.text());
+        row3.add(AdminButton.FORECAST.text());
 
-        return buildKeyboard(List.of(row1, row2, row3));
+        KeyboardRow row4 = new KeyboardRow();
+        row4.add(AdminButton.MESSAGE_INTENTS.text());
+        row4.add(AdminButton.BACK.text());
+
+        return buildKeyboard(List.of(row1, row2, row3, row4));
     }
 
     public ReplyKeyboardMarkup targetsReplyKeyboard() {
@@ -50,6 +57,21 @@ public class AdminMenuService {
         KeyboardRow row2 = new KeyboardRow();
         row2.add(AdminButton.ADD_TARGET.text());
         row2.add(AdminButton.REMOVE_TARGET.text());
+
+        KeyboardRow row3 = new KeyboardRow();
+        row3.add(AdminButton.BACK.text());
+
+        return buildKeyboard(List.of(row1, row2, row3));
+    }
+
+    public ReplyKeyboardMarkup crudReplyKeyboard() {
+
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add(AdminButton.SHOW_ATTENTIONS.text());
+
+        KeyboardRow row2 = new KeyboardRow();
+        row2.add(AdminButton.ADD_ATTENTION.text());
+        row2.add(AdminButton.REMOVE_ATTENTION.text());
 
         KeyboardRow row3 = new KeyboardRow();
         row3.add(AdminButton.BACK.text());
@@ -146,8 +168,8 @@ public class AdminMenuService {
 
     private ReplyKeyboardMarkup buildKeyboard(List<KeyboardRow> rows) {
         return ReplyKeyboardMarkup.builder()
-                .keyboard(rows)
-                .resizeKeyboard(true)
-                .build();
+            .keyboard(rows)
+            .resizeKeyboard(true)
+            .build();
     }
 }

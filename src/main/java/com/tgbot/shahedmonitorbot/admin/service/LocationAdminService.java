@@ -1,10 +1,6 @@
 package com.tgbot.shahedmonitorbot.admin.service;
 
-import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryCategory;
-import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryConfig;
-import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryJsonService;
-import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryStorage;
-import com.tgbot.shahedmonitorbot.admin.dictionary.DynamicConfig;
+import com.tgbot.shahedmonitorbot.admin.dictionary.*;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;
 import org.springframework.stereotype.Service;
 
@@ -14,150 +10,281 @@ import java.util.List;
 @Service
 public class LocationAdminService {
 
-    private final DictionaryStorage storage;
-    private final DictionaryJsonService jsonService;
+	private final DictionaryStorage storage;
+	private final DictionaryConfigService configService;
 
-    public LocationAdminService(
-        DictionaryStorage storage,
-        DictionaryJsonService jsonService
-    ) {
-        this.storage = storage;
-        this.jsonService = jsonService;
-    }
+	public LocationAdminService(
+		DictionaryStorage storage,
+		DictionaryConfigService configService
+	) {
+		this.storage = storage;
+		this.configService = configService;
+	}
 
-    public synchronized List<String> getLocations() {
+	public synchronized List<String> getLocations() {
 
-        return storage.get()
-            .dictionaries()
-            .locations()
-            .stream()
-            .flatMap(category -> category.aliases().stream())
-            .toList();
-    }
+		return storage.get()
+			.dictionaries()
+			.locations()
+			.stream()
+			.flatMap(category -> category.aliases().stream())
+			.toList();
+	}
 
-    public synchronized List<String> getCategories() {
+	public synchronized List<String> getCategories() {
 
-        return storage.get()
-            .dictionaries()
-            .locations()
-            .stream()
-            .map(DictionaryCategory::category)
-            .toList();
-    }
+		return storage.get()
+			.dictionaries()
+			.locations()
+			.stream()
+			.map(DictionaryCategory::category)
+			.toList();
+	}
 
-    public synchronized String getCategory(String location) {
+	public synchronized String getCategory(String location) {
 
-        String normalizedLocation = TextNormalizer.normalize(location);
+		String normalizedLocation = TextNormalizer.normalize(location);
 
-        return storage.get()
-            .dictionaries()
-            .locations()
-            .stream()
-            .filter(category -> category.aliases()
-                .stream()
-                .map(TextNormalizer::normalize)
-                .anyMatch(normalizedLocation::equals)
-            )
-            .map(DictionaryCategory::category)
-            .findFirst()
-            .orElse(normalizedLocation);
-    }
+		return storage.get()
+			.dictionaries()
+			.locations()
+			.stream()
+			.filter(category -> category.aliases()
+				.stream()
+				.map(TextNormalizer::normalize)
+				.anyMatch(normalizedLocation::equals)
+			)
+			.map(DictionaryCategory::category)
+			.findFirst()
+			.orElse(normalizedLocation);
+	}
 
-    public synchronized boolean addLocation(String location) {
-        return addLocation(location, location);
-    }
+	public synchronized boolean addLocation(String location) {
+		return addLocation(location, location);
+	}
 
-    public synchronized boolean addLocation(String location, String category) {
+	public synchronized boolean addLocation(String location, String category) {
 
-        String normalizedLocation = TextNormalizer.normalize(location);
-        String normalizedCategory = TextNormalizer.normalize(category);
+		String normalizedLocation = TextNormalizer.normalize(location);
+		String normalizedCategory = TextNormalizer.normalize(category);
 
-        if (normalizedLocation.isBlank() || normalizedCategory.isBlank()) {
-            return false;
-        }
+		if (normalizedLocation.isBlank() || normalizedCategory.isBlank()) {
+			return false;
+		}
 
-        List<DictionaryCategory> categories = new ArrayList<>(storage.get().dictionaries().locations());
+		List<DictionaryCategory> categories = new ArrayList<>(
+			storage.get().dictionaries().locations()
+		);
 
-        boolean locationExists = categories.stream().anyMatch(item -> item.aliases()
-            .stream()
-            .map(TextNormalizer::normalize)
-            .anyMatch(normalizedLocation::equals)
-        );
+		boolean locationExists = categories.stream()
+			.anyMatch(item -> item.aliases()
+				.stream()
+				.map(TextNormalizer::normalize)
+				.anyMatch(normalizedLocation::equals)
+			);
 
-        if (locationExists) {
-            return false;
-        }
+		if (locationExists) {
+			return false;
+		}
 
-        for (int index = 0; index < categories.size(); index++) {
+		for (int index = 0; index < categories.size(); index++) {
 
-            DictionaryCategory current = categories.get(index);
+			DictionaryCategory current = categories.get(index);
 
-            if (!TextNormalizer.normalize(current.category()).equals(normalizedCategory)) {
-                continue;
-            }
+			if (!TextNormalizer.normalize(current.category()).equals(normalizedCategory)) {
+				continue;
+			}
 
-            List<String> aliases = new ArrayList<>(current.aliases());
+			List<String> aliases = new ArrayList<>(current.aliases());
 
-            aliases.add(normalizedLocation);
-            categories.set(index, new DictionaryCategory(current.category(), current.displayName(), List.copyOf(aliases)));
-            replaceLocations(categories);
+			aliases.add(normalizedLocation);
 
-            return true;
-        }
+			categories.set(
+				index,
+				new DictionaryCategory(
+					current.category(),
+					current.displayName(),
+					List.copyOf(aliases)
+				)
+			);
 
-        categories.add(new DictionaryCategory(normalizedCategory, null, List.of(normalizedLocation)));
-        replaceLocations(categories);
+			List<DictionaryCategory> updatedLocations = List.copyOf(categories);
 
-        return true;
-    }
+			configService.update(currentConfig -> new DictionaryConfig(
+				currentConfig.targets(),
+				updatedLocations,
+				currentConfig.directions(),
+				currentConfig.attention(),
+				currentConfig.globalThreat(),
+				currentConfig.forecast(),
+				currentConfig.noise(),
+				currentConfig.messageIntents()
+			));
 
-    public synchronized boolean removeLocation(String location) {
+			return true;
+		}
 
-        String normalizedLocation = TextNormalizer.normalize(location);
+		categories.add(
+			new DictionaryCategory(
+				normalizedCategory,
+				null,
+				List.of(normalizedLocation)
+			)
+		);
 
-        List<DictionaryCategory> categories = new ArrayList<>(storage.get().dictionaries().locations());
+		List<DictionaryCategory> updatedLocations = List.copyOf(categories);
 
-        for (int index = 0; index < categories.size(); index++) {
+		configService.update(currentConfig -> new DictionaryConfig(
+			currentConfig.targets(),
+			updatedLocations,
+			currentConfig.directions(),
+			currentConfig.attention(),
+			currentConfig.globalThreat(),
+			currentConfig.forecast(),
+			currentConfig.noise(),
+			currentConfig.messageIntents()
+		));
 
-            DictionaryCategory current = categories.get(index);
-            List<String> aliases = new ArrayList<>(current.aliases());
-            boolean removed = aliases.removeIf(alias -> TextNormalizer.normalize(alias).equals(normalizedLocation));
+		return true;
+	}
 
-            if (!removed) {
-                continue;
-            }
+	public synchronized boolean removeLocation(String location) {
 
-            if (aliases.isEmpty()) {
-                categories.remove(index);
-            } else {
-                categories.set(index, new DictionaryCategory(current.category(), current.displayName(), List.copyOf(aliases)));
-            }
+		String normalizedLocation = TextNormalizer.normalize(location);
 
-            replaceLocations(categories);
+		List<DictionaryCategory> categories = new ArrayList<>(
+			storage.get().dictionaries().locations()
+		);
 
-            return true;
-        }
+		for (int index = 0; index < categories.size(); index++) {
 
-        return false;
-    }
+			DictionaryCategory current = categories.get(index);
+			List<String> aliases = new ArrayList<>(current.aliases());
 
-    private void replaceLocations(List<DictionaryCategory> locations) {
+			boolean removed = aliases.removeIf(
+				alias -> TextNormalizer.normalize(alias).equals(normalizedLocation)
+			);
 
-        DynamicConfig current = storage.get();
-        DictionaryConfig currentDictionaries = current.dictionaries();
+			if (!removed) {
+				continue;
+			}
 
-        DictionaryConfig updatedDictionaries = new DictionaryConfig(
-            currentDictionaries.targets(),
-            List.copyOf(locations),
-            currentDictionaries.directions(),
-            currentDictionaries.attention(),
-            currentDictionaries.globalThreat(),
-            currentDictionaries.forecast(),
-            currentDictionaries.noise(),
-            currentDictionaries.messageIntents()
-        );
+			if (aliases.isEmpty()) {
+				categories.remove(index);
+			} else {
+				categories.set(
+					index,
+					new DictionaryCategory(
+						current.category(),
+						current.displayName(),
+						List.copyOf(aliases)
+					)
+				);
+			}
 
-        storage.replace(new DynamicConfig(updatedDictionaries,current.sources()));
-        jsonService.save();
-    }
+			List<DictionaryCategory> updatedLocations = List.copyOf(categories);
+
+			configService.update(currentConfig -> new DictionaryConfig(
+				currentConfig.targets(),
+				updatedLocations,
+				currentConfig.directions(),
+				currentConfig.attention(),
+				currentConfig.globalThreat(),
+				currentConfig.forecast(),
+				currentConfig.noise(),
+				currentConfig.messageIntents()
+			));
+
+			return true;
+		}
+
+		return false;
+	}
+
+	public synchronized List<String> getAliasesByCategory(String category) {
+	
+		String normalizedCategory = TextNormalizer.normalize(category);
+	
+		return storage.get()
+			.dictionaries()
+			.locations()
+			.stream()
+			.filter(item ->
+				TextNormalizer.normalize(item.category())
+					.equals(normalizedCategory)
+			)
+			.findFirst()
+			.map(DictionaryCategory::aliases)
+			.map(List::copyOf)
+			.orElse(List.of());
+	}
+	
+	public synchronized boolean addCategory(String category) {
+	
+		String normalizedCategory = TextNormalizer.normalize(category);
+	
+		if (normalizedCategory.isBlank()) {
+			return false;
+		}
+	
+		List<DictionaryCategory> categories =
+			new ArrayList<>(storage.get().dictionaries().locations());
+	
+		boolean exists = categories.stream()
+			.anyMatch(item ->
+				TextNormalizer.normalize(item.category())
+					.equals(normalizedCategory)
+			);
+	
+		if (exists) {
+			return false;
+		}
+	
+		categories.add(
+			new DictionaryCategory(
+				normalizedCategory,
+				null,
+				List.of()
+			)
+		);
+	
+		replaceLocations(categories);
+	
+		return true;
+	}
+	
+	public synchronized boolean removeCategory(String category) {
+	
+		String normalizedCategory = TextNormalizer.normalize(category);
+	
+		List<DictionaryCategory> categories =
+			new ArrayList<>(storage.get().dictionaries().locations());
+	
+		boolean removed = categories.removeIf(item ->
+			TextNormalizer.normalize(item.category())
+				.equals(normalizedCategory)
+		);
+	
+		if (!removed) {
+			return false;
+		}
+	
+		replaceLocations(categories);
+	
+		return true;
+	}
+
+	private void replaceLocations(List<DictionaryCategory> categories) {
+
+		configService.update(currentConfig -> new DictionaryConfig(
+			currentConfig.targets(),
+			List.copyOf(categories),
+			currentConfig.directions(),
+			currentConfig.attention(),
+			currentConfig.globalThreat(),
+			currentConfig.forecast(),
+			currentConfig.noise(),
+			currentConfig.messageIntents()
+		));
+	}
 }

@@ -2,6 +2,7 @@ package com.tgbot.shahedmonitorbot.admin.command;
 
 import com.tgbot.shahedmonitorbot.admin.enums.*;
 import com.tgbot.shahedmonitorbot.admin.menu.AdminMenuService;
+import com.tgbot.shahedmonitorbot.admin.menu.DictionaryMenuService;
 import com.tgbot.shahedmonitorbot.admin.service.*;
 import com.tgbot.shahedmonitorbot.alertapi.formatter.ApiAlertStatusFormatter;
 import com.tgbot.shahedmonitorbot.alertapi.service.AirAlertApiService;
@@ -43,22 +44,26 @@ public class AdminCommandHandler {
     private final UnknownSourceCandidateService unknownSourceCandidateService;
     private final MonitoringStateService monitoringStateService;
     private final TdLibStatusService tdLibStatusService;
+    private final DictionaryAdminService dictionaryAdminService;
+    private final DictionaryMenuService dictionaryMenuService;
 
     public AdminCommandHandler(
-            TargetAdminService targetAdminService,
-            LocationAdminService locationAdminService,
-            DirectionAdminService directionAdminService,
-            TelegramSenderService senderService,
-            AdminSessionService sessionService,
-            AdminAccessService accessService,
-            AdminMenuService menuService,
-            ManualAlertService manualAlertService,
-            AirAlertApiService airAlertApiService,
-            ApiAlertStatusFormatter apiAlertStatusFormatter,
-            MonitoredSourceService monitoredSourceService,
-            UnknownSourceCandidateService unknownSourceCandidateService,
-            MonitoringStateService monitoringStateService,
-            TdLibStatusService tdLibStatusService
+        TargetAdminService targetAdminService,
+        LocationAdminService locationAdminService,
+        DirectionAdminService directionAdminService,
+        TelegramSenderService senderService,
+        AdminSessionService sessionService,
+        AdminAccessService accessService,
+        AdminMenuService menuService,
+        ManualAlertService manualAlertService,
+        AirAlertApiService airAlertApiService,
+        ApiAlertStatusFormatter apiAlertStatusFormatter,
+        MonitoredSourceService monitoredSourceService,
+        UnknownSourceCandidateService unknownSourceCandidateService,
+        MonitoringStateService monitoringStateService,
+        TdLibStatusService tdLibStatusService,
+        DictionaryAdminService dictionaryAdminService,
+        DictionaryMenuService dictionaryMenuService
     ) {
         this.targetAdminService = targetAdminService;
         this.locationAdminService = locationAdminService;
@@ -74,6 +79,8 @@ public class AdminCommandHandler {
         this.unknownSourceCandidateService = unknownSourceCandidateService;
         this.monitoringStateService = monitoringStateService;
         this.tdLibStatusService = tdLibStatusService;
+        this.dictionaryAdminService = dictionaryAdminService;
+        this.dictionaryMenuService = dictionaryMenuService;
     }
 
     public void handle(Long userId, String chatId, String text) {
@@ -141,44 +148,352 @@ public class AdminCommandHandler {
             return;
         }
 
+        if (callbackData.startsWith("dictionary:")) {
+
+	    handleDictionaryCallback(
+		userId,
+		chatId,
+		messageId,
+		callbackQueryId,
+		callbackData
+	    );
+
+	    return;
+        }
+
         senderService.answerCallback(callbackQueryId, "Невідома дія");
     }
 
+
+    private void handleDictionaryCallback(
+	Long userId,
+	String chatId,
+	Integer messageId,
+	String callbackQueryId,
+	String callbackData
+    ) {
+
+	String[] parts = callbackData.split(":", 4);
+
+	if (parts.length < 2) {
+		senderService.answerCallback(
+			callbackQueryId,
+			"Некоректна дія"
+		);
+		return;
+	}
+
+	String action = parts[1];
+
+	switch (action) {
+
+		case "category":
+
+			if (parts.length < 4) {
+				senderService.answerCallback(
+					callbackQueryId,
+					"Некоректна категорія"
+				);
+				return;
+			}
+
+			openDictionaryCategory(
+				userId,
+				chatId,
+				messageId,
+				callbackQueryId,
+				DictionaryType.valueOf(parts[2]),
+				parts[3]
+			);
+			return;
+
+		case "categories":
+
+			if (parts.length < 3) {
+				senderService.answerCallback(
+					callbackQueryId,
+					"Некоректний словник"
+				);
+				return;
+			}
+
+			showDictionaryCategories(
+				chatId,
+				messageId,
+				callbackQueryId,
+				DictionaryType.valueOf(parts[2])
+			);
+			return;
+
+		case "aliases":
+
+			if (parts.length < 4) {
+				senderService.answerCallback(
+					callbackQueryId,
+					"Некоректна категорія"
+				);
+				return;
+			}
+
+			showDictionaryAliases(
+				chatId,
+				messageId,
+				callbackQueryId,
+				DictionaryType.valueOf(parts[2]),
+				parts[3]
+			);
+			return;
+
+		case "add-alias":
+
+			if (parts.length < 4) {
+				senderService.answerCallback(
+					callbackQueryId,
+					"Некоректна категорія"
+				);
+				return;
+			}
+
+			requestDictionaryAlias(
+				userId,
+				chatId,
+				DictionaryType.valueOf(parts[2]),
+				DictionaryAction.ADD,
+				parts[3]
+			);
+
+			senderService.answerCallback(
+				callbackQueryId,
+				""
+			);
+			return;
+
+		case "remove-alias":
+
+			if (parts.length < 4) {
+				senderService.answerCallback(
+					callbackQueryId,
+					"Некоректна категорія"
+				);
+				return;
+			}
+
+			requestDictionaryAlias(
+				userId,
+				chatId,
+				DictionaryType.valueOf(parts[2]),
+				DictionaryAction.REMOVE,
+				parts[3]
+			);
+
+			senderService.answerCallback(
+				callbackQueryId,
+				""
+			);
+			return;
+
+		case "add-category":
+
+			if (parts.length < 3) {
+				senderService.answerCallback(
+					callbackQueryId,
+					"Некоректний словник"
+				);
+				return;
+			}
+
+			requestNewCategory(
+				userId,
+				chatId,
+				DictionaryType.valueOf(parts[2])
+			);
+
+			senderService.answerCallback(
+				callbackQueryId,
+				""
+			);
+			return;
+
+		case "delete-mode":
+
+			if (parts.length < 3) {
+				senderService.answerCallback(
+					callbackQueryId,
+					"Некоректний словник"
+				);
+				return;
+			}
+
+			showDeleteCategoryMenu(
+				chatId,
+				messageId,
+				callbackQueryId,
+				DictionaryType.valueOf(parts[2])
+			);
+			return;
+
+		case "delete-category":
+
+			if (parts.length < 4) {
+				senderService.answerCallback(
+					callbackQueryId,
+					"Некоректна категорія"
+				);
+				return;
+			}
+
+			deleteDictionaryCategory(
+				chatId,
+				messageId,
+				callbackQueryId,
+				DictionaryType.valueOf(parts[2]),
+				parts[3]
+			);
+			return;
+
+		case "back":
+
+			sendMainMenu(chatId);
+
+			senderService.answerCallback(
+				callbackQueryId,
+				""
+			);
+			return;
+
+		default:
+
+			senderService.answerCallback(
+				callbackQueryId,
+				"Невідома дія"
+			);
+	}
+    }
+
+
+
+
     private boolean handleSession(Long userId, String chatId, String text) {
 
-        AdminSessionState state = sessionService.getState(userId);
+	AdminSessionState state = sessionService.getState(userId);
 
-        if (state == AdminSessionState.WAITING_FOR_NEW_TARGET) {
-            addTarget(userId, chatId, text);
-            return true;
-        }
+	switch (state) {
 
-        if (state == AdminSessionState.WAITING_FOR_REMOVE_TARGET) {
-            removeTarget(userId, chatId, text);
-            return true;
-        }
+	    case WAITING_FOR_DICTIONARY_INPUT:
 
-        if (state == AdminSessionState.WAITING_FOR_NEW_LOCATION) {
-            addLocation(userId, chatId, text);
-            return true;
-        }
+	    	DictionaryType dictionaryType = sessionService.getDictionaryType(userId);
+	    	DictionaryAction dictionaryAction = sessionService.getDictionaryAction(userId);
 
-        if (state == AdminSessionState.WAITING_FOR_REMOVE_LOCATION) {
-            removeLocation(userId, chatId, text);
-            return true;
-        }
+	    	if (dictionaryType == null || dictionaryAction == null) {
+	    	    sessionService.reset(userId);
+	    	    senderService.sendToChat(
+	    	    	chatId,
+	    	    	"❌ Не вдалося визначити операцію зі словником. Спробуйте ще раз."
+	    	    );
+	    	    return true;
+	    	}
+	    	if (text == null || text.isBlank()) {
+	    	    senderService.sendToChat(
+	    	    	chatId,
+	    	    	"⚠️ Значення не може бути порожнім."
+	    	    );
+	    	    return true;
+	    	}
+	    	handleDictionaryInput(
+	    	    userId,
+	    	    chatId,
+	    	    dictionaryType,
+	    	    dictionaryAction,
+	    	    text
+	    	);
+	    	return true;
 
-        if (state == AdminSessionState.WAITING_FOR_NEW_DIRECTION) {
-            addDirection(userId, chatId, text);
-            return true;
-        }
+            case WAITING_FOR_NEW_CATEGORY:
 
-        if (state == AdminSessionState.WAITING_FOR_REMOVE_DIRECTION) {
-            removeDirection(userId, chatId, text);
-            return true;
-        }
+	        DictionaryType type = sessionService.getDictionaryType(userId);
+	        boolean added = dictionaryAdminService.addCategory(type, text);
 
-        return false;
+	        sessionService.reset(userId);
+
+	        senderService.sendToChat(
+		    chatId,
+		    added
+			? "✅ Категорію «" + text + "» створено."
+			: "⚠️ Така категорія вже існує."
+	        );
+
+	    return true;
+
+	    case IDLE:
+	    default:
+	    	return false;
+	}
+    }
+
+
+    private void handleDictionaryInput(
+	Long userId,
+	String chatId,
+	DictionaryType type,
+	DictionaryAction action,
+	String value
+    ) {
+
+	String category = sessionService.getSelectedCategory(userId);
+
+	if (
+		(type == DictionaryType.TARGETS
+			|| type == DictionaryType.LOCATIONS)
+		&& (category == null || category.isBlank())
+	) {
+
+		sessionService.reset(userId);
+
+		senderService.sendToChat(
+			chatId,
+			"❌ Не вдалося визначити категорію."
+		);
+
+		return;
+	}
+
+	boolean success;
+
+	if (action == DictionaryAction.ADD) {
+
+		success = dictionaryAdminService.addAlias(
+			type,
+			category,
+			value
+		);
+
+	} else {
+
+		success = dictionaryAdminService.removeAlias(
+			type,
+			category,
+			value
+		);
+	}
+
+	sessionService.reset(userId);
+
+	String message;
+
+	if (action == DictionaryAction.ADD) {
+		message = success
+			? "✅ Аліас «" + value + "» додано до «" + category + "»."
+			: "⚠️ Такий аліас уже існує.";
+	} else {
+		message = success
+			? "✅ Аліас «" + value + "» видалено."
+			: "⚠️ Такий аліас не знайдено.";
+	}
+
+	senderService.sendToChat(
+		chatId,
+		message
+	);
     }
 
     private boolean handleCommand(Long userId, String chatId, String text) {
@@ -192,10 +507,7 @@ public class AdminCommandHandler {
         switch (command) {
 
             case START:
-                senderService.sendToChat(
-                        chatId,
-                        AdminMessage.WELCOME_MESSAGE.text()
-                );
+                senderService.sendToChat(chatId, AdminMessage.WELCOME_MESSAGE.text());
                 return true;
 
             case ADMIN:
@@ -218,38 +530,20 @@ public class AdminCommandHandler {
 
             case KEYWORDS:
                 senderService.sendToChatWithReplyKeyboard(
-                        chatId,
-                        "🔑 Ключові слова\n\nОберіть розділ:",
-                        menuService.keywordsReplyKeyboard()
+                    chatId,
+                    "🔑 Ключові слова\n\nОберіть розділ:",
+                    menuService.keywordsReplyKeyboard()
                 );
                 return true;
 
             case TARGETS:
-                senderService.sendToChatWithReplyKeyboard(
-                        chatId,
-                        AdminMessage.TARGETS_MENU_TITLE.text(),
-                        menuService.targetsReplyKeyboard()
-                );
-                return true;
-
-            case SHOW_TARGETS:
-                sendTargets(chatId);
-                return true;
-
-            case ADD_TARGET:
-                requestAddTarget(userId, chatId);
-                return true;
-
-            case REMOVE_TARGET:
-                requestRemoveTarget(userId, chatId);
+                sendDictionaryCategories(chatId, DictionaryType.TARGETS);
+                senderService.sendToChatWithReplyKeyboard(chatId, "цілі", menuService.crudReplyKeyboard());
                 return true;
 
             case LOCATIONS:
-                senderService.sendToChatWithReplyKeyboard(
-                        chatId,
-                        AdminMessage.LOCATIONS_MENU_TITLE.text(),
-                        menuService.locationsReplyKeyboard()
-                );
+                senderService.sendToChatWithReplyKeyboard(chatId, "Населені пункти\n\nОберіть дію:", menuService.locationsReplyKeyboard());
+                //sendDictionaryCategories(chatId, DictionaryType.LOCATIONS);
                 return true;
 
             case SHOW_LOCATIONS:
@@ -257,19 +551,15 @@ public class AdminCommandHandler {
                 return true;
 
             case ADD_LOCATION:
-                requestAddLocation(userId, chatId);
+                requestDictionaryInput(userId, chatId, DictionaryType.LOCATIONS, DictionaryAction.ADD, "Введіть населений пункт для моніторингу:");
                 return true;
 
             case REMOVE_LOCATION:
-                requestRemoveLocation(userId, chatId);
+                requestDictionaryInput(userId, chatId, DictionaryType.LOCATIONS, DictionaryAction.REMOVE, "Введіть населений пункт, який треба видалити:");
                 return true;
 
             case DIRECTIONS:
-                senderService.sendToChatWithReplyKeyboard(
-                        chatId,
-                        "🧭 Напрямки\n\nОберіть дію:",
-                        menuService.directionsReplyKeyboard()
-                );
+                senderService.sendToChatWithReplyKeyboard(chatId, "🧭 Напрямки\n\nОберіть дію:", menuService.directionsReplyKeyboard());
                 return true;
 
             case SHOW_DIRECTIONS:
@@ -277,43 +567,27 @@ public class AdminCommandHandler {
                 return true;
 
             case ADD_DIRECTION:
-                requestAddDirection(userId, chatId);
+                requestDictionaryInput(userId, chatId, DictionaryType.DIRECTIONS, DictionaryAction.ADD, "Введіть напрямок для моніторингу:");
                 return true;
 
             case REMOVE_DIRECTION:
-                requestRemoveDirection(userId, chatId);
+                requestDictionaryInput(userId, chatId, DictionaryType.DIRECTIONS, DictionaryAction.REMOVE, "Введіть напрямок, який треба видалити:");
                 return true;
 
             case ALERTS:
-                senderService.sendToChatWithReplyKeyboard(
-                        chatId,
-                        AdminMessage.ALERT_MENU_TITLE.text(),
-                        menuService.alertReplyKeyboard()
-                );
+                senderService.sendToChatWithReplyKeyboard(chatId, AdminMessage.ALERT_MENU_TITLE.text(), menuService.alertReplyKeyboard());
                 return true;
 
             case ALERT:
-                sendManualAlert(
-                        chatId,
-                        ManualAlertType.ALERT,
-                        AdminMessage.ALERT_SENT
-                );
+                sendManualAlert(chatId, ManualAlertType.ALERT, AdminMessage.ALERT_SENT);
                 return true;
 
             case HIGH_RISK:
-                sendManualAlert(
-                        chatId,
-                        ManualAlertType.HIGH_RISK,
-                        AdminMessage.HIGH_RISK_SENT
-                );
+                sendManualAlert(chatId, ManualAlertType.HIGH_RISK, AdminMessage.HIGH_RISK_SENT);
                 return true;
 
             case ALL_CLEAR:
-                sendManualAlert(
-                        chatId,
-                        ManualAlertType.ALL_CLEAR,
-                        AdminMessage.ALL_CLEAR_SENT
-                );
+                sendManualAlert(chatId, ManualAlertType.ALL_CLEAR, AdminMessage.ALL_CLEAR_SENT);
                 return true;
 
             case BACK:
@@ -321,11 +595,7 @@ public class AdminCommandHandler {
                 return true;
 
             case STATUS:
-                senderService.sendToChatWithReplyKeyboard(
-                        chatId,
-                        "📊 Статус\n\nОберіть дію:",
-                        menuService.statusReplyKeyboard()
-                );
+                senderService.sendToChatWithReplyKeyboard(chatId, "📊 Статус\n\nОберіть дію:", menuService.statusReplyKeyboard());
                 return true;
 
             case ALERT_STATUS:
@@ -337,19 +607,11 @@ public class AdminCommandHandler {
                 return true;
 
             case SETTINGS:
-                senderService.sendToChatWithReplyKeyboard(
-                        chatId,
-                        "⚙️ Налаштування\n\nОберіть дію:",
-                        menuService.settingsReplyKeyboard()
-                );
+                senderService.sendToChatWithReplyKeyboard(chatId, "⚙️ Налаштування\n\nОберіть дію:", menuService.settingsReplyKeyboard());
                 return true;
 
             case SOURCES:
-                senderService.sendToChatWithReplyKeyboard(
-                        chatId,
-                        "📡 Джерела моніторингу\n\nОберіть дію:",
-                        menuService.sourcesReplyKeyboard()
-                );
+                senderService.sendToChatWithReplyKeyboard(chatId, "📡 Джерела моніторингу\n\nОберіть дію:", menuService.sourcesReplyKeyboard());
                 return true;
 
             case ACTIVE_SOURCES:
@@ -368,10 +630,46 @@ public class AdminCommandHandler {
         return false;
     }
 
+    private void sendDictionaryCategories(String chatId, DictionaryType type) {
+    
+    	List<String> categories = dictionaryAdminService.getCategories(type);
+    
+    	if (categories.isEmpty()) {
+    
+    		senderService.sendToChatWithKeyboard(
+    			chatId,
+    			type == DictionaryType.TARGETS
+    				? "🎯 Категорій цілей поки немає."
+    				: "📍 Категорій локацій поки немає.",
+    			dictionaryMenuService.categoriesKeyboard(
+    				type,
+    				categories,
+    				false
+    			)
+    		);
+    
+    		return;
+    	}
+    
+    	String title = type == DictionaryType.TARGETS
+    		? "🎯 Цілі"
+    		: "📍 Локації";
+    
+    	senderService.sendToChatWithKeyboard(
+    		chatId,
+    		title,
+    		dictionaryMenuService.categoriesKeyboard(
+    			type,
+    			categories,
+    			false
+    		)
+    	);
+    }
+    
     private void sendTargets(String chatId) {
-
+    
         String targets = String.join("\n", targetAdminService.getTargets());
-
+    
         if (targets.isBlank()) {
             senderService.sendToChat(chatId, "Список цілей порожній.");
             return;
@@ -392,78 +690,12 @@ public class AdminCommandHandler {
         senderService.sendToChat(chatId, "📍 Локації моніторингу:\n\n" + locations);
     }
 
-    private void addTarget(Long userId, String chatId, String target) {
+    private void requestDictionaryInput(Long userId, String chatId, DictionaryType type, DictionaryAction action, String prompt) {
 
-        boolean added = targetAdminService.addTarget(target);
-        sessionService.reset(userId);
-
-        if (added) {
-            senderService.sendToChat(chatId, "✅ Ціль додано: " + target);
-        } else {
-            senderService.sendToChat(chatId, "⚠️ Таку ціль уже додано або значення порожнє.");
-        }
-    }
-
-    private void removeTarget(Long userId, String chatId, String target) {
-
-        boolean removed = targetAdminService.removeTarget(target);
-        sessionService.reset(userId);
-
-        if (removed) {
-            senderService.sendToChat(chatId, "✅ Ціль видалено: " + target);
-        } else {
-            senderService.sendToChat(chatId, "⚠️ Таку ціль не знайдено.");
-        }
-    }
-
-    private void addLocation(Long userId, String chatId, String location) {
-
-        boolean added = locationAdminService.addLocation(location);
-        sessionService.reset(userId);
-
-        if (added) {
-            senderService.sendToChat(chatId, "✅ Локацію додано: " + location);
-        } else {
-            senderService.sendToChat(chatId, "⚠️ Таку локацію вже додано або значення порожнє.");
-        }
-    }
-
-    private void removeLocation(Long userId, String chatId, String location) {
-
-        boolean removed = locationAdminService.removeLocation(location);
-
-        sessionService.reset(userId);
-
-        if (removed) {
-            senderService.sendToChat(chatId, "✅ Локацію видалено: " + location);
-        } else {
-            senderService.sendToChat(chatId, "⚠️ Таку локацію не знайдено.");
-        }
-    }
-
-    private void requestAddTarget(Long userId, String chatId) {
-
-        sessionService.setState(userId, AdminSessionState.WAITING_FOR_NEW_TARGET);
-        senderService.sendToChat(chatId, "Введіть ціль для моніторингу:");
-    }
-
-    private void requestRemoveTarget(Long userId, String chatId) {
-
-        sessionService.setState(userId, AdminSessionState.WAITING_FOR_REMOVE_TARGET);
-        senderService.sendToChat(chatId, "Введіть ціль, яку треба видалити:");
-    }
-
-    private void requestAddLocation(Long userId, String chatId) {
-
-        sessionService.setState( userId, AdminSessionState.WAITING_FOR_NEW_LOCATION);
-
-        senderService.sendToChat(chatId, "Введіть локацію для моніторингу:");
-    }
-
-    private void requestRemoveLocation(Long userId, String chatId) {
-
-        sessionService.setState(userId, AdminSessionState.WAITING_FOR_REMOVE_LOCATION);
-        senderService.sendToChat(chatId, "Введіть локацію, яку треба видалити:");
+	sessionService.setState(userId, AdminSessionState.WAITING_FOR_DICTIONARY_INPUT);
+	sessionService.setDictionaryType(userId, type);
+	sessionService.setDictionaryAction(userId, action);
+	senderService.sendToChat(chatId, prompt);
     }
 
     private void sendManualAlert(String chatId, ManualAlertType type, AdminMessage successMessage) {
@@ -486,50 +718,6 @@ public class AdminCommandHandler {
         }
 
         senderService.sendToChat(chatId, "🧭 Напрямки моніторингу:\n\n" + directions);
-    }
-
-    private void addDirection(Long userId, String chatId, String direction) {
-
-        boolean added = directionAdminService.addDirection(direction);
-
-        sessionService.reset(userId);
-
-        if (added) {
-            senderService.sendToChat(
-                    chatId,
-                    "✅ Напрямок додано: " + direction
-            );
-        } else {
-            senderService.sendToChat(
-                    chatId,
-                    "⚠️ Такий напрямок уже додано або значення порожнє."
-            );
-        }
-    }
-
-    private void removeDirection(Long userId, String chatId, String direction) {
-
-        boolean removed = directionAdminService.removeDirection(direction);
-
-        sessionService.reset(userId);
-
-        if (removed) {
-            senderService.sendToChat(chatId, "✅ Напрямок видалено: " + direction);
-        } else {
-            senderService.sendToChat(chatId, "⚠️ Такий напрямок не знайдено.");
-        }
-    }
-
-    private void requestAddDirection(Long userId, String chatId) {
-
-        sessionService.setState(userId, AdminSessionState.WAITING_FOR_NEW_DIRECTION);
-        senderService.sendToChat(chatId, "Введіть напрямок для моніторингу:");
-    }
-
-    private void requestRemoveDirection(Long userId, String chatId) {
-
-        sessionService.setState(userId, AdminSessionState.WAITING_FOR_REMOVE_DIRECTION);
-        senderService.sendToChat(chatId, "Введіть напрямок, який треба видалити:");
     }
 
     private String normalizeCommand(String text) {
@@ -856,13 +1044,10 @@ public class AdminCommandHandler {
             );
 
             senderService.editMessageWithKeyboard(
-                    adminChatId,
-                    messageId,
-                    message,
-                    singleButtonKeyboard(
-                        "✅ Увімкнути моніторинг",
-                        SOURCE_ENABLE_CALLBACK + source.chatId()
-                    )
+                adminChatId,
+                messageId,
+                message,
+                singleButtonKeyboard("✅ Увімкнути моніторинг", SOURCE_ENABLE_CALLBACK + source.chatId())
             );
 
             return;
@@ -901,5 +1086,203 @@ public class AdminCommandHandler {
         }
 
         return SOURCE_TIME_FORMATTER.format(instant.atZone(KYIV_ZONE));
+    }
+
+    private void openDictionaryCategory(
+	Long userId,
+	String chatId,
+	Integer messageId,
+	String callbackQueryId,
+	DictionaryType type,
+	String category
+    ) {
+
+	sessionService.setDictionaryType(userId, type);
+	sessionService.setSelectedCategory(userId, category);
+
+	String title = type == DictionaryType.TARGETS
+		? "🎯 "
+		: "📍 ";
+
+	senderService.editMessageWithKeyboard(
+		chatId,
+		messageId,
+		title + category,
+		dictionaryMenuService.categoryKeyboard(
+			type,
+			category
+		)
+	);
+
+	senderService.answerCallback(
+		callbackQueryId,
+		""
+	);
+    }
+
+    private void showDictionaryCategories(
+	String chatId,
+	Integer messageId,
+	String callbackQueryId,
+	DictionaryType type
+    ) {
+
+	List<String> categories = dictionaryAdminService.getCategories(type);
+	String title = type == DictionaryType.TARGETS ? "🎯 Цілі" : "📍 Локації";
+
+	senderService.editMessageWithKeyboard(
+		chatId,
+		messageId,
+		title,
+		dictionaryMenuService.categoriesKeyboard(type, categories, false)
+	);
+
+	senderService.answerCallback(callbackQueryId, "");
+    }
+
+    private void showDictionaryAliases(
+	String chatId,
+	Integer messageId,
+	String callbackQueryId,
+	DictionaryType type,
+	String category
+    ) {
+
+	List<String> aliases =
+		dictionaryAdminService.getAliases(
+			type,
+			category
+		);
+
+	String message;
+
+	if (aliases.isEmpty()) {
+		message = "📋 Аліасів поки немає.";
+	} else {
+		message = "📋 Аліаси:\n\n"
+			+ String.join("\n", aliases);
+	}
+
+	senderService.editMessageWithKeyboard(
+		chatId,
+		messageId,
+		message,
+		dictionaryMenuService.categoryKeyboard(
+			type,
+			category
+		)
+	);
+
+	senderService.answerCallback(
+		callbackQueryId,
+		""
+	);
+    }
+
+    private void requestDictionaryAlias(
+	Long userId,
+	String chatId,
+	DictionaryType type,
+	DictionaryAction action,
+	String category
+    ) {
+
+	sessionService.setState(
+		userId,
+		AdminSessionState.WAITING_FOR_DICTIONARY_INPUT
+	);
+
+	sessionService.setDictionaryType(
+		userId,
+		type
+	);
+
+	sessionService.setDictionaryAction(
+		userId,
+		action
+	);
+
+	sessionService.setSelectedCategory(
+		userId,
+		category
+	);
+
+	String message = action == DictionaryAction.ADD
+		? "Надішліть новий аліас для категорії «" + category + "»."
+		: "Надішліть аліас, який потрібно видалити з категорії «"
+			+ category
+			+ "».";
+
+	senderService.sendToChat(chatId, message);
+    }
+
+    private void requestNewCategory(
+	Long userId,
+	String chatId,
+	DictionaryType type
+    ) {
+
+	sessionService.setState(userId, AdminSessionState.WAITING_FOR_NEW_CATEGORY);
+	sessionService.setDictionaryType(userId, type);
+	senderService.sendToChat(chatId, "Введіть назву нової категорії:");
+    }
+
+    private void showDeleteCategoryMenu(
+	String chatId,
+	Integer messageId,
+	String callbackQueryId,
+	DictionaryType type
+    ) {
+
+	List<String> categories = dictionaryAdminService.getCategories(type);
+
+	senderService.editMessageWithKeyboard(
+		chatId,
+		messageId,
+		"➖ Оберіть категорію, яку потрібно видалити:",
+		dictionaryMenuService.deleteCategoriesKeyboard(
+			type,
+			categories
+		)
+	);
+
+	senderService.answerCallback(callbackQueryId, "");
+    }
+
+    private void deleteDictionaryCategory(
+	String chatId,
+	Integer messageId,
+	String callbackQueryId,
+	DictionaryType type,
+	String category
+    ) {
+
+	boolean removed =
+		dictionaryAdminService.removeCategory(
+			type,
+			category
+		);
+
+	if (!removed) {
+
+		senderService.answerCallback(
+			callbackQueryId,
+			"Категорію не знайдено"
+		);
+
+		return;
+	}
+
+	senderService.answerCallback(
+		callbackQueryId,
+		"Категорію видалено"
+	);
+
+	showDictionaryCategories(
+		chatId,
+		messageId,
+		callbackQueryId,
+		type
+	);
     }
 }

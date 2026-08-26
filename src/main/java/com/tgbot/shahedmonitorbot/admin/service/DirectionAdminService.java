@@ -1,9 +1,8 @@
 package com.tgbot.shahedmonitorbot.admin.service;
 
 import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryConfig;
-import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryJsonService;
+import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryConfigService;
 import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryStorage;
-import com.tgbot.shahedmonitorbot.admin.dictionary.DynamicConfig;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;
 import org.springframework.stereotype.Service;
 
@@ -13,72 +12,81 @@ import java.util.List;
 @Service
 public class DirectionAdminService {
 
-    private final DictionaryStorage storage;
-    private final DictionaryJsonService jsonService;
+	private final DictionaryStorage storage;
+	private final DictionaryConfigService configService;
 
-    public DirectionAdminService(
-        DictionaryStorage storage,
-        DictionaryJsonService jsonService
-    ) {
-        this.storage = storage;
-        this.jsonService = jsonService;
-    }
+	public DirectionAdminService(
+		DictionaryStorage storage,
+		DictionaryConfigService configService
+	) {
+		this.storage = storage;
+		this.configService = configService;
+	}
 
-    public synchronized List<String> getDirections() {
-        return List.copyOf(storage.get().dictionaries().directions());
-    }
+	public synchronized List<String> getDirections() {
 
-    public synchronized boolean addDirection(String direction) {
+		return List.copyOf(
+			storage.get()
+				.dictionaries()
+				.directions()
+		);
+	}
 
-        String normalized = TextNormalizer.normalize(direction);
+	public synchronized boolean addDirection(String direction) {
 
-        if (normalized.isBlank()) {
-            return false;
-        }
+		String normalized = TextNormalizer.normalize(direction);
 
-        List<String> directions = new ArrayList<>(storage.get().dictionaries().directions());
+		if (normalized.isBlank()) {
+			return false;
+		}
 
-        if (directions.contains(normalized)) {
-            return false;
-        }
+		List<String> directions = new ArrayList<>(
+			storage.get().dictionaries().directions()
+		);
 
-        directions.add(normalized);
-        replaceDirections(directions);
+		if (directions.contains(normalized)) {
+			return false;
+		}
 
-        return true;
-    }
+		directions.add(normalized);
 
-    public synchronized boolean removeDirection(String direction) {
+		configService.update(current -> new DictionaryConfig(
+			current.targets(),
+			current.locations(),
+			List.copyOf(directions),
+			current.attention(),
+			current.globalThreat(),
+			current.forecast(),
+			current.noise(),
+			current.messageIntents()
+		));
 
-        String normalized = TextNormalizer.normalize(direction);
-        List<String> directions = new ArrayList<>(storage.get().dictionaries().directions());
+		return true;
+	}
 
-        if (!directions.remove(normalized)) {
-            return false;
-        }
+	public synchronized boolean removeDirection(String direction) {
 
-        replaceDirections(directions);
+		String normalized = TextNormalizer.normalize(direction);
 
-        return true;
-    }
+		List<String> directions = new ArrayList<>(
+			storage.get().dictionaries().directions()
+		);
 
-    private void replaceDirections(List<String> directions) {
+		if (!directions.remove(normalized)) {
+			return false;
+		}
 
-        DynamicConfig current = storage.get();
-        DictionaryConfig currentDictionaries = current.dictionaries();
+		configService.update(current -> new DictionaryConfig(
+			current.targets(),
+			current.locations(),
+			List.copyOf(directions),
+			current.attention(),
+			current.globalThreat(),
+			current.forecast(),
+			current.noise(),
+			current.messageIntents()
+		));
 
-        DictionaryConfig updatedDictionaries = new DictionaryConfig(
-            currentDictionaries.targets(),
-            currentDictionaries.locations(),
-            List.copyOf(directions),
-            currentDictionaries.attention(),
-            currentDictionaries.globalThreat(),
-            currentDictionaries.forecast(),
-            currentDictionaries.noise(),
-            currentDictionaries.messageIntents()
-        );
-
-        storage.replace(new DynamicConfig(updatedDictionaries, current.sources()));
-        jsonService.save();
-    }
+		return true;
+	}
 }

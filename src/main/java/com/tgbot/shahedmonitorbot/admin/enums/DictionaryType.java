@@ -2,12 +2,12 @@ package com.tgbot.shahedmonitorbot.admin.enums;
 
 public enum DictionaryType {
 
-    TARGET,
-    LOCATION,
-    DIRECTION,
+    TARGETS,
+    LOCATIONS,
+    DIRECTIONS,
     ATTENTION,
     GLOBAL_THREAT,
     FORECAST,
     NOISE,
-    MESSAGE_INTENT
+    MESSAGE_INTENTS
 }

@@ -2,12 +2,12 @@ package com.tgbot.shahedmonitorbot.admin.enums;
 
 public enum AdminButton {
 
+    KEYWORDS("🔑 Ключові слова"),
+
     TARGETS("🎯 Цілі"),
     SHOW_TARGETS("📋 Показати цілі"),
     ADD_TARGET("➕ Додати ціль"),
     REMOVE_TARGET("➖ Видалити ціль"),
-
-    KEYWORDS("🔑 Ключові слова"),
 
     LOCATIONS("📍 Локації"),
     SHOW_LOCATIONS("📋 Показати локації"),
@@ -18,6 +18,31 @@ public enum AdminButton {
     SHOW_DIRECTIONS("📋 Показати напрямки"),
     ADD_DIRECTION("➕ Додати напрямок"),
     REMOVE_DIRECTION("➖ Видалити напрямок"),
+
+    ATTENTION("Увага"),
+    SHOW_ATTENTIONS("📋 Показати слова"),
+    ADD_ATTENTION("➕ Додати слово"),
+    REMOVE_ATTENTION("➖ Видалити слово"),
+
+    GLOBAL_THREAT("Глобальні загрози"),
+    SHOW_GLOBAL_THREATS("📋 Показати слова"),
+    ADD_GLOBAL_THREATS("➕ Додати слово"),
+    REMOVE_GLOBAL_THREAT("➖ Видалити слово"),
+
+    FORECAST("Прогноз"),
+    SHOW_FORECASTS("📋 Показати слова"),
+    ADD_FORECAST("➕ Додати слово"),
+    REMOVE_FORECAST("➖ Видалити слово"),
+
+    NOISE("Шум"),
+    SHOW_NOISES("📋 Показати слова"),
+    ADD_NOISE("➕ Додати слово"),
+    REMOVE_NOISE("➖ Видалити слово"),
+
+    MESSAGE_INTENTS("MESSAGE_INTENTS"),
+    SHOW_MESSAGE_INTENTS("📋 Показати слова"),
+    ADD_MESSAGE_INTENTS("➕ Додати слово"),
+    REMOVE_MESSAGE_INTENTS("➖ Видалити слово"),
 
     ALERTS("🚨 Керування тривогами"),
     ALERT("🚨 Тривога"),
