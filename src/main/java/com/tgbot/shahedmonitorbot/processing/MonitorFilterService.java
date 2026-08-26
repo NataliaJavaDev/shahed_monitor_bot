@@ -1,5 +1,6 @@
 package com.tgbot.shahedmonitorbot.processing;
 
+import com.tgbot.shahedmonitorbot.admin.enums.DictionaryType;
 import com.tgbot.shahedmonitorbot.admin.service.*;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;
 import org.springframework.stereotype.Service;
@@ -12,18 +13,18 @@ public class MonitorFilterService {
 
     private final TargetAdminService targetAdminService;
     private final LocationAdminService locationAdminService;
-    private final DirectionAdminService directionAdminService;
+    private final DictionaryAdminService dictionaryAdminService;
     private final AttentionWordAdminService attentionWordAdminService;
 
     public MonitorFilterService(
         TargetAdminService targetAdminService,
         LocationAdminService locationAdminService,
-        DirectionAdminService directionAdminService,
+        DictionaryAdminService dictionaryAdminService,
         AttentionWordAdminService attentionWordAdminService
     ) {
         this.targetAdminService = targetAdminService;
         this.locationAdminService = locationAdminService;
-        this.directionAdminService = directionAdminService;
+        this.dictionaryAdminService = dictionaryAdminService;
         this.attentionWordAdminService = attentionWordAdminService;
     }
 
@@ -88,7 +89,7 @@ public class MonitorFilterService {
 
         String normalizedLocation = TextNormalizer.normalize(matchedLocation);
 
-        return directionAdminService.getDirections()
+        return dictionaryAdminService.getValues(DictionaryType.DIRECTIONS)
             .stream()
             .filter(direction -> normalizedText.equals(direction + " " + normalizedLocation))
                 .findFirst()

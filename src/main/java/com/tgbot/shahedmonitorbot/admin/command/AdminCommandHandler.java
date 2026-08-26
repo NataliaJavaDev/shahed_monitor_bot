@@ -32,7 +32,6 @@ public class AdminCommandHandler {
 
     private final TargetAdminService targetAdminService;
     private final LocationAdminService locationAdminService;
-    private final DirectionAdminService directionAdminService;
     private final TelegramSenderService senderService;
     private final AdminSessionService sessionService;
     private final AdminAccessService accessService;
@@ -50,7 +49,6 @@ public class AdminCommandHandler {
     public AdminCommandHandler(
         TargetAdminService targetAdminService,
         LocationAdminService locationAdminService,
-        DirectionAdminService directionAdminService,
         TelegramSenderService senderService,
         AdminSessionService sessionService,
         AdminAccessService accessService,
@@ -67,7 +65,6 @@ public class AdminCommandHandler {
     ) {
         this.targetAdminService = targetAdminService;
         this.locationAdminService = locationAdminService;
-        this.directionAdminService = directionAdminService;
         this.senderService = senderService;
         this.sessionService = sessionService;
         this.accessService = accessService;
@@ -430,72 +427,6 @@ public class AdminCommandHandler {
 	}
     }
 
-
-    private void handleDictionaryInput(
-	Long userId,
-	String chatId,
-	DictionaryType type,
-	DictionaryAction action,
-	String value
-    ) {
-
-	String category = sessionService.getSelectedCategory(userId);
-
-	if (
-		(type == DictionaryType.TARGETS
-			|| type == DictionaryType.LOCATIONS)
-		&& (category == null || category.isBlank())
-	) {
-
-		sessionService.reset(userId);
-
-		senderService.sendToChat(
-			chatId,
-			"❌ Не вдалося визначити категорію."
-		);
-
-		return;
-	}
-
-	boolean success;
-
-	if (action == DictionaryAction.ADD) {
-
-		success = dictionaryAdminService.addAlias(
-			type,
-			category,
-			value
-		);
-
-	} else {
-
-		success = dictionaryAdminService.removeAlias(
-			type,
-			category,
-			value
-		);
-	}
-
-	sessionService.reset(userId);
-
-	String message;
-
-	if (action == DictionaryAction.ADD) {
-		message = success
-			? "✅ Аліас «" + value + "» додано до «" + category + "»."
-			: "⚠️ Такий аліас уже існує.";
-	} else {
-		message = success
-			? "✅ Аліас «" + value + "» видалено."
-			: "⚠️ Такий аліас не знайдено.";
-	}
-
-	senderService.sendToChat(
-		chatId,
-		message
-	);
-    }
-
     private boolean handleCommand(Long userId, String chatId, String text) {
 
         AdminCommand command = AdminCommand.fromText(text);
@@ -563,7 +494,7 @@ public class AdminCommandHandler {
                 return true;
 
             case SHOW_DIRECTIONS:
-                sendDirections(chatId);
+                sendDictionaryValues(chatId, DictionaryType.DIRECTIONS);
                 return true;
 
             case ADD_DIRECTION:
@@ -573,6 +504,134 @@ public class AdminCommandHandler {
             case REMOVE_DIRECTION:
                 requestDictionaryInput(userId, chatId, DictionaryType.DIRECTIONS, DictionaryAction.REMOVE, "Введіть напрямок, який треба видалити:");
                 return true;
+
+            case ATTENTION:
+	senderService.sendToChatWithReplyKeyboard(
+		chatId,
+		"⚠️ Attention words\n\nОберіть дію:",
+		menuService.dictionaryReplyKeyboard(DictionaryType.ATTENTION)
+	);
+	return true;
+
+            case SHOW_ATTENTIONS:
+        	sendDictionaryValues(chatId, DictionaryType.ATTENTION);
+        	return true;
+        
+            case ADD_ATTENTION:
+        	requestDictionaryInput(
+        		userId,
+        		chatId,
+        		DictionaryType.ATTENTION,
+        		DictionaryAction.ADD,
+        		"Введіть новий attention marker:"
+        	);
+        	return true;
+        
+            case REMOVE_ATTENTION:
+        	requestDictionaryInput(
+        		userId,
+        		chatId,
+        		DictionaryType.ATTENTION,
+        		DictionaryAction.REMOVE,
+        		"Введіть attention marker, який треба видалити:"
+        	);
+        	return true;
+        
+            case GLOBAL_THREAT:
+        	senderService.sendToChatWithReplyKeyboard(
+        		chatId,
+        		"🌐 Global threat markers\n\nОберіть дію:",
+        		menuService.dictionaryReplyKeyboard(DictionaryType.GLOBAL_THREAT)
+        	);
+        	return true;
+        
+            case SHOW_GLOBAL_THREATS:
+        	sendDictionaryValues(chatId, DictionaryType.GLOBAL_THREAT);
+        	return true;
+        
+            case ADD_GLOBAL_THREATS:
+        	requestDictionaryInput(
+        		userId,
+        		chatId,
+        		DictionaryType.GLOBAL_THREAT,
+        		DictionaryAction.ADD,
+        		"Введіть новий global threat marker:"
+        	);
+        	return true;
+        
+            case REMOVE_GLOBAL_THREAT:
+        	requestDictionaryInput(
+        		userId,
+        		chatId,
+        		DictionaryType.GLOBAL_THREAT,
+        		DictionaryAction.REMOVE,
+        		"Введіть global threat marker, який треба видалити:"
+        	);
+        	return true;
+        
+            case FORECAST:
+        	senderService.sendToChatWithReplyKeyboard(
+        		chatId,
+        		"🔮 Forecast markers\n\nОберіть дію:",
+        		menuService.dictionaryReplyKeyboard(DictionaryType.FORECAST)
+        	);
+        	return true;
+        
+            case SHOW_FORECASTS:
+        	sendDictionaryValues(chatId, DictionaryType.FORECAST);
+        	return true;
+        
+            case ADD_FORECAST:
+        	requestDictionaryInput(
+        		userId,
+        		chatId,
+        		DictionaryType.FORECAST,
+        		DictionaryAction.ADD,
+        		"Введіть новий forecast marker:"
+        	);
+        	return true;
+        
+            case REMOVE_FORECAST:
+        	requestDictionaryInput(
+        		userId,
+        		chatId,
+        		DictionaryType.FORECAST,
+        		DictionaryAction.REMOVE,
+        		"Введіть forecast marker, який треба видалити:"
+        	);
+        	return true;
+        
+            case NOISE:
+        	senderService.sendToChatWithReplyKeyboard(
+        		chatId,
+        		"✂️ Noise markers\n\nОберіть дію:",
+        		menuService.dictionaryReplyKeyboard(DictionaryType.NOISE)
+        	);
+        	return true;
+        
+            case SHOW_NOISES:
+        	sendDictionaryValues(chatId, DictionaryType.NOISE);
+        	return true;
+        
+            case ADD_NOISE:
+        	requestDictionaryInput(
+        		userId,
+        		chatId,
+        		DictionaryType.NOISE,
+        		DictionaryAction.ADD,
+        		"Введіть новий noise marker:"
+        	);
+        	return true;
+        
+            case REMOVE_NOISE:
+        	requestDictionaryInput(
+        		userId,
+        		chatId,
+        		DictionaryType.NOISE,
+        		DictionaryAction.REMOVE,
+        		"Введіть noise marker, який треба видалити:"
+        	);
+        	return true;
 
             case ALERTS:
                 senderService.sendToChatWithReplyKeyboard(chatId, AdminMessage.ALERT_MENU_TITLE.text(), menuService.alertReplyKeyboard());
@@ -665,6 +724,92 @@ public class AdminCommandHandler {
     		)
     	);
     }
+
+    private void handleDictionaryInput(
+	Long userId,
+	String chatId,
+	DictionaryType type,
+	DictionaryAction action,
+	String value
+    ) {
+
+	String category = sessionService.getSelectedCategory(userId);
+
+	boolean categoryBased = type == DictionaryType.TARGETS || type == DictionaryType.LOCATIONS;
+
+	/*
+	 * TARGETS і LOCATIONS працюють через категорії та аліаси.
+	 */
+	if (categoryBased && (category == null || category.isBlank())) {
+
+	    sessionService.reset(userId);
+	    senderService.sendToChat(chatId, "❌ Не вдалося визначити категорію.");
+
+	    return;
+	}
+
+	boolean success;
+
+	if (categoryBased) {
+
+	    if (action == DictionaryAction.ADD) {
+		success = dictionaryAdminService.addAlias(type, category, value);
+	    } else {
+                success = dictionaryAdminService.removeAlias(type, category, value);
+	    }
+
+	} else {
+
+	    /*
+	     * DIRECTIONS, ATTENTION, GLOBAL_THREAT,
+	     * FORECAST, NOISE — прості списки.
+	     */
+	    if (action == DictionaryAction.ADD) {
+	    	success = dictionaryAdminService.add(type, value);
+	    } else {
+	    	success = dictionaryAdminService.remove(type, value);
+	    }
+	}
+
+	sessionService.reset(userId);
+
+	String message;
+
+	if (action == DictionaryAction.ADD) {
+	    message = success ? "✅ Слово «" + value + "» додано." : "⚠️ Таке слово вже існує.";
+	} else {
+            message = success ? "✅ Слово «" + value + "» видалено." : "⚠️ Таке слово не знайдено.";
+	}
+
+	senderService.sendToChat(chatId, message);
+    }
+
+    private void sendDictionaryValues(String chatId, DictionaryType type) {
+    
+        List<String> values = dictionaryAdminService.getValues(type);
+    
+        if (values.isEmpty()) {
+            senderService.sendToChat(
+                chatId,
+                "Список значень порожній."
+            );
+            return;
+        }
+    
+        String title = switch (type) {
+            case DIRECTIONS -> "🧭 Напрямки моніторингу";
+            case ATTENTION -> "⚠️ Attention words";
+            case GLOBAL_THREAT -> "🌐 Global threat markers";
+            case FORECAST -> "🔮 Forecast markers";
+            case NOISE -> "✂️ Noise markers";
+            default -> "📋 Значення";
+        };
+    
+        senderService.sendToChat(
+            chatId,
+            title + ":\n\n" + String.join("\n", values)
+        );
+    }
     
     private void sendTargets(String chatId) {
     
@@ -706,18 +851,6 @@ public class AdminCommandHandler {
 
     private void sendMainMenu(String chatId) {
         senderService.sendToChatWithReplyKeyboard(chatId, menuService.mainMenuText(), menuService.mainReplyKeyboard());
-    }
-
-    private void sendDirections(String chatId) {
-
-        String directions = String.join("\n", directionAdminService.getDirections());
-
-        if (directions.isBlank()) {
-            senderService.sendToChat(chatId, "Список напрямків порожній.");
-            return;
-        }
-
-        senderService.sendToChat(chatId, "🧭 Напрямки моніторингу:\n\n" + directions);
     }
 
     private String normalizeCommand(String text) {

@@ -1,6 +1,8 @@
 package com.tgbot.shahedmonitorbot.admin.menu;
 
 import com.tgbot.shahedmonitorbot.admin.enums.AdminButton;
+import com.tgbot.shahedmonitorbot.admin.enums.DictionaryType;
+
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
@@ -109,6 +111,21 @@ public class AdminMenuService {
         return buildKeyboard(List.of(row1, row2, row3));
     }
 
+    public ReplyKeyboardMarkup dictionaryReplyKeyboard(DictionaryType type) {
+
+    	KeyboardRow row1 = new KeyboardRow();
+    	row1.add(getShowButton(type));
+    
+    	KeyboardRow row2 = new KeyboardRow();
+    	row2.add(getAddButton(type));
+    	row2.add(getRemoveButton(type));
+    
+    	KeyboardRow row3 = new KeyboardRow();
+    	row3.add(AdminButton.BACK.text());
+    
+    	return buildKeyboard(List.of(row1, row2, row3));
+    }
+
     public ReplyKeyboardMarkup alertReplyKeyboard() {
 
         KeyboardRow row1 = new KeyboardRow();
@@ -171,5 +188,38 @@ public class AdminMenuService {
             .keyboard(rows)
             .resizeKeyboard(true)
             .build();
+    }
+
+    private String getShowButton(DictionaryType type) {
+
+    	return switch (type) {
+    		case ATTENTION -> AdminButton.SHOW_ATTENTIONS.text();
+    		case GLOBAL_THREAT -> AdminButton.SHOW_GLOBAL_THREATS.text();
+    		case FORECAST -> AdminButton.SHOW_FORECASTS.text();
+    		case NOISE -> AdminButton.SHOW_NOISES.text();
+    		default -> "📋 Показати";
+    	};
+    }
+    
+    private String getAddButton(DictionaryType type) {
+    
+    	return switch (type) {
+    		case ATTENTION -> AdminButton.ADD_ATTENTION.text();
+    		case GLOBAL_THREAT -> AdminButton.ADD_GLOBAL_THREATS.text();
+    		case FORECAST -> AdminButton.ADD_FORECAST.text();
+    		case NOISE -> AdminButton.ADD_NOISE.text();
+    		default -> "➕ Додати";
+    	};
+    }
+    
+    private String getRemoveButton(DictionaryType type) {
+    
+    	return switch (type) {
+    		case ATTENTION -> AdminButton.REMOVE_ATTENTION.text();
+    		case GLOBAL_THREAT -> AdminButton.REMOVE_GLOBAL_THREAT.text();
+    		case FORECAST -> AdminButton.REMOVE_FORECAST.text();
+    		case NOISE -> AdminButton.REMOVE_NOISE.text();
+    		default -> "➖ Видалити";
+    	};
     }
 }
