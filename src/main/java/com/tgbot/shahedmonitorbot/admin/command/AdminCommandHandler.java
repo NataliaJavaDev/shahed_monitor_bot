@@ -383,26 +383,14 @@ public class AdminCommandHandler {
 
 	    	if (dictionaryType == null || dictionaryAction == null) {
 	    	    sessionService.reset(userId);
-	    	    senderService.sendToChat(
-	    	    	chatId,
-	    	    	"❌ Не вдалося визначити операцію зі словником. Спробуйте ще раз."
-	    	    );
+	    	    senderService.sendToChat(chatId, "❌ Не вдалося визначити операцію зі словником. Спробуйте ще раз.");
 	    	    return true;
 	    	}
 	    	if (text == null || text.isBlank()) {
-	    	    senderService.sendToChat(
-	    	    	chatId,
-	    	    	"⚠️ Значення не може бути порожнім."
-	    	    );
+	    	    senderService.sendToChat(chatId, "⚠️ Значення не може бути порожнім.");
 	    	    return true;
 	    	}
-	    	handleDictionaryInput(
-	    	    userId,
-	    	    chatId,
-	    	    dictionaryType,
-	    	    dictionaryAction,
-	    	    text
-	    	);
+	    	handleDictionaryInput(userId, chatId, dictionaryType, dictionaryAction, text);
 	    	return true;
 
             case WAITING_FOR_NEW_CATEGORY:
@@ -414,9 +402,7 @@ public class AdminCommandHandler {
 
 	        senderService.sendToChat(
 		    chatId,
-		    added
-			? "✅ Категорію «" + text + "» створено."
-			: "⚠️ Така категорія вже існує."
+		    added ? "✅ Категорію «" + text + "» створено." : "⚠️ Така категорія вже існує."
 	        );
 
 	    return true;
@@ -1233,24 +1219,16 @@ public class AdminCommandHandler {
 	sessionService.setDictionaryType(userId, type);
 	sessionService.setSelectedCategory(userId, category);
 
-	String title = type == DictionaryType.TARGETS
-		? "🎯 "
-		: "📍 ";
+	String title = type == DictionaryType.TARGETS ? "🎯 " : "📍 ";
 
 	senderService.editMessageWithKeyboard(
 		chatId,
 		messageId,
 		title + category,
-		dictionaryMenuService.categoryKeyboard(
-			type,
-			category
-		)
+		dictionaryMenuService.categoryKeyboard(type, category)
 	);
 
-	senderService.answerCallback(
-		callbackQueryId,
-		""
-	);
+	senderService.answerCallback(callbackQueryId, "");
     }
 
     private void showDictionaryCategories(
@@ -1281,35 +1259,24 @@ public class AdminCommandHandler {
 	String category
     ) {
 
-	List<String> aliases =
-		dictionaryAdminService.getAliases(
-			type,
-			category
-		);
+	List<String> aliases = dictionaryAdminService.getAliases(type, category);
 
 	String message;
 
 	if (aliases.isEmpty()) {
 		message = "📋 Аліасів поки немає.";
 	} else {
-		message = "📋 Аліаси:\n\n"
-			+ String.join("\n", aliases);
+		message = "📋 Аліаси:\n\n" + String.join("\n", aliases);
 	}
 
 	senderService.editMessageWithKeyboard(
 		chatId,
 		messageId,
 		message,
-		dictionaryMenuService.categoryKeyboard(
-			type,
-			category
-		)
+		dictionaryMenuService.categoryKeyboard(type, category)
 	);
 
-	senderService.answerCallback(
-		callbackQueryId,
-		""
-	);
+	senderService.answerCallback(callbackQueryId, "");
     }
 
     private void requestDictionaryAlias(
@@ -1320,52 +1287,26 @@ public class AdminCommandHandler {
 	String category
     ) {
 
-	sessionService.setState(
-		userId,
-		AdminSessionState.WAITING_FOR_DICTIONARY_INPUT
-	);
+	sessionService.setState(userId, AdminSessionState.WAITING_FOR_DICTIONARY_INPUT);
 
-	sessionService.setDictionaryType(
-		userId,
-		type
-	);
-
-	sessionService.setDictionaryAction(
-		userId,
-		action
-	);
-
-	sessionService.setSelectedCategory(
-		userId,
-		category
-	);
+	sessionService.setDictionaryType(userId, type);
+	sessionService.setDictionaryAction(userId, action);
+	sessionService.setSelectedCategory(userId, category);
 
 	String message = action == DictionaryAction.ADD
 		? "Надішліть новий аліас для категорії «" + category + "»."
-		: "Надішліть аліас, який потрібно видалити з категорії «"
-			+ category
-			+ "».";
+		: "Надішліть аліас, який потрібно видалити з категорії «" + category + "».";
 
 	senderService.sendToChat(chatId, message);
     }
 
-    private void requestNewCategory(
-	Long userId,
-	String chatId,
-	DictionaryType type
-    ) {
-
+    private void requestNewCategory(Long userId, String chatId, DictionaryType type) {
 	sessionService.setState(userId, AdminSessionState.WAITING_FOR_NEW_CATEGORY);
 	sessionService.setDictionaryType(userId, type);
 	senderService.sendToChat(chatId, "Введіть назву нової категорії:");
     }
 
-    private void showDeleteCategoryMenu(
-	String chatId,
-	Integer messageId,
-	String callbackQueryId,
-	DictionaryType type
-    ) {
+    private void showDeleteCategoryMenu(String chatId, Integer messageId, String callbackQueryId, DictionaryType type) {
 
 	List<String> categories = dictionaryAdminService.getCategories(type);
 
@@ -1373,10 +1314,7 @@ public class AdminCommandHandler {
 		chatId,
 		messageId,
 		"➖ Оберіть категорію, яку потрібно видалити:",
-		dictionaryMenuService.deleteCategoriesKeyboard(
-			type,
-			categories
-		)
+		dictionaryMenuService.deleteCategoriesKeyboard(type, categories)
 	);
 
 	senderService.answerCallback(callbackQueryId, "");
@@ -1390,32 +1328,15 @@ public class AdminCommandHandler {
 	String category
     ) {
 
-	boolean removed =
-		dictionaryAdminService.removeCategory(
-			type,
-			category
-		);
+	boolean removed = dictionaryAdminService.removeCategory(type, category);
 
 	if (!removed) {
 
-		senderService.answerCallback(
-			callbackQueryId,
-			"Категорію не знайдено"
-		);
-
-		return;
+	    senderService.answerCallback(callbackQueryId, "Категорію не знайдено");
+	    return;
 	}
 
-	senderService.answerCallback(
-		callbackQueryId,
-		"Категорію видалено"
-	);
-
-	showDictionaryCategories(
-		chatId,
-		messageId,
-		callbackQueryId,
-		type
-	);
+	senderService.answerCallback(callbackQueryId, "Категорію видалено");
+	showDictionaryCategories(chatId, messageId, callbackQueryId, type);
     }
 }
