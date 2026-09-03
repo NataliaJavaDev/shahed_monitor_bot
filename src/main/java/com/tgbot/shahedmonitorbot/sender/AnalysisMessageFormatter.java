@@ -8,10 +8,10 @@ import org.springframework.stereotype.Service;
 public class AnalysisMessageFormatter {
 
     public String format(
-            MessageAnalysis analysis,
-            String sourceTitle,
-            String chatId,
-            String originalText
+        MessageAnalysis analysis,
+        String sourceTitle,
+        String chatId,
+        String originalText
     ) {
 
         MonitorMatch match = analysis.monitorMatch();

@@ -1,7 +1,5 @@
 package com.tgbot.shahedmonitorbot.admin.enums;
 
-import org.checkerframework.checker.units.qual.C;
-
 public enum AdminButton {
 
     KEYWORDS("🔑 Ключові слова"),
