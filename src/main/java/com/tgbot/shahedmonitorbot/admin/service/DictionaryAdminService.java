@@ -249,15 +249,14 @@ public class DictionaryAdminService {
 
 		categories.set(
 			0,
-			new com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryCategory(
+			new DictionaryCategory(
 				category.category(),
 				category.displayName(),
 				List.copyOf(aliases)
 			)
 		);
 
-		List<com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryCategory> updated =
-			List.copyOf(categories);
+		List<DictionaryCategory> updated = List.copyOf(categories);
 
 		configService.update(current -> new DictionaryConfig(
 			current.targets(),
@@ -273,10 +272,7 @@ public class DictionaryAdminService {
 		return true;
 	}
 
-	private boolean addSimpleValue(
-		DictionaryType type,
-		String value
-	) {
+	private boolean addSimpleValue(DictionaryType type, String value) {
 
 		String normalized = TextNormalizer.normalize(value);
 
@@ -293,24 +289,16 @@ public class DictionaryAdminService {
 		}
 
 		values.add(normalized);
-
 		updateSimpleDictionary(type, values);
 
 		return true;
 	}
 
-	private boolean removeSimpleValue(
-		DictionaryType type,
-		String value
-	) {
+	private boolean removeSimpleValue(DictionaryType type, String value) {
 
 		String normalized = TextNormalizer.normalize(value);
-
 		List<String> values = new ArrayList<>(getValues(type));
-
-		boolean removed = values.removeIf(
-			item -> TextNormalizer.normalize(item).equals(normalized)
-		);
+		boolean removed = values.removeIf(item -> TextNormalizer.normalize(item).equals(normalized));
 
 		if (!removed) {
 			return false;

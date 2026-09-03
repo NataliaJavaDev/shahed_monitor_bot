@@ -97,10 +97,7 @@ public class MessageAnalysisService {
         Optional<ForecastMatch> forecast = forecastDetectorService.findForecast(cleanedText);
 
         if (forecast.isPresent()) {
-            return analyzeForecast(
-                    forecast.get(),
-                    cleanedText
-            );
+            return analyzeForecast(forecast.get(), cleanedText);
         }
 
         if (intent == MessageIntent.THREAT_DETECTED) {

@@ -41,6 +41,21 @@ public class LocationAdminService {
 			.toList();
 	}
 
+	public synchronized List<String> getAliasesByCategory(String category) {
+	
+		String normalizedCategory = TextNormalizer.normalize(category);
+	
+		return storage.get()
+			.dictionaries()
+			.locations()
+			.stream()
+			.filter(item ->TextNormalizer.normalize(item.category()).equals(normalizedCategory))
+			.findFirst()
+			.map(DictionaryCategory::aliases)
+			.map(List::copyOf)
+			.orElse(List.of());
+	}
+
 	public synchronized String getCategory(String location) {
 
 		String normalizedLocation = TextNormalizer.normalize(location);
@@ -72,9 +87,7 @@ public class LocationAdminService {
 			return false;
 		}
 
-		List<DictionaryCategory> categories = new ArrayList<>(
-			storage.get().dictionaries().locations()
-		);
+		List<DictionaryCategory> categories = new ArrayList<>(storage.get().dictionaries().locations());
 
 		boolean locationExists = categories.stream()
 			.anyMatch(item -> item.aliases()
@@ -96,11 +109,9 @@ public class LocationAdminService {
 			}
 
 			List<String> aliases = new ArrayList<>(current.aliases());
-
 			aliases.add(normalizedLocation);
 
-			categories.set(
-				index,
+			categories.set(index,
 				new DictionaryCategory(
 					current.category(),
 					current.displayName(),
@@ -127,7 +138,7 @@ public class LocationAdminService {
 		categories.add(
 			new DictionaryCategory(
 				normalizedCategory,
-				null,
+				normalizedCategory,
 				List.of(normalizedLocation)
 			)
 		);
@@ -151,10 +162,7 @@ public class LocationAdminService {
 	public synchronized boolean removeLocation(String location) {
 
 		String normalizedLocation = TextNormalizer.normalize(location);
-
-		List<DictionaryCategory> categories = new ArrayList<>(
-			storage.get().dictionaries().locations()
-		);
+		List<DictionaryCategory> categories = new ArrayList<>(storage.get().dictionaries().locations());
 
 		for (int index = 0; index < categories.size(); index++) {
 
@@ -172,8 +180,7 @@ public class LocationAdminService {
 			if (aliases.isEmpty()) {
 				categories.remove(index);
 			} else {
-				categories.set(
-					index,
+				categories.set(index,
 					new DictionaryCategory(
 						current.category(),
 						current.displayName(),
@@ -201,24 +208,21 @@ public class LocationAdminService {
 		return false;
 	}
 
-	public synchronized List<String> getAliasesByCategory(String category) {
-	
+	public synchronized String getDisplayName(String category) {
+		
 		String normalizedCategory = TextNormalizer.normalize(category);
-	
+
 		return storage.get()
 			.dictionaries()
 			.locations()
 			.stream()
-			.filter(item ->
-				TextNormalizer.normalize(item.category())
-					.equals(normalizedCategory)
-			)
+			.filter(item -> TextNormalizer.normalize(item.category()).equals(normalizedCategory))
+			.map(DictionaryCategory::displayName)
+			.filter(displayName -> displayName != null && !displayName.isBlank())
 			.findFirst()
-			.map(DictionaryCategory::aliases)
-			.map(List::copyOf)
-			.orElse(List.of());
+			.orElse(normalizedCategory);
 	}
-	
+
 	public synchronized boolean addCategory(String category) {
 	
 		String normalizedCategory = TextNormalizer.normalize(category);
@@ -227,14 +231,10 @@ public class LocationAdminService {
 			return false;
 		}
 	
-		List<DictionaryCategory> categories =
-			new ArrayList<>(storage.get().dictionaries().locations());
+		List<DictionaryCategory> categories = new ArrayList<>(storage.get().dictionaries().locations());
 	
 		boolean exists = categories.stream()
-			.anyMatch(item ->
-				TextNormalizer.normalize(item.category())
-					.equals(normalizedCategory)
-			);
+			.anyMatch(item -> TextNormalizer.normalize(item.category()).equals(normalizedCategory));
 	
 		if (exists) {
 			return false;
@@ -243,34 +243,26 @@ public class LocationAdminService {
 		categories.add(
 			new DictionaryCategory(
 				normalizedCategory,
-				null,
+				normalizedCategory,
 				List.of()
 			)
 		);
 	
 		replaceLocations(categories);
-	
 		return true;
 	}
-	
+
 	public synchronized boolean removeCategory(String category) {
 	
 		String normalizedCategory = TextNormalizer.normalize(category);
-	
-		List<DictionaryCategory> categories =
-			new ArrayList<>(storage.get().dictionaries().locations());
-	
-		boolean removed = categories.removeIf(item ->
-			TextNormalizer.normalize(item.category())
-				.equals(normalizedCategory)
-		);
+		List<DictionaryCategory> categories = new ArrayList<>(storage.get().dictionaries().locations());
+		boolean removed = categories.removeIf(item -> TextNormalizer.normalize(item.category()).equals(normalizedCategory));
 	
 		if (!removed) {
 			return false;
 		}
 	
 		replaceLocations(categories);
-	
 		return true;
 	}
 

@@ -24,7 +24,7 @@ public class AdminMenuService {
 
         KeyboardRow row2 = new KeyboardRow();
         row2.add(AdminButton.STATUS.text());
-        row2.add(AdminButton.SETTINGS.text());
+        row2.add(AdminButton.SOURCES.text());
 
         return buildKeyboard(List.of(row1, row2));
     }
@@ -49,66 +49,6 @@ public class AdminMenuService {
         row4.add(AdminButton.BACK.text());
 
         return buildKeyboard(List.of(row1, row2, row3, row4));
-    }
-
-    public ReplyKeyboardMarkup targetsReplyKeyboard() {
-
-        KeyboardRow row1 = new KeyboardRow();
-        row1.add(AdminButton.SHOW_TARGETS.text());
-
-        KeyboardRow row2 = new KeyboardRow();
-        row2.add(AdminButton.ADD_TARGET.text());
-        row2.add(AdminButton.REMOVE_TARGET.text());
-
-        KeyboardRow row3 = new KeyboardRow();
-        row3.add(AdminButton.BACK.text());
-
-        return buildKeyboard(List.of(row1, row2, row3));
-    }
-
-    public ReplyKeyboardMarkup crudReplyKeyboard() {
-
-        KeyboardRow row1 = new KeyboardRow();
-        row1.add(AdminButton.SHOW_ATTENTIONS.text());
-
-        KeyboardRow row2 = new KeyboardRow();
-        row2.add(AdminButton.ADD_ATTENTION.text());
-        row2.add(AdminButton.REMOVE_ATTENTION.text());
-
-        KeyboardRow row3 = new KeyboardRow();
-        row3.add(AdminButton.BACK.text());
-
-        return buildKeyboard(List.of(row1, row2, row3));
-    }
-
-    public ReplyKeyboardMarkup locationsReplyKeyboard() {
-
-        KeyboardRow row1 = new KeyboardRow();
-        row1.add(AdminButton.SHOW_LOCATIONS.text());
-
-        KeyboardRow row2 = new KeyboardRow();
-        row2.add(AdminButton.ADD_LOCATION.text());
-        row2.add(AdminButton.REMOVE_LOCATION.text());
-
-        KeyboardRow row3 = new KeyboardRow();
-        row3.add(AdminButton.BACK.text());
-
-        return buildKeyboard(List.of(row1, row2, row3));
-    }
-
-    public ReplyKeyboardMarkup directionsReplyKeyboard() {
-
-        KeyboardRow row1 = new KeyboardRow();
-        row1.add(AdminButton.SHOW_DIRECTIONS.text());
-
-        KeyboardRow row2 = new KeyboardRow();
-        row2.add(AdminButton.ADD_DIRECTION.text());
-        row2.add(AdminButton.REMOVE_DIRECTION.text());
-
-        KeyboardRow row3 = new KeyboardRow();
-        row3.add(AdminButton.BACK.text());
-
-        return buildKeyboard(List.of(row1, row2, row3));
     }
 
     public ReplyKeyboardMarkup dictionaryReplyKeyboard(DictionaryType type) {
@@ -155,17 +95,6 @@ public class AdminMenuService {
         return buildKeyboard(List.of(row1, row2));
     }
 
-    public ReplyKeyboardMarkup settingsReplyKeyboard() {
-
-        KeyboardRow row1 = new KeyboardRow();
-        row1.add(AdminButton.SOURCES.text());
-
-        KeyboardRow row2 = new KeyboardRow();
-        row2.add(AdminButton.BACK.text());
-
-        return buildKeyboard(List.of(row1, row2));
-    }
-
     public ReplyKeyboardMarkup sourcesReplyKeyboard() {
 
         KeyboardRow row1 = new KeyboardRow();
@@ -193,6 +122,7 @@ public class AdminMenuService {
     private String getShowButton(DictionaryType type) {
 
     	return switch (type) {
+            case DIRECTIONS -> AdminButton.SHOW_DIRECTIONS.text();
     		case ATTENTION -> AdminButton.SHOW_ATTENTIONS.text();
     		case GLOBAL_THREAT -> AdminButton.SHOW_GLOBAL_THREATS.text();
     		case FORECAST -> AdminButton.SHOW_FORECASTS.text();
@@ -204,6 +134,7 @@ public class AdminMenuService {
     private String getAddButton(DictionaryType type) {
     
     	return switch (type) {
+            case DIRECTIONS -> AdminButton.ADD_DIRECTION.text();
     		case ATTENTION -> AdminButton.ADD_ATTENTION.text();
     		case GLOBAL_THREAT -> AdminButton.ADD_GLOBAL_THREATS.text();
     		case FORECAST -> AdminButton.ADD_FORECAST.text();
@@ -215,6 +146,7 @@ public class AdminMenuService {
     private String getRemoveButton(DictionaryType type) {
     
     	return switch (type) {
+            case DIRECTIONS -> AdminButton.REMOVE_DIRECTION.text();
     		case ATTENTION -> AdminButton.REMOVE_ATTENTION.text();
     		case GLOBAL_THREAT -> AdminButton.REMOVE_GLOBAL_THREAT.text();
     		case FORECAST -> AdminButton.REMOVE_FORECAST.text();

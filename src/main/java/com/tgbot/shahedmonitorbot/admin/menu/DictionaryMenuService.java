@@ -21,14 +21,16 @@ public class DictionaryMenuService {
 		List<InlineKeyboardRow> rows = new ArrayList<>();
 		InlineKeyboardRow categoryRow = new InlineKeyboardRow();
 	
-		for (String category : categories) {
-	
+		for (int i = 0; i < categories.size(); i++) {
+
+			String category = categories.get(i);
+
 			String callback = deleteMode
-				? "dictionary:delete-category:" + type.name() + ":" + category
-				: "dictionary:category:" + type.name() + ":" + category;
-	
+				? "dictionary:delete-category:" + type.name() + ":" + i
+				: "dictionary:category:" + type.name() + ":" + i;
+
 			categoryRow.add(button(category, callback));
-	
+
 			if (categoryRow.size() == 2) {
 				rows.add(categoryRow);
 				categoryRow = new InlineKeyboardRow();
@@ -39,26 +41,26 @@ public class DictionaryMenuService {
 			rows.add(categoryRow);
 		}
 	
-		// rows.add(
-		// 	singleRow(
-		// 		getAddText(type),
-		// 		"dictionary:add-category:" + type.name()
-		// 	)
-		// );
+		rows.add(
+			singleRow(
+				getAddText(type),
+				"dictionary:add-category:" + type.name()
+			)
+		);
 	
-		// rows.add(
-		// 	singleRow(
-		// 		getRemoveText(type),
-		// 		"dictionary:delete-mode:" + type.name()
-		// 	)
-		// );
+		rows.add(
+			singleRow(
+				getRemoveText(type),
+				"dictionary:delete-mode:" + type.name()
+			)
+		);
 	
-		// rows.add(
-		// 	singleRow(
-		// 		"⬅️ Назад",
-		// 		"dictionary:back"
-		// 	)
-		// );
+		rows.add(
+			singleRow(
+				"⬅️ Назад",
+				"dictionary:back"
+			)
+		);
 	
 		return markup(rows);
 	}
@@ -69,10 +71,11 @@ public class DictionaryMenuService {
 	) {
 
 		List<InlineKeyboardRow> rows = new ArrayList<>();
-
 		InlineKeyboardRow categoryRow = new InlineKeyboardRow();
 
-		for (String category : categories) {
+		for (int i = 0; i < categories.size(); i++) {
+
+			String category = categories.get(i);
 
 			categoryRow.add(
 				button(
@@ -80,7 +83,7 @@ public class DictionaryMenuService {
 					"dictionary:delete-category:"
 						+ type.name()
 						+ ":"
-						+ category
+						+ i
 				)
 			);
 
@@ -110,17 +113,6 @@ public class DictionaryMenuService {
 	) {
 
 		List<InlineKeyboardRow> rows = new ArrayList<>();
-
-		// Показати аліаси
-		rows.add(
-			singleRow(
-				"📋 Усі аліаси",
-				"dictionary:aliases:"
-					+ type.name()
-					+ ":"
-					+ category
-			)
-		);
 
 		// Додати + Видалити аліас
 		InlineKeyboardRow actionRow = new InlineKeyboardRow();
@@ -184,19 +176,12 @@ public class DictionaryMenuService {
 
 		InlineKeyboardRow row = new InlineKeyboardRow();
 
-		row.add(
-			button(text, callbackData)
-		);
+		row.add(button(text, callbackData));
 
 		return row;
 	}
 
-	private InlineKeyboardMarkup markup(
-		List<InlineKeyboardRow> rows
-	) {
-
-		return InlineKeyboardMarkup.builder()
-			.keyboard(rows)
-			.build();
+	private InlineKeyboardMarkup markup(List<InlineKeyboardRow> rows) {
+		return InlineKeyboardMarkup.builder().keyboard(rows).build();
 	}
 }

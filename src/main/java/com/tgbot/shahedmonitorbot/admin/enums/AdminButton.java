@@ -1,5 +1,7 @@
 package com.tgbot.shahedmonitorbot.admin.enums;
 
+import org.checkerframework.checker.units.qual.C;
+
 public enum AdminButton {
 
     KEYWORDS("🔑 Ключові слова"),
@@ -8,6 +10,9 @@ public enum AdminButton {
     SHOW_TARGETS("📋 Показати цілі"),
     ADD_TARGET("➕ Додати ціль"),
     REMOVE_TARGET("➖ Видалити ціль"),
+
+    CATEGORY_ADD("➕ Додати категорію"),
+    CATEGORY_REMOVE("➖ Видалити категорію"),
 
     LOCATIONS("📍 Локації"),
     SHOW_LOCATIONS("📋 Показати локації"),
@@ -52,9 +57,6 @@ public enum AdminButton {
     STATUS("📊 Статус"),
     BOT_STATUS("🤖 Статус бота"),
     ALERT_STATUS("🚨 Статус тривоги"),
-
-    SETTINGS("⚙️ Налаштування"),
-    API_CONTROL("🔌 API-керування"),
 
     SOURCES("📡 Джерела моніторингу"),
 

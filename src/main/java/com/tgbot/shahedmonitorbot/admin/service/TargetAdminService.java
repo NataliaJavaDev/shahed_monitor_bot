@@ -1,9 +1,6 @@
 package com.tgbot.shahedmonitorbot.admin.service;
 
-import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryCategory;
-import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryConfig;
-import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryConfigService;
-import com.tgbot.shahedmonitorbot.admin.dictionary.DictionaryStorage;
+import com.tgbot.shahedmonitorbot.admin.dictionary.*;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;
 import org.springframework.stereotype.Service;
 
@@ -52,9 +49,7 @@ public class TargetAdminService {
 			.dictionaries()
 			.targets()
 			.stream()
-			.filter(item ->
-				TextNormalizer.normalize(item.category()).equals(normalizedCategory)
-			)
+			.filter(item -> TextNormalizer.normalize(item.category()).equals(normalizedCategory))
 			.findFirst()
 			.map(DictionaryCategory::aliases)
 			.map(List::copyOf)
@@ -92,9 +87,7 @@ public class TargetAdminService {
 			return false;
 		}
 
-		List<DictionaryCategory> categories = new ArrayList<>(
-			storage.get().dictionaries().targets()
-		);
+		List<DictionaryCategory> categories = new ArrayList<>(storage.get().dictionaries().targets());
 
 		boolean targetExists = categories.stream()
 			.anyMatch(item -> item.aliases()
@@ -118,8 +111,7 @@ public class TargetAdminService {
 			List<String> aliases = new ArrayList<>(current.aliases());
 			aliases.add(normalizedTarget);
 
-			categories.set(
-				index,
+			categories.set(index,
 				new DictionaryCategory(
 					current.category(),
 					current.displayName(),
@@ -170,10 +162,7 @@ public class TargetAdminService {
 	public synchronized boolean removeTarget(String target) {
 
 		String normalizedTarget = TextNormalizer.normalize(target);
-
-		List<DictionaryCategory> categories = new ArrayList<>(
-			storage.get().dictionaries().targets()
-		);
+		List<DictionaryCategory> categories = new ArrayList<>(storage.get().dictionaries().targets());
 
 		for (int index = 0; index < categories.size(); index++) {
 
@@ -191,8 +180,7 @@ public class TargetAdminService {
 			if (aliases.isEmpty()) {
 				categories.remove(index);
 			} else {
-				categories.set(
-					index,
+				categories.set(index,
 					new DictionaryCategory(
 						current.category(),
 						current.displayName(),
@@ -228,13 +216,9 @@ public class TargetAdminService {
 			.dictionaries()
 			.targets()
 			.stream()
-			.filter(item ->
-				TextNormalizer.normalize(item.category()).equals(normalizedCategory)
-			)
+			.filter(item -> TextNormalizer.normalize(item.category()).equals(normalizedCategory))
 			.map(DictionaryCategory::displayName)
-			.filter(displayName ->
-				displayName != null && !displayName.isBlank()
-			)
+			.filter(displayName -> displayName != null && !displayName.isBlank())
 			.findFirst()
 			.orElse(normalizedCategory);
 	}
@@ -247,14 +231,10 @@ public class TargetAdminService {
 			return false;
 		}
 	
-		List<DictionaryCategory> categories =
-			new ArrayList<>(storage.get().dictionaries().targets());
+		List<DictionaryCategory> categories = new ArrayList<>(storage.get().dictionaries().targets());
 	
 		boolean exists = categories.stream()
-			.anyMatch(item ->
-				TextNormalizer.normalize(item.category())
-					.equals(normalizedCategory)
-			);
+			.anyMatch(item -> TextNormalizer.normalize(item.category()).equals(normalizedCategory));
 	
 		if (exists) {
 			return false;
@@ -269,28 +249,20 @@ public class TargetAdminService {
 		);
 	
 		replaceTargets(categories);
-	
 		return true;
 	}
 
 	public synchronized boolean removeCategory(String category) {
 	
 		String normalizedCategory = TextNormalizer.normalize(category);
-	
-		List<DictionaryCategory> categories =
-			new ArrayList<>(storage.get().dictionaries().targets());
-	
-		boolean removed = categories.removeIf(item ->
-			TextNormalizer.normalize(item.category())
-				.equals(normalizedCategory)
-		);
+		List<DictionaryCategory> categories = new ArrayList<>(storage.get().dictionaries().targets());
+		boolean removed = categories.removeIf(item -> TextNormalizer.normalize(item.category()).equals(normalizedCategory));
 	
 		if (!removed) {
 			return false;
 		}
 	
 		replaceTargets(categories);
-	
 		return true;
 	}
 
