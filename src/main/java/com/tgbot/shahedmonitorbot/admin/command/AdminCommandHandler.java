@@ -146,11 +146,11 @@ public class AdminCommandHandler {
         if (callbackData.startsWith("dictionary:")) {
 
 	    handleDictionaryCallback(
-		userId,
-		chatId,
-		messageId,
-		callbackQueryId,
-		callbackData
+            userId,
+            chatId,
+            messageId,
+            callbackQueryId,
+            callbackData
 	    );
 
 	    return;
@@ -817,7 +817,7 @@ public class AdminCommandHandler {
         for (int index = 0; index < sources.size(); index++) {
 
             MonitoredSource source = sources.get(index);
-            String message = adminMessageFormatter.formatSourceCard(source.chatId(), source.title(), "активне", + 1, sources.size());
+            String message = adminMessageFormatter.formatSourceCard(source.title(), source.chatId(), "активне", index + 1, sources.size());
 
             InlineKeyboardMarkup keyboard = singleButtonKeyboard(
                 "⛔ Вимкнути моніторинг",
@@ -867,7 +867,7 @@ public class AdminCommandHandler {
         for (int index = 0; index < sources.size(); index++) {
 
             MonitoredSource source = sources.get(index);
-            String message = adminMessageFormatter.formatSourceCard(source.chatId(), source.title(), "ігнороване", index + 1, sources.size());
+            String message = adminMessageFormatter.formatSourceCard(source.title(), source.chatId(), "ігнороване", index + 1, sources.size());
 
             InlineKeyboardMarkup keyboard = singleButtonKeyboard(
                 "✅ Увімкнути моніторинг",
@@ -891,7 +891,7 @@ public class AdminCommandHandler {
                 unknownSourceCandidateService.remove(candidate.chatId());
                 senderService.answerCallback(callbackQueryId, "Моніторинг увімкнено");
 
-                String message = adminMessageFormatter.formatSourceCard(candidate.chatId(), candidate.title(), "активне", null, null);
+                String message = adminMessageFormatter.formatSourceCard(candidate.title(), candidate.chatId(), "активне", null, null);
 
                 senderService.editMessageWithKeyboard(
                     adminChatId,
@@ -919,7 +919,7 @@ public class AdminCommandHandler {
         if (enabled) {
 
             senderService.answerCallback(callbackQueryId, "Моніторинг увімкнено");
-            String message = adminMessageFormatter.formatSourceCard(candidate.chatId(), candidate.title(), "активне", null, null);
+            String message = adminMessageFormatter.formatSourceCard(source.title(), source.chatId(), "активне", null, null);
 
             senderService.editMessageWithKeyboard(
                 adminChatId,
@@ -949,7 +949,7 @@ public class AdminCommandHandler {
                 unknownSourceCandidateService.remove(candidate.chatId());
                 senderService.answerCallback(callbackQueryId, "Джерело ігнорується");
 
-                String message = adminMessageFormatter.formatSourceCard(candidate.chatId(), candidate.title(), "ігнороване", null, null);
+                String message = adminMessageFormatter.formatSourceCard(candidate.title(), candidate.chatId(), "ігнороване", null, null);
 
                 senderService.editMessageWithKeyboard(
                     adminChatId,
@@ -978,7 +978,7 @@ public class AdminCommandHandler {
 
             senderService.answerCallback(callbackQueryId, "Моніторинг вимкнено");
 
-            String message = adminMessageFormatter.formatSourceCard(candidate.chatId(), candidate.title(), "ігнороване", null, null);
+            String message = adminMessageFormatter.formatSourceCard(source.title(), source.chatId(), "ігнороване", null, null);
 
             senderService.editMessageWithKeyboard(
                 adminChatId,
