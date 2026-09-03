@@ -45,7 +45,7 @@ public class AdminMenuService {
         row3.add(AdminButton.FORECAST.text());
 
         KeyboardRow row4 = new KeyboardRow();
-        row4.add(AdminButton.MESSAGE_INTENTS.text());
+        // row4.add(AdminButton.MESSAGE_INTENTS.text());
         row4.add(AdminButton.BACK.text());
 
         return buildKeyboard(List.of(row1, row2, row3, row4));
