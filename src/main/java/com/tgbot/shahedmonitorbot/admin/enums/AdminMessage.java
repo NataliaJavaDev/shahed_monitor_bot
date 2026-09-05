@@ -25,11 +25,19 @@ public enum AdminMessage {
     ),
 
     CATEGORY_NOT_FOUND(
-        "Категорію не знайдено"
+        "⚠️ Категорію не знайдено"
     ),
 
     CATEGORIES_NOT_FOUND(
-        "Категорій не знайдено"
+        "⚠️ Категорій не знайдено"
+    ),
+
+    VALUE_NOT_FOUND(
+        "📋⚠️ Значення не знайдено"
+    ),
+
+    SOURCE_NOT_FOUND(
+        "⚠️ Джерело не знайдено"
     ),
 
     UNKNOWN_COMMAND(
@@ -44,12 +52,72 @@ public enum AdminMessage {
         "❌ Не вдалося визначити операцію зі словником. Спробуйте ще раз"
     ),
 
+    UNKNOWN_CATEGORY(
+        "❌ Не вдалося визначити категорію"
+    ),
+
     VALUE_CAN_NOT_BE_EMPTY(
         "⚠️ Значення не може бути порожнім"
     ),
 
+    LIST_IS_EMPTY(
+        "⚠️ Список значень порожній"
+    ),
+
+    CATEGORY_IS_CREATED(
+        "✅ Категорію «%s» успішно створено"
+    ),
+
+    CATEGORY_IS_REMOVED(
+        "✅ Категорію успішно видалено"
+    ),
+
     CATEGORY_ALREADY_EXISTS(
         "⚠️ Така категорія вже існує"
+    ),
+
+    VALUE_ALREADY_EXISTS(
+        "⚠️ Таке значення вже існує"
+    ),
+
+    STATE_IS_ALREADY_ACTUAL(
+        "⚠️ Стан вже актуальний"
+    ),
+
+    ENTER_NEW_VALUE(
+        "Введіть нове значення:"
+    ),
+
+    REMOVE_VALUE(
+        "Введіть значення, яке потрібно видалити:"
+    ),
+
+    VALUE_IS_ADDED(
+        "✅ Значення «%s» успішно додано"
+    ),
+
+    VALUE_IS_REMOVED(
+        "✅ Значення «%s» успішно видалено"
+    ),
+
+    ENTER_NEW_VALUE_FOR_CATEGORY(
+        "Введіть нове значення для категорії «%s»:"
+    ),
+
+    REMOVE_VALUE_FOR_CATEGORY(
+        "Введіть значення, яке потрібно видалити з категорії «%s»:"
+    ),
+
+    ENTER_NEW_CATEGORY(
+        "Введіть назву нової категорії:"
+    ),
+
+    CHUSE_CATEGORY_TO_DELETE(
+        "➖ Оберіть категорію, яку потрібно видалити:"
+    ),
+
+    ADMIN_MENU(
+        "⚙️ Адмін-панель\n\nОберіть дію:"
     ),
 
     KEYWORDS_MENU(
@@ -61,15 +129,7 @@ public enum AdminMessage {
     ),
 
     ATTENTION_MENU(
-        "⚠️ Attention words\n\nОберіть дію:"
-    ),
-
-    ENTER_NEW_VALUE(
-        "Введіть нове значення:"
-    ),
-
-    REMOVE_VALUE(
-        "Введіть значення, яке потрібно видалити:"
+        "⚠️ Увага\n\nОберіть дію:"
     ),
 
     GLOBAL_THREATS_MENU(
@@ -108,57 +168,31 @@ public enum AdminMessage {
         "✅ Сповіщення про відбій відправлено."
     ),
 
-
-
-
-
-
-
-
-
-    SHOW_TARGETS(
-        "Поточні цілі:\n\n%s"
+    MONITORING_ENABLED(
+        "✅ Моніторинг увімкнено"
     ),
 
-    TARGETS_MENU_TITLE(
-        "🎯 Цілі\n\nОберіть дію:"
+    MONITORING_DISABLED(
+        "⛔ Моніторинг вимкнено"
     ),
 
-    ADD_LOCATION_REQUEST(
-        "Надішліть локацію, яку потрібно додати."
+    SOURCE_IGNORED(
+        "⛔ Джерело ігнорується"
     ),
 
-    REMOVE_LOCATION_REQUEST(
-        "Надішліть локацію, яку потрібно видалити."
+    ACTIVE_SOURCES_NOT_FOUND(
+        "📡⚠️ Активних джерел не знайдено"
     ),
 
-    EMPTY_LOCATIONS(
-        "Список локацій порожній."
+    NEW_SOURCES_NOT_FOUND(
+        "📡🆕 Нових джерел не знайдено"
     ),
 
-    LOCATION_ADDED(
-        "Локацію додано: %s"
+    IGNORED_SOURCES_NOT_FOUND(
+        "📡⛔ Ігнорованих джерел не знайдено"
     ),
 
-    LOCATION_REMOVED(
-        "Локацію видалено: %s"
-    ),
 
-    LOCATION_NOT_FOUND(
-        "Локацію не знайдено."
-    ),
-
-    LOCATION_ADD_FAILED(
-        "Не вдалося додати локацію. Можливо, вона вже існує."
-    ),
-
-    SHOW_LOCATIONS(
-        "Поточні локації:\n\n%s"
-    ),
-
-    LOCATIONS_MENU_TITLE(
-        "📍 Локації\n\nОберіть дію:"
-    ),
 
 
 

@@ -1,8 +1,7 @@
 package com.tgbot.shahedmonitorbot.admin.command;
 
 import com.tgbot.shahedmonitorbot.admin.enums.*;
-import com.tgbot.shahedmonitorbot.admin.menu.AdminMenuService;
-import com.tgbot.shahedmonitorbot.admin.menu.DictionaryMenuService;
+import com.tgbot.shahedmonitorbot.admin.menu.*;
 import com.tgbot.shahedmonitorbot.admin.service.*;
 import com.tgbot.shahedmonitorbot.alertapi.formatter.ApiAlertStatusFormatter;
 import com.tgbot.shahedmonitorbot.alertapi.service.AirAlertApiService;
@@ -15,11 +14,8 @@ import com.tgbot.shahedmonitorbot.tdlib.TdLibStatusService;
 
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.*;
 
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -27,8 +23,6 @@ public class AdminCommandHandler {
 
     private static final String SOURCE_ENABLE_CALLBACK = "source:enable:";
     private static final String SOURCE_IGNORE_CALLBACK = "source:ignore:";
-    private static final ZoneId KYIV_ZONE = ZoneId.of("Europe/Kyiv");
-    private static final DateTimeFormatter SOURCE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     private final TelegramSenderService senderService;
     private final AdminSessionService sessionService;
@@ -103,7 +97,6 @@ public class AdminCommandHandler {
         if (handleButton(userId, chatId, text)) {
             return;
         }
-
         senderService.sendToChat(chatId, AdminMessage.UNKNOWN_COMMAND.text());
     }
 
@@ -145,10 +138,8 @@ public class AdminCommandHandler {
                 callbackQueryId,
                 callbackData
             );
-
             return;
         }
-
         senderService.answerCallback(callbackQueryId, AdminMessage.NO_CORRECT_ACTION.text());
     }
 
@@ -173,7 +164,6 @@ public class AdminCommandHandler {
 	    switch (action) {
 
 	    	case "category":
-
                 if (parts.length < 4) {
                     senderService.answerCallback(callbackQueryId, AdminMessage.NO_CORRECT_CATEGORY.text());
                     return;
@@ -206,7 +196,6 @@ public class AdminCommandHandler {
                 return;
 
 	    	case "categories":
-
 	    		if (parts.length < 3) {
 	    			senderService.answerCallback(callbackQueryId, AdminMessage.NO_CORRECT_VOCAB.text());
 	    			return;
@@ -220,7 +209,6 @@ public class AdminCommandHandler {
 	    		return;
 
 	    	case "aliases":
-
 	    		if (parts.length < 4) {
 	    			senderService.answerCallback(callbackQueryId, AdminMessage.NO_CORRECT_CATEGORY.text());
 	    			return;
@@ -235,7 +223,6 @@ public class AdminCommandHandler {
 	    		return;
 
 	    	case "add-alias":
-
 	    		if (parts.length < 4) {
 	    			senderService.answerCallback(callbackQueryId, AdminMessage.NO_CORRECT_CATEGORY.text());
 	    			return;
@@ -252,7 +239,6 @@ public class AdminCommandHandler {
 	    		return;
 
 	    	case "remove-alias":
-
 	    		if (parts.length < 4) {
 	    			senderService.answerCallback(callbackQueryId, AdminMessage.NO_CORRECT_CATEGORY.text());
 	    			return;
@@ -269,7 +255,6 @@ public class AdminCommandHandler {
 	    		return;
 
 	    	case "add-category":
-
 	    		if (parts.length < 3) {
 	    			senderService.answerCallback(callbackQueryId, AdminMessage.NO_CORRECT_VOCAB.text());
 	    			return;
@@ -280,7 +265,6 @@ public class AdminCommandHandler {
 	    		return;
 
 	    	case "delete-mode":
-
 	    		if (parts.length < 3) {
 	    			senderService.answerCallback(callbackQueryId, AdminMessage.NO_CORRECT_VOCAB.text());
 	    			return;
@@ -294,7 +278,6 @@ public class AdminCommandHandler {
 	    		return;
 
 	    	case "delete-category":
-
                 if (parts.length < 4) {
                     senderService.answerCallback(callbackQueryId, AdminMessage.NO_CORRECT_CATEGORY.text());
                     return;
@@ -326,7 +309,6 @@ public class AdminCommandHandler {
                 return;
 
 	    	case "back":
-
 	    		sendMainMenu(chatId);
 	    		senderService.answerCallback(callbackQueryId, "");
 	    		return;
@@ -343,7 +325,6 @@ public class AdminCommandHandler {
 	    switch (state) {
 
 	        case WAITING_FOR_DICTIONARY_INPUT:
-            
 	        	DictionaryType dictionaryType = sessionService.getDictionaryType(userId);
 	        	DictionaryAction dictionaryAction = sessionService.getDictionaryAction(userId);
     
@@ -357,18 +338,15 @@ public class AdminCommandHandler {
 	        	    return true;
 	        	}
 	        	handleDictionaryInput(userId, chatId, dictionaryType, dictionaryAction, text);
-
 	        	return true;
     
             case WAITING_FOR_NEW_CATEGORY:
-
                 DictionaryType type = sessionService.getDictionaryType(userId);
                 boolean added = dictionaryAdminService.addCategory(type, text);
         
                 sessionService.reset(userId);
                 senderService.sendToChat(chatId,
-                added ? "✅ Категорію «" + text + "» створено." : AdminMessage.CATEGORY_ALREADY_EXISTS.text());
-
+                added ? AdminMessage.CATEGORY_IS_CREATED.format(text) : AdminMessage.CATEGORY_ALREADY_EXISTS.text());
 	            return true;
     
 	        case IDLE:
@@ -423,98 +401,54 @@ public class AdminCommandHandler {
                 return true;
 
             case DIRECTIONS:
+                sessionService.setCurrentMenuType(userId, DictionaryType.DIRECTIONS);
                 senderService.sendToChatWithReplyKeyboard(chatId, AdminMessage.DIRECTIONS_MENU.text(),
-                    menuService.dictionaryReplyKeyboard(DictionaryType.DIRECTIONS));
-                return true;
-
-            case SHOW_DIRECTIONS:
-                sendDictionaryValues(chatId, DictionaryType.DIRECTIONS);
-                return true;
-
-            case ADD_DIRECTION:
-                requestDictionaryInput(userId, chatId, DictionaryType.DIRECTIONS,
-                    DictionaryAction.ADD, AdminMessage.ENTER_NEW_VALUE.text());
-                return true;
-
-            case REMOVE_DIRECTION:
-                requestDictionaryInput(userId, chatId, DictionaryType.DIRECTIONS,
-                    DictionaryAction.REMOVE, AdminMessage.REMOVE_VALUE.text());
+                    menuService.dictionaryReplyKeyboard());
                 return true;
 
             case ATTENTION:
+                sessionService.setCurrentMenuType(userId, DictionaryType.ATTENTION);
 	            senderService.sendToChatWithReplyKeyboard(chatId, AdminMessage.ATTENTION_MENU.text(),
-                    menuService.dictionaryReplyKeyboard(DictionaryType.ATTENTION));
+                    menuService.dictionaryReplyKeyboard());
 	            return true;
 
-            case SHOW_ATTENTIONS:
-                sendDictionaryValues(chatId, DictionaryType.ATTENTION);
-                return true;
-        
-            case ADD_ATTENTION:
-                requestDictionaryInput(userId, chatId, DictionaryType.ATTENTION,
-                    DictionaryAction.ADD, AdminMessage.ENTER_NEW_VALUE.text());
-        	    return true;
-        
-            case REMOVE_ATTENTION:
-                requestDictionaryInput(userId, chatId, DictionaryType.ATTENTION,
-                    DictionaryAction.REMOVE, AdminMessage.REMOVE_VALUE.text());
-                return true;
-        
             case GLOBAL_THREAT:
+                sessionService.setCurrentMenuType(userId, DictionaryType.GLOBAL_THREAT);
                 senderService.sendToChatWithReplyKeyboard(chatId, AdminMessage.GLOBAL_THREATS_MENU.text(),
-                    menuService.dictionaryReplyKeyboard(DictionaryType.GLOBAL_THREAT));
-                return true;
-        
-            case SHOW_GLOBAL_THREATS:
-                sendDictionaryValues(chatId, DictionaryType.GLOBAL_THREAT);
-                return true;
-        
-            case ADD_GLOBAL_THREATS:
-                requestDictionaryInput(userId, chatId, DictionaryType.GLOBAL_THREAT,
-                    DictionaryAction.ADD, AdminMessage.ENTER_NEW_VALUE.text());
-                return true;
-        
-            case REMOVE_GLOBAL_THREAT:
-                requestDictionaryInput(userId, chatId, DictionaryType.GLOBAL_THREAT,
-                    DictionaryAction.REMOVE, AdminMessage.REMOVE_VALUE.text());
+                    menuService.dictionaryReplyKeyboard());
                 return true;
         
             case FORECAST:
+                sessionService.setCurrentMenuType(userId, DictionaryType.FORECAST);
                 senderService.sendToChatWithReplyKeyboard(chatId, AdminMessage.FORECAST_MENU.text(),
-                    menuService.dictionaryReplyKeyboard(DictionaryType.FORECAST));
-                return true;
-        
-            case SHOW_FORECASTS:
-                sendDictionaryValues(chatId, DictionaryType.FORECAST);
-                return true;
-        
-            case ADD_FORECAST:
-                requestDictionaryInput(userId, chatId, DictionaryType.FORECAST,
-                    DictionaryAction.ADD, AdminMessage.ENTER_NEW_VALUE.text());
-                return true;
-        
-            case REMOVE_FORECAST:
-                requestDictionaryInput(userId, chatId, DictionaryType.FORECAST,
-                    DictionaryAction.REMOVE, AdminMessage.REMOVE_VALUE.text());
+                    menuService.dictionaryReplyKeyboard());
                 return true;
         
             case NOISE:
+                sessionService.setCurrentMenuType(userId, DictionaryType.NOISE);
                 senderService.sendToChatWithReplyKeyboard(chatId, AdminMessage.NOISE_MENU.text(),
-                    menuService.dictionaryReplyKeyboard(DictionaryType.NOISE));
+                    menuService.dictionaryReplyKeyboard());
                 return true;
-        
-            case SHOW_NOISES:
-                sendDictionaryValues(chatId, DictionaryType.NOISE);
+
+            case SHOW_VALUES:
+                DictionaryType currentType = requireCurrentDictionaryType(userId, chatId);
+                if (currentType == null) return true;
+
+                sendDictionaryValues(chatId, currentType);
                 return true;
-        
-            case ADD_NOISE:
-                requestDictionaryInput(userId, chatId, DictionaryType.NOISE,
-                    DictionaryAction.ADD, AdminMessage.ENTER_NEW_VALUE.text());
+
+            case ADD_VALUE:
+                DictionaryType currentType1 = requireCurrentDictionaryType(userId, chatId);
+                if (currentType1 == null) return true;
+
+                requestDictionaryInput(userId, chatId, currentType1, DictionaryAction.ADD, AdminMessage.ENTER_NEW_VALUE.text());
                 return true;
-        
-            case REMOVE_NOISE:
-                requestDictionaryInput(userId, chatId, DictionaryType.NOISE,
-                    DictionaryAction.REMOVE, AdminMessage.REMOVE_VALUE.text());
+
+            case REMOVE_VALUE:
+                DictionaryType currentType2 = requireCurrentDictionaryType(userId, chatId);
+                if (currentType2 == null) return true;
+
+                requestDictionaryInput(userId, chatId, currentType2, DictionaryAction.REMOVE, AdminMessage.REMOVE_VALUE.text());
                 return true;
 
             case ALERTS:
@@ -534,6 +468,7 @@ public class AdminCommandHandler {
                 return true;
 
             case BACK:
+                sessionService.clearCurrentMenuType(userId);
                 sendMainMenu(chatId);
                 return true;
 
@@ -565,8 +500,17 @@ public class AdminCommandHandler {
                 sendIgnoredSources(chatId);
                 return true;
         }
-
         return false;
+    }
+
+    private DictionaryType requireCurrentDictionaryType(Long userId, String chatId) {
+
+        DictionaryType currentType = sessionService.getCurrentMenuType(userId);
+
+        if (currentType == null) {
+            senderService.sendToChat(chatId, AdminMessage.UNKNOWN_ACTION_VOCAB.text());
+        }
+        return currentType;
     }
 
     private void sendDictionaryCategories(String chatId, DictionaryType type) {
@@ -578,15 +522,14 @@ public class AdminCommandHandler {
     		senderService.sendToChatWithKeyboard(
     			chatId,
     			type == DictionaryType.TARGETS
-    				? "🎯 " + AdminMessage.CATEGORIES_NOT_FOUND.text()
-    				: "📍 " + AdminMessage.CATEGORIES_NOT_FOUND.text(),
+    				? AdminButton.TARG_ICON.text() + AdminMessage.CATEGORIES_NOT_FOUND.text()
+    				: AdminButton.LOCAT_ICON.text() + AdminMessage.CATEGORIES_NOT_FOUND.text(),
     			dictionaryMenuService.categoriesKeyboard(
     				type,
     				categories,
     				false
     			)
     		);
-    
     		return;
     	}
     
@@ -616,11 +559,10 @@ public class AdminCommandHandler {
         String category = sessionService.getSelectedCategory(userId);
         boolean categoryBased = type == DictionaryType.TARGETS || type == DictionaryType.LOCATIONS;
 
-        // TARGETS і LOCATIONS працюють через категорії та аліаси.
         if (categoryBased && (category == null || category.isBlank())) {
 
             sessionService.reset(userId);
-            senderService.sendToChat(chatId, "❌ Не вдалося визначити категорію.");
+            senderService.sendToChat(chatId, AdminMessage.UNKNOWN_CATEGORY.text());
             return;
         }
 
@@ -636,7 +578,6 @@ public class AdminCommandHandler {
 
         } else {
 
-            // DIRECTIONS, ATTENTION, GLOBAL_THREAT, FORECAST, NOISE — прості списки.
             if (action == DictionaryAction.ADD) {
                 success = dictionaryAdminService.add(type, value);
             } else {
@@ -648,9 +589,9 @@ public class AdminCommandHandler {
         String message;
 
         if (action == DictionaryAction.ADD) {
-            message = success ? "✅ Слово «" + value + "» додано." : "⚠️ Таке слово вже існує.";
+            message = success ? AdminMessage.VALUE_IS_ADDED.format(value) : AdminMessage.VALUE_ALREADY_EXISTS.text();
         } else {
-            message = success ? "✅ Слово «" + value + "» видалено." : "⚠️ Таке слово не знайдено.";
+            message = success ? AdminMessage.VALUE_IS_REMOVED.format(value) : AdminMessage.VALUE_NOT_FOUND.text();
         }
 
         senderService.sendToChat(chatId, message);
@@ -661,17 +602,17 @@ public class AdminCommandHandler {
         List<String> values = dictionaryAdminService.getValues(type);
     
         if (values.isEmpty()) {
-            senderService.sendToChat(chatId, "Список значень порожній.");
+            senderService.sendToChat(chatId, AdminMessage.LIST_IS_EMPTY.text());
             return;
         }
     
         String title = switch (type) {
-            case DIRECTIONS -> "🧭 Напрямки моніторингу";
-            case ATTENTION -> "⚠️ Attention words";
-            case GLOBAL_THREAT -> "🌐 Global threat markers";
-            case FORECAST -> "🔮 Forecast markers";
-            case NOISE -> "✂️ Noise markers";
-            default -> "📋 Значення";
+            case DIRECTIONS -> AdminButton.DIRECTIONS_TITLE.text();
+            case ATTENTION -> AdminButton.ATTENTION.text();
+            case GLOBAL_THREAT -> AdminButton.GLOBAL_THREAT.text();
+            case FORECAST -> AdminButton.FORECAST.text();
+            case NOISE -> AdminButton.NOISE.text();
+            default -> AdminButton.VALUES.text();
         };
         senderService.sendToChat(chatId, title + ":\n\n" + String.join("\n", values));
     }
@@ -717,10 +658,9 @@ public class AdminCommandHandler {
         List<MonitoredSource> sources = monitoredSourceService.getActiveSources();
 
         if (sources.isEmpty()) {
-            senderService.sendToChat(chatId, "📡 Активних джерел поки немає.");
+            senderService.sendToChat(chatId, AdminMessage.ACTIVE_SOURCES_NOT_FOUND.text());
             return;
         }
-
         senderService.sendToChat(chatId, adminMessageFormatter.formatActiveSourcesHeader(sources.size()));
 
         for (int index = 0; index < sources.size(); index++) {
@@ -728,10 +668,8 @@ public class AdminCommandHandler {
             MonitoredSource source = sources.get(index);
             String message = adminMessageFormatter.formatSourceCard(source.title(), source.chatId(), "активне", index + 1, sources.size());
 
-            InlineKeyboardMarkup keyboard = singleButtonKeyboard(
-                "⛔ Вимкнути моніторинг",
-                SOURCE_IGNORE_CALLBACK + source.chatId()
-            );
+            InlineKeyboardMarkup keyboard = singleButtonKeyboard(AdminButton.DISABLE_MONITORING.text(),
+                SOURCE_IGNORE_CALLBACK + source.chatId());
             senderService.sendToChatWithKeyboard(chatId, message, keyboard);
         }
     }
@@ -741,10 +679,9 @@ public class AdminCommandHandler {
         List<UnknownSourceCandidate> candidates = unknownSourceCandidateService.getAll();
 
         if (candidates.isEmpty()) {
-            senderService.sendToChat(chatId, "🆕 Нових джерел поки немає.");
+            senderService.sendToChat(chatId, AdminMessage.NEW_SOURCES_NOT_FOUND.text());
             return;
         }
-
         senderService.sendToChat(chatId, adminMessageFormatter.formatNewSourcesHeader(candidates.size()));
 
         for (int index = 0; index < candidates.size(); index++) {
@@ -753,9 +690,9 @@ public class AdminCommandHandler {
             String message = adminMessageFormatter.formatNewSourceCandidateCard(candidate, index + 1, candidates.size());
 
             InlineKeyboardMarkup keyboard = twoButtonKeyboard(
-                "✅ Увімкнути моніторинг",
+                AdminButton.ENABLE_MONITORING.text(),
                 SOURCE_ENABLE_CALLBACK + candidate.chatId(),
-                "⛔ Ігнорувати",
+                AdminButton.IGNORE_MONITORING.text(),
                 SOURCE_IGNORE_CALLBACK + candidate.chatId()
             );
             senderService.sendToChatWithKeyboard(chatId, message, keyboard);
@@ -767,10 +704,9 @@ public class AdminCommandHandler {
         List<MonitoredSource> sources = monitoredSourceService.getIgnoredSources();
 
         if (sources.isEmpty()) {
-            senderService.sendToChat(chatId, "⛔ Ігнорованих джерел поки немає.");
+            senderService.sendToChat(chatId, AdminMessage.IGNORED_SOURCES_NOT_FOUND.text());
             return;
         }
-
         senderService.sendToChat(chatId, adminMessageFormatter.formatIgnoredSourcesHeader(sources.size()));
 
         for (int index = 0; index < sources.size(); index++) {
@@ -778,10 +714,8 @@ public class AdminCommandHandler {
             MonitoredSource source = sources.get(index);
             String message = adminMessageFormatter.formatSourceCard(source.title(), source.chatId(), "ігнороване", index + 1, sources.size());
 
-            InlineKeyboardMarkup keyboard = singleButtonKeyboard(
-                "✅ Увімкнути моніторинг",
-                SOURCE_ENABLE_CALLBACK + source.chatId()
-            );
+            InlineKeyboardMarkup keyboard = singleButtonKeyboard(AdminButton.ENABLE_MONITORING.text(),
+                SOURCE_ENABLE_CALLBACK + source.chatId());
             senderService.sendToChatWithKeyboard(chatId, message, keyboard);
         }
     }
@@ -798,18 +732,13 @@ public class AdminCommandHandler {
             if (added) {
 
                 unknownSourceCandidateService.remove(candidate.chatId());
-                senderService.answerCallback(callbackQueryId, "Моніторинг увімкнено");
+                senderService.answerCallback(callbackQueryId, AdminMessage.MONITORING_ENABLED.text());
 
                 String message = adminMessageFormatter.formatSourceCard(candidate.title(), candidate.chatId(), "активне", null, null);
 
-                senderService.editMessageWithKeyboard(
-                    adminChatId,
-                    messageId,
-                    message,
-                    singleButtonKeyboard(
-                        "⛔ Вимкнути моніторинг",
-                        SOURCE_IGNORE_CALLBACK + candidate.chatId()
-                    )
+                senderService.editMessageWithKeyboard(adminChatId, messageId, message,
+                    singleButtonKeyboard(AdminButton.DISABLE_MONITORING.text(),
+                        SOURCE_IGNORE_CALLBACK + candidate.chatId())
                 );
                 return;
             }
@@ -819,7 +748,7 @@ public class AdminCommandHandler {
         MonitoredSource source = monitoredSourceService.findByChatId(sourceId);
 
         if (source == null) {
-            senderService.answerCallback(callbackQueryId, "Джерело не знайдено");
+            senderService.answerCallback(callbackQueryId, AdminMessage.SOURCE_NOT_FOUND.text());
             return;
         }
 
@@ -827,21 +756,16 @@ public class AdminCommandHandler {
 
         if (enabled) {
 
-            senderService.answerCallback(callbackQueryId, "Моніторинг увімкнено");
+            senderService.answerCallback(callbackQueryId, AdminMessage.MONITORING_ENABLED.text());
             String message = adminMessageFormatter.formatSourceCard(source.title(), source.chatId(), "активне", null, null);
 
-            senderService.editMessageWithKeyboard(
-                adminChatId,
-                messageId,
-                message,
-                singleButtonKeyboard(
-                    "⛔ Вимкнути моніторинг",
-                    SOURCE_IGNORE_CALLBACK + source.chatId()
-                )
+            senderService.editMessageWithKeyboard(adminChatId, messageId, message,
+                singleButtonKeyboard(AdminButton.DISABLE_MONITORING.text(),
+                    SOURCE_IGNORE_CALLBACK + source.chatId())
             );
             return;
         }
-        senderService.answerCallback(callbackQueryId, "Стан уже актуальний");
+        senderService.answerCallback(callbackQueryId, AdminMessage.STATE_IS_ALREADY_ACTUAL.text());
     }
 
     private void ignoreSource(String adminChatId, Integer messageId, String callbackQueryId, String sourceId) {
@@ -856,18 +780,13 @@ public class AdminCommandHandler {
             if (added) {
 
                 unknownSourceCandidateService.remove(candidate.chatId());
-                senderService.answerCallback(callbackQueryId, "Джерело ігнорується");
+                senderService.answerCallback(callbackQueryId, AdminMessage.SOURCE_IGNORED.text());
 
                 String message = adminMessageFormatter.formatSourceCard(candidate.title(), candidate.chatId(), "ігнороване", null, null);
 
-                senderService.editMessageWithKeyboard(
-                    adminChatId,
-                    messageId,
-                    message,
-                    singleButtonKeyboard(
-                        "✅ Увімкнути моніторинг",
-                        SOURCE_ENABLE_CALLBACK + candidate.chatId()
-                    )
+                senderService.editMessageWithKeyboard(adminChatId, messageId, message,
+                    singleButtonKeyboard(AdminButton.ENABLE_MONITORING.text(),
+                        SOURCE_ENABLE_CALLBACK + candidate.chatId())
                 );
                 return;
             }
@@ -877,7 +796,7 @@ public class AdminCommandHandler {
         MonitoredSource source = monitoredSourceService.findByChatId(sourceId);
 
         if (source == null) {
-            senderService.answerCallback(callbackQueryId, "Джерело не знайдено");
+            senderService.answerCallback(callbackQueryId, AdminMessage.SOURCE_NOT_FOUND.text());
             return;
         }
 
@@ -885,7 +804,7 @@ public class AdminCommandHandler {
 
         if (ignored) {
 
-            senderService.answerCallback(callbackQueryId, "Моніторинг вимкнено");
+            senderService.answerCallback(callbackQueryId, AdminMessage.MONITORING_DISABLED.text());
 
             String message = adminMessageFormatter.formatSourceCard(source.title(), source.chatId(), "ігнороване", null, null);
 
@@ -893,20 +812,17 @@ public class AdminCommandHandler {
                 adminChatId,
                 messageId,
                 message,
-                singleButtonKeyboard("✅ Увімкнути моніторинг", SOURCE_ENABLE_CALLBACK + source.chatId())
+                singleButtonKeyboard(AdminButton.ENABLE_MONITORING.text(), SOURCE_ENABLE_CALLBACK + source.chatId())
             );
-
             return;
         }
-
-        senderService.answerCallback(callbackQueryId, "Стан уже актуальний");
+        senderService.answerCallback(callbackQueryId, AdminMessage.STATE_IS_ALREADY_ACTUAL.text());
     }
 
     private InlineKeyboardMarkup singleButtonKeyboard(String text, String callbackData) {
 
         InlineKeyboardButton button = InlineKeyboardButton.builder().text(text).callbackData(callbackData).build();
         InlineKeyboardRow row = new InlineKeyboardRow();
-
         row.add(button);
         return InlineKeyboardMarkup.builder().keyboard(List.of(row)).build();
     }
@@ -917,7 +833,6 @@ public class AdminCommandHandler {
         InlineKeyboardButton secondButton = InlineKeyboardButton.builder().text(secondText).callbackData(secondCallback).build();
 
         InlineKeyboardRow row = new InlineKeyboardRow();
-
         row.add(firstButton);
         row.add(secondButton);
 
@@ -937,41 +852,31 @@ public class AdminCommandHandler {
         sessionService.setSelectedCategory(userId, category);
 
         List<String> aliases = dictionaryAdminService.getAliases(type, category);
-        String icon = type == DictionaryType.TARGETS ? "🎯 " : "📍 ";
+        String icon = type == DictionaryType.TARGETS ? AdminButton.TARG_ICON.text() : AdminButton.LOCAT_ICON.text();
         StringBuilder messageText = new StringBuilder();
-        messageText.append(icon).append("Категорія: *").append(category).append("*\n\n");
+        messageText.append(icon).append(AdminButton.CATEGORY.text()).append(category).append("*\n\n");
 
         if (aliases.isEmpty()) {
-            messageText.append("📋 Аліасів поки немає.");
+            messageText.append(AdminMessage.VALUE_NOT_FOUND.text());
         } else {
-            messageText.append("📋 Аліаси:\n");
+            messageText.append(AdminButton.VALUES.text() + ":\n");
             for (String alias : aliases) {
                 messageText.append("• ").append(alias).append("\n");
             }
         }
 
-        senderService.editMessageWithKeyboard(
-            chatId,
-            messageId,
-            messageText.toString(),
-            dictionaryMenuService.categoryKeyboard(type, category)
-        );
-
+        senderService.editMessageWithKeyboard(chatId, messageId, messageText.toString(),
+            dictionaryMenuService.categoryKeyboard(type, category));
         senderService.answerCallback(callbackQueryId, "");
     }
 
     private void showDictionaryCategories(String chatId, Integer messageId, String callbackQueryId, DictionaryType type) {
 
         List<String> categories = dictionaryAdminService.getCategories(type);
-        String title = type == DictionaryType.TARGETS ? "🎯 Цілі" : "📍 Локації";
+        String title = type == DictionaryType.TARGETS ? AdminButton.TARGETS.text() : AdminButton.LOCATIONS.text();
 
-        senderService.editMessageWithKeyboard(
-            chatId,
-            messageId,
-            title,
-            dictionaryMenuService.categoriesKeyboard(type, categories, false)
-        );
-
+        senderService.editMessageWithKeyboard(chatId, messageId, title,
+            dictionaryMenuService.categoriesKeyboard(type, categories, false));
         senderService.answerCallback(callbackQueryId, "");
     }
 
@@ -987,18 +892,13 @@ public class AdminCommandHandler {
         String message;
 
         if (aliases.isEmpty()) {
-            message = "📋 Аліасів поки немає.";
+            message = AdminMessage.VALUE_NOT_FOUND.text();
         } else {
-            message = "📋 Аліаси:\n\n" + String.join("\n", aliases);
+            message = AdminButton.VALUES.text() + ":\n\n" + String.join("\n", aliases);
         }
 
-        senderService.editMessageWithKeyboard(
-            chatId,
-            messageId,
-            message,
-            dictionaryMenuService.categoryKeyboard(type, category)
-        );
-
+        senderService.editMessageWithKeyboard(chatId, messageId, message,
+            dictionaryMenuService.categoryKeyboard(type, category));
         senderService.answerCallback(callbackQueryId, "");
     }
 
@@ -1011,35 +911,28 @@ public class AdminCommandHandler {
     ) {
 
         sessionService.setState(userId, AdminSessionState.WAITING_FOR_DICTIONARY_INPUT);
-
         sessionService.setDictionaryType(userId, type);
         sessionService.setDictionaryAction(userId, action);
         sessionService.setSelectedCategory(userId, category);
 
         String message = action == DictionaryAction.ADD
-            ? "Надішліть новий аліас для категорії «" + category + "»."
-            : "Надішліть аліас, який потрібно видалити з категорії «" + category + "».";
-
+            ? AdminMessage.ENTER_NEW_VALUE_FOR_CATEGORY.format(category)
+            : AdminMessage.REMOVE_VALUE_FOR_CATEGORY.format(category);
         senderService.sendToChat(chatId, message);
     }
 
     private void requestNewCategory(Long userId, String chatId, DictionaryType type) {
         sessionService.setState(userId, AdminSessionState.WAITING_FOR_NEW_CATEGORY);
         sessionService.setDictionaryType(userId, type);
-        senderService.sendToChat(chatId, "Введіть назву нової категорії:");
+        senderService.sendToChat(chatId, AdminMessage.ENTER_NEW_CATEGORY.text());
     }
 
     private void showDeleteCategoryMenu(String chatId, Integer messageId, String callbackQueryId, DictionaryType type) {
 
         List<String> categories = dictionaryAdminService.getCategories(type);
 
-        senderService.editMessageWithKeyboard(
-            chatId,
-            messageId,
-            "➖ Оберіть категорію, яку потрібно видалити:",
-            dictionaryMenuService.deleteCategoriesKeyboard(type, categories)
-        );
-
+        senderService.editMessageWithKeyboard(chatId, messageId, AdminMessage.CHUSE_CATEGORY_TO_DELETE.text(),
+            dictionaryMenuService.deleteCategoriesKeyboard(type, categories));
         senderService.answerCallback(callbackQueryId, "");
     }
 
@@ -1054,11 +947,10 @@ public class AdminCommandHandler {
         boolean removed = dictionaryAdminService.removeCategory(type, category);
 
         if (!removed) {
-            senderService.answerCallback(callbackQueryId, "Категорію не знайдено");
+            senderService.answerCallback(callbackQueryId, AdminMessage.CATEGORY_NOT_FOUND.text());
             return;
         }
-
-        senderService.answerCallback(callbackQueryId, "Категорію видалено");
+        senderService.answerCallback(callbackQueryId, AdminMessage.CATEGORY_IS_REMOVED.text());
         showDictionaryCategories(chatId, messageId, callbackQueryId, type);
     }
 }

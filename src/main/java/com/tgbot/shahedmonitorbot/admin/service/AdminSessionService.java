@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class AdminSessionService {
 
     private final Map<Long, AdminSession> sessions = new ConcurrentHashMap<>();
+    private final Map<Long, DictionaryType> currentMenuTypes = new ConcurrentHashMap<>();
 
     public AdminSessionState getState(Long userId) {
         return getSession(userId).getState();
@@ -60,5 +61,17 @@ public class AdminSessionService {
 
     public void setSelectedCategory(Long userId, String category) {
 	    getSession(userId).setSelectedCategory(category);
+    }
+
+    public DictionaryType getCurrentMenuType(Long userId) {
+        return currentMenuTypes.get(userId);
+    }
+
+    public void setCurrentMenuType(Long userId, DictionaryType type) {
+        currentMenuTypes.put(userId, type);
+    }
+
+    public void clearCurrentMenuType(Long userId) {
+        currentMenuTypes.remove(userId);
     }
 }
