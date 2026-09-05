@@ -1,6 +1,6 @@
 package com.tgbot.shahedmonitorbot.manualalert;
 
-public enum ManualAlertType {
+public enum AlertType {
     ALERT,
     HIGH_RISK,
     ALL_CLEAR

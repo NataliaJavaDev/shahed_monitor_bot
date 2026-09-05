@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class ManualAlertMessageFormatter {
 
     public String format(
-            ManualAlertType type,
+            AlertType type,
             AlertReason reason
     ) {
         return switch (type) {

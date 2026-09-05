@@ -26,7 +26,7 @@ public class ManualAlertService {
         this.alertReasonAnalyzerService = alertReasonAnalyzerService;
     }
 
-    public void sendAlert(ManualAlertType type) {
+    public void sendAlert(AlertType type) {
 
         // alertDeliveryService.send("DEBUG: sendAlert()");
 
@@ -34,35 +34,35 @@ public class ManualAlertService {
         sendWithReason(type);
     }
 
-    public void sendApiAlert(ManualAlertType type) {
+    public void sendApiAlert(AlertType type) {
 
         // alertDeliveryService.send("DEBUG: sendApiAlert()");
 
         sendWithReason(type);
     }
 
-    private void send(ManualAlertType type, AlertReason reason) {
+    private void send(AlertType type, AlertReason reason) {
 
         alertDeliveryService.send(formatter.format(type, reason));
     }
 
     private void updateMonitoringFromManual(
-            ManualAlertType type
+            AlertType type
     ) {
 
-        if (type == ManualAlertType.ALERT) {
+        if (type == AlertType.ALERT) {
             monitoringStateService.enableMonitoringManually();
             return;
         }
 
-        if (type == ManualAlertType.ALL_CLEAR) {
+        if (type == AlertType.ALL_CLEAR) {
             monitoringStateService.disableMonitoringManually();
         }
     }
 
-    private void sendWithReason(ManualAlertType type) {
+    private void sendWithReason(AlertType type) {
 
-        if (type != ManualAlertType.ALERT) {
+        if (type != AlertType.ALERT) {
             send(type, null);
             return;
         }

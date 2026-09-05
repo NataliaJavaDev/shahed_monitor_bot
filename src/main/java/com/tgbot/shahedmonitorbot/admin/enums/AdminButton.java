@@ -4,13 +4,22 @@ public enum AdminButton {
 
     KEYWORDS("🔑 Ключові слова"),
 
+
+    SHOW_VALUES("📋 Показати значення"),
+    ADD_VALUE("➕ Додати значення"),
+    REMOVE_VALUE("➖ Видалити значення"),
+
+    CATEGORY_ADD("➕ Додати категорію"),
+    CATEGORY_REMOVE("➖ Видалити категорію"),
+
+
+
     TARGETS("🎯 Цілі"),
     SHOW_TARGETS("📋 Показати цілі"),
     ADD_TARGET("➕ Додати ціль"),
     REMOVE_TARGET("➖ Видалити ціль"),
 
-    CATEGORY_ADD("➕ Додати категорію"),
-    CATEGORY_REMOVE("➖ Видалити категорію"),
+    
 
     LOCATIONS("📍 Локації"),
     SHOW_LOCATIONS("📋 Показати локації"),

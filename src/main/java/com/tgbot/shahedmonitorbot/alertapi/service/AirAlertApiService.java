@@ -5,7 +5,7 @@ import com.tgbot.shahedmonitorbot.alertapi.dto.RegionAlertDto;
 import com.tgbot.shahedmonitorbot.alertapi.model.ApiAlertStatus;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
-import com.tgbot.shahedmonitorbot.manualalert.ManualAlertType;
+import com.tgbot.shahedmonitorbot.manualalert.AlertType;
 import com.tgbot.shahedmonitorbot.monitoring.AlertLifecycleService;
 
 import org.springframework.stereotype.Service;
@@ -87,14 +87,14 @@ public class AirAlertApiService {
     
         if (isActive) {
     
-            updateMonitoringFromApi(ManualAlertType.ALERT);
-            manualAlertService.sendApiAlert(ManualAlertType.ALERT);
+            updateMonitoringFromApi(AlertType.ALERT);
+            manualAlertService.sendApiAlert(AlertType.ALERT);
     
             return;
         }
     
-        updateMonitoringFromApi(ManualAlertType.ALL_CLEAR);
-        manualAlertService.sendApiAlert(ManualAlertType.ALL_CLEAR);
+        updateMonitoringFromApi(AlertType.ALL_CLEAR);
+        manualAlertService.sendApiAlert(AlertType.ALL_CLEAR);
     }
 
     private void processHighRiskChange(ApiAlertStatus previousStatus, ApiAlertStatus currentStatus) {
@@ -108,18 +108,18 @@ public class AirAlertApiService {
          * тобто 711.
          */
         if (!wasActive && isActive) {
-            manualAlertService.sendApiAlert(ManualAlertType.HIGH_RISK);
+            manualAlertService.sendApiAlert(AlertType.HIGH_RISK);
         }
     }
 
-    private void updateMonitoringFromApi(ManualAlertType type) {
+    private void updateMonitoringFromApi(AlertType type) {
 
-        if (type == ManualAlertType.ALERT) {
+        if (type == AlertType.ALERT) {
             alertLifecycleService.enableMonitoringFromApi();
             return;
         }
 
-        if (type == ManualAlertType.ALL_CLEAR) {
+        if (type == AlertType.ALL_CLEAR) {
             alertLifecycleService.disableMonitoringFromApi();
         }
     }

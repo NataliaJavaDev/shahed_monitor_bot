@@ -3,13 +3,7 @@ package com.tgbot.shahedmonitorbot.admin.enums;
 public enum AdminCommand {
 
     START("/start"),
-    ADMIN("/admin"),
-    TARGETS("/targets"),
-    ADD_TARGET("/add_target"),
-    REMOVE_TARGET("/remove_target"),
-    LOCATIONS("/locations"),
-    ADD_LOCATION("/add_location"),
-    REMOVE_LOCATION("/remove_location");
+    ADMIN("/admin");
 
     private final String value;
 
