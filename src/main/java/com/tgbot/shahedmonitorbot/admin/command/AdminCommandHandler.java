@@ -468,6 +468,7 @@ public class AdminCommandHandler {
                 return true;
 
             case BACK:
+                sessionService.reset(userId);
                 sessionService.clearCurrentMenuType(userId);
                 sendMainMenu(chatId);
                 return true;
