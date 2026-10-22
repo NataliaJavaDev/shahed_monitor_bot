@@ -4,7 +4,7 @@ public enum AdminButton {
 
     KEYWORDS("🔑 Ключові слова"),
     TARGETS("🎯 Цілі"),
-    TARG_ICON("🎯 ")
+    TARG_ICON("🎯 "),
     LOCATIONS("📍 Локації"),
     LOCAT_ICON("📍 "),
     DIRECTIONS("🧭 Напрямки"),
