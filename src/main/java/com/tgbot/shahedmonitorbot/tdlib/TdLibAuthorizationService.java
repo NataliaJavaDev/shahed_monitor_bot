@@ -21,6 +21,7 @@ public class TdLibAuthorizationService {
     private final TdLibHistoryRequestService tdLibHistoryRequestService;
     private final TdLibStatusService tdLibStatusService;
     private final RecentHistoryBootstrapService recentHistoryBootstrapService;
+    private final TdLibAuthFileService tdLibAuthFileService;
 
     private static final Logger log = LoggerFactory.getLogger(TdLibAuthorizationService.class);
     
@@ -32,7 +33,8 @@ public class TdLibAuthorizationService {
         TemporaryHistoryExportService temporaryHistoryExportService,
         TdLibHistoryRequestService tdLibHistoryRequestService,
         TdLibStatusService tdLibStatusService,
-        RecentHistoryBootstrapService recentHistoryBootstrapService
+        RecentHistoryBootstrapService recentHistoryBootstrapService,
+        TdLibAuthFileService tdLibAuthFileService
     ) {
         this.tdLibClientService = tdLibClientService;
         this.appProperties = appProperties;
@@ -41,6 +43,7 @@ public class TdLibAuthorizationService {
         this.tdLibHistoryRequestService = tdLibHistoryRequestService;
         this.tdLibStatusService = tdLibStatusService;
         this.recentHistoryBootstrapService = recentHistoryBootstrapService;
+        this.tdLibAuthFileService = tdLibAuthFileService;
     }
 
     @PostConstruct
@@ -94,8 +97,8 @@ public class TdLibAuthorizationService {
             }
 
             if (update.contains("\"authorizationStateWaitCode\"")) {
-                String code = appProperties.tdlib().authCode();
-
+                String code = tdLibAuthFileService.read().authCode();
+                
                 if (code == null || code.isBlank()) {
                     log.warn("TDLib is waiting for authentication code, but TDLIB_AUTH_CODE is empty");
                     continue;
@@ -155,15 +158,20 @@ public class TdLibAuthorizationService {
     }
 
     private void sendPhoneNumber() {
-        
-        var tdlib = appProperties.tdlib();
+
+    String phoneNumber = tdLibAuthFileService.read().phoneNumber();
+
+        if (phoneNumber == null || phoneNumber.isBlank()) {
+            log.warn("TDLib phone number is empty");
+            return;
+        }
 
         tdLibClientService.send("""
                 {
-                  "@type": "setAuthenticationPhoneNumber",
-                  "phone_number": "%s"
+                "@type": "setAuthenticationPhoneNumber",
+                "phone_number": "%s"
                 }
-                """.formatted(tdlib.phoneNumber()));
+                """.formatted(phoneNumber));
     }
 
     private void requestChats() {

@@ -21,8 +21,7 @@ app:
   tdlib:
     api-id: ${TDLIB_API_ID}
     api-hash: ${TDLIB_API_HASH}
-    phone-number: ${TDLIB_PHONE_NUMBER}
+    auth-file: data/tdlib-auth.json
     database-directory: tdlib-db
     files-directory: tdlib-files
     library-path: ${TDLIB_LIBRARY_PATH}
-    auth-code: ${TDLIB_AUTH_CODE:}

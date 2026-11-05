@@ -89,9 +89,29 @@ public class AdminMenuService {
         row1.add(AdminButton.ALERT_STATUS.text());
 
         KeyboardRow row2 = new KeyboardRow();
-        row2.add(AdminButton.BACK.text());
+        row2.add(AdminButton.AUTH_TDLIB.text());
 
-        return buildKeyboard(List.of(row1, row2));
+        KeyboardRow row3 = new KeyboardRow();
+        row3.add(AdminButton.BACK.text());
+
+        return buildKeyboard(List.of(row1, row2, row3));
+    }
+
+    public ReplyKeyboardMarkup authTdLibReplyKeyboard() {
+
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add(AdminButton.AUTH_NUMBER.text());
+
+        KeyboardRow row2 = new KeyboardRow();
+        row2.add(AdminButton.TDLIB_AUTH_CODE.text());
+
+        KeyboardRow row3 = new KeyboardRow();
+        row3.add(AdminButton.TWO_F_AUTH_TDLIB.text());
+
+        KeyboardRow row4 = new KeyboardRow();
+        row4.add(AdminButton.BACK.text());
+
+        return buildKeyboard(List.of(row1, row2, row3, row4));
     }
 
     public ReplyKeyboardMarkup sourcesReplyKeyboard() {

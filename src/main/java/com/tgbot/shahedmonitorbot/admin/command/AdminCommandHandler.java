@@ -485,6 +485,22 @@ public class AdminCommandHandler {
                 sendBotStatus(chatId);
                 return true;
 
+            case AUTH_TDLIB:
+                senderService.sendToChatWithReplyKeyboard(chatId, AdminMessage.AUTH_MENU.text(), menuService.authTdLibReplyKeyboard());
+                return true;
+
+            //заглушки
+            case AUTH_NUMBER:
+                return true;
+
+            case TDLIB_AUTH_CODE:
+                return true;
+
+            case TWO_F_AUTH_TDLIB:
+                return true;
+
+            //-------------------
+
             case SOURCES:
                 senderService.sendToChatWithReplyKeyboard(chatId, AdminMessage.SOURCES_MENU.text(), menuService.sourcesReplyKeyboard());
                 return true;

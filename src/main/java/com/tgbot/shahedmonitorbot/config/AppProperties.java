@@ -33,11 +33,10 @@ public record AppProperties(
     public record Tdlib(
         Integer apiId,
         String apiHash,
-        String phoneNumber,
+        String authFile,
         String databaseDirectory,
         String filesDirectory,
-        String libraryPath,
-        String authCode
+        String libraryPath
     ) {}
 
     public record Dictionary(

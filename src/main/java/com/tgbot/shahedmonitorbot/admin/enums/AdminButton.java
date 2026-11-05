@@ -36,6 +36,10 @@ public enum AdminButton {
     STATUS("📊 Статус"),
     BOT_STATUS("🤖 Статус бота"),
     ALERT_STATUS("🚨 Статус тривоги"),
+    AUTH_TDLIB("Авторизація акаунту"),
+    AUTH_NUMBER("Номер телефону"),
+    TDLIB_AUTH_CODE("Код авторизації"),
+    TWO_F_AUTH_TDLIB("Двохфакторна авторизація"),
 
     SOURCES("📡 Джерела моніторингу"),
 
