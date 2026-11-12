@@ -30,4 +30,6 @@ secret.env
 application-local.yml
 
 tdlib-db/
+tdlib-db-windows/
 exports/
+data/tdlib-auth.json

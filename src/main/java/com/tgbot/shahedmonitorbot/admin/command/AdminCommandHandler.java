@@ -10,7 +10,7 @@ import com.tgbot.shahedmonitorbot.model.admin.AdminSessionState;
 import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
 import com.tgbot.shahedmonitorbot.monitoring.source.*;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
-import com.tgbot.shahedmonitorbot.tdlib.TdLibStatusService;
+import com.tgbot.shahedmonitorbot.tdlib.*;
 
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -38,6 +38,7 @@ public class AdminCommandHandler {
     private final DictionaryAdminService dictionaryAdminService;
     private final DictionaryMenuService dictionaryMenuService;
     private final AdminMessageFormatter adminMessageFormatter;
+    private final TdLibAuthorizationService tdLibAuthorizationService;
 
     public AdminCommandHandler(
         TelegramSenderService senderService,
@@ -53,7 +54,8 @@ public class AdminCommandHandler {
         TdLibStatusService tdLibStatusService,
         DictionaryAdminService dictionaryAdminService,
         DictionaryMenuService dictionaryMenuService,
-        AdminMessageFormatter adminMessageFormatter
+        AdminMessageFormatter adminMessageFormatter,
+        TdLibAuthorizationService tdLibAuthorizationService
     ) {
         this.senderService = senderService;
         this.sessionService = sessionService;
@@ -69,6 +71,7 @@ public class AdminCommandHandler {
         this.dictionaryAdminService = dictionaryAdminService;
         this.dictionaryMenuService = dictionaryMenuService;
         this.adminMessageFormatter = adminMessageFormatter;
+        this.tdLibAuthorizationService = tdLibAuthorizationService;
     }
 
     public void handle(Long userId, String chatId, String text) {
@@ -348,6 +351,61 @@ public class AdminCommandHandler {
                 senderService.sendToChat(chatId,
                 added ? AdminMessage.CATEGORY_IS_CREATED.format(text) : AdminMessage.CATEGORY_ALREADY_EXISTS.text());
 	            return true;
+
+            
+            case WAITING_FOR_AUTH_NUMBER:
+                if (text == null || text.isBlank()) {
+                    senderService.sendToChat(chatId, "Номер телефону не може бути порожнім.");
+                    return true;
+                }
+
+                try {
+                    tdLibAuthorizationService.submitPhoneNumber(text.trim());
+                    sessionService.reset(userId);
+                    senderService.sendToChat(chatId,
+                            "Номер телефону збережено та передано TDLib.\n\n" +
+                            "Коли отримаєш код Telegram, натисни «Код авторизації».");
+                } catch (IllegalArgumentException | IllegalStateException e) {
+                    senderService.sendToChat(chatId,
+                            "Не вдалося передати номер телефону. Спробуй ще раз.");
+                }
+                return true;
+
+            case WAITING_FOR_TDLIB_AUTH_CODE:
+                if (text == null || text.isBlank()) {
+                    senderService.sendToChat(chatId, "Код авторизації не може бути порожнім.");
+                    return true;
+                }
+
+                try {
+                    tdLibAuthorizationService.submitAuthenticationCode(text.trim());
+                    sessionService.reset(userId);
+                    senderService.sendToChat(chatId,
+                            "Код авторизації збережено та передано TDLib.\n\n" +
+                            "Якщо Telegram запросить пароль 2FA, натисни відповідну кнопку.");
+                } catch (IllegalArgumentException | IllegalStateException e) {
+                    senderService.sendToChat(chatId,
+                            "Не вдалося передати код авторизації. Спробуй ще раз.");
+                }
+                return true;
+
+            case WAITING_FOR_TDLIB_2FA_PASSWORD:
+                if (text == null || text.isBlank()) {
+                    senderService.sendToChat(chatId, "Пароль 2FA не може бути порожнім.");
+                    return true;
+                }
+
+                try {
+                    tdLibAuthorizationService.submitTwoFactorPassword(text);
+                    sessionService.reset(userId);
+                    senderService.sendToChat(chatId,
+                            "Пароль 2FA збережено та передано TDLib.");
+                } catch (IllegalArgumentException | IllegalStateException e) {
+                    senderService.sendToChat(chatId,
+                            "Не вдалося передати пароль 2FA. Спробуй ще раз.");
+                }
+                return true;
+
     
 	        case IDLE:
 	        default:
@@ -488,18 +546,25 @@ public class AdminCommandHandler {
             case AUTH_TDLIB:
                 senderService.sendToChatWithReplyKeyboard(chatId, AdminMessage.AUTH_MENU.text(), menuService.authTdLibReplyKeyboard());
                 return true;
-
-            //заглушки
+       
             case AUTH_NUMBER:
+                sessionService.setState(userId, AdminSessionState.WAITING_FOR_AUTH_NUMBER);
+                senderService.sendToChat(chatId,
+                        "Введи номер телефону Telegram у міжнародному форматі.\n" +
+                        "Наприклад: +380XXXXXXXXX");
                 return true;
 
             case TDLIB_AUTH_CODE:
+                sessionService.setState(userId, AdminSessionState.WAITING_FOR_TDLIB_AUTH_CODE);
+                senderService.sendToChat(chatId,
+                        "Введи код авторизації, отриманий від Telegram.");
                 return true;
 
             case TWO_F_AUTH_TDLIB:
+                sessionService.setState(userId, AdminSessionState.WAITING_FOR_TDLIB_2FA_PASSWORD);
+                senderService.sendToChat(chatId,
+                        "Введи пароль двофакторної автентифікації Telegram.");
                 return true;
-
-            //-------------------
 
             case SOURCES:
                 senderService.sendToChatWithReplyKeyboard(chatId, AdminMessage.SOURCES_MENU.text(), menuService.sourcesReplyKeyboard());

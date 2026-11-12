@@ -1,3 +1,4 @@
+
 package com.tgbot.shahedmonitorbot.admin.dictionary;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,13 +23,13 @@ public class DictionaryJsonService {
     ) {
         this.storage = storage;
         this.properties = properties;
-        this.objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+        this.objectMapper = new ObjectMapper()
+            .enable(SerializationFeature.INDENT_OUTPUT);
     }
 
     public void save() {
 
         try {
-
             Path path = Path.of(properties.dictionary().file());
             Path parent = path.getParent();
 
@@ -39,25 +40,32 @@ public class DictionaryJsonService {
             objectMapper.writeValue(path.toFile(), storage.get());
 
         } catch (IOException exception) {
-
-            throw new IllegalStateException("Failed to save dictionaries to JSON", exception);
+            throw new IllegalStateException(
+                "Failed to save dictionaries to JSON",
+                exception
+            );
         }
     }
 
     public DynamicConfig load() {
 
         try {
-
             Path path = Path.of(properties.dictionary().file());
 
             if (!Files.exists(path)) {
                 return null;
             }
 
-            return objectMapper.readValue(path.toFile(), DynamicConfig.class);
+            return objectMapper.readValue(
+                path.toFile(),
+                DynamicConfig.class
+            );
 
         } catch (IOException exception) {
-            throw new IllegalStateException("Failed to load dictionaries from JSON", exception);
+            throw new IllegalStateException(
+                "Failed to load dictionaries from JSON",
+                exception
+            );
         }
     }
 }

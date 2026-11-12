@@ -1,3 +1,4 @@
+
 package com.tgbot.shahedmonitorbot.admin.dictionary;
 
 import jakarta.annotation.PostConstruct;
@@ -23,7 +24,9 @@ public class DictionaryInitializer {
         DynamicConfig config = jsonService.load();
 
         if (config == null) {
-            throw new IllegalStateException("Dynamic configuration file was not found");
+            throw new IllegalStateException(
+                "Dynamic configuration file was not found"
+            );
         }
 
         storage.replace(config);

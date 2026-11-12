@@ -3,6 +3,8 @@ package com.tgbot.shahedmonitorbot.tdlib;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.monitoring.history.RecentHistoryBootstrapService;
 import com.tgbot.shahedmonitorbot.tdlib.history.TdLibHistoryRequestService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.annotation.PostConstruct;
 
@@ -22,6 +24,7 @@ public class TdLibAuthorizationService {
     private final TdLibStatusService tdLibStatusService;
     private final RecentHistoryBootstrapService recentHistoryBootstrapService;
     private final TdLibAuthFileService tdLibAuthFileService;
+    private final ObjectMapper objectMapper;
 
     private static final Logger log = LoggerFactory.getLogger(TdLibAuthorizationService.class);
     
@@ -34,7 +37,8 @@ public class TdLibAuthorizationService {
         TdLibHistoryRequestService tdLibHistoryRequestService,
         TdLibStatusService tdLibStatusService,
         RecentHistoryBootstrapService recentHistoryBootstrapService,
-        TdLibAuthFileService tdLibAuthFileService
+        TdLibAuthFileService tdLibAuthFileService,
+        ObjectMapper objectMapper
     ) {
         this.tdLibClientService = tdLibClientService;
         this.appProperties = appProperties;
@@ -44,6 +48,7 @@ public class TdLibAuthorizationService {
         this.tdLibStatusService = tdLibStatusService;
         this.recentHistoryBootstrapService = recentHistoryBootstrapService;
         this.tdLibAuthFileService = tdLibAuthFileService;
+        this.objectMapper = objectMapper;
     }
 
     @PostConstruct
@@ -96,20 +101,27 @@ public class TdLibAuthorizationService {
                 sendPhoneNumber();
             }
 
+            
             if (update.contains("\"authorizationStateWaitCode\"")) {
                 String code = tdLibAuthFileService.read().authCode();
-                
+
                 if (code == null || code.isBlank()) {
-                    log.warn("TDLib is waiting for authentication code, but TDLIB_AUTH_CODE is empty");
+                    log.warn("TDLib is waiting for authentication code");
                     continue;
                 }
 
-                tdLibClientService.send("""
-                        {
-                        "@type": "checkAuthenticationCode",
-                        "code": "%s"
-                        }
-                        """.formatted(code));
+                submitAuthenticationCode(code);
+            }
+
+            if (update.contains("\"authorizationStateWaitPassword\"")) {
+                String password = tdLibAuthFileService.read().twoFactorPassword();
+
+                if (password == null || password.isBlank()) {
+                    log.warn("TDLib is waiting for 2FA password");
+                    continue;
+                }
+
+                submitTwoFactorPassword(password);
             }
 
             if (update.contains("\"authorizationStateReady\"")) {
@@ -158,20 +170,14 @@ public class TdLibAuthorizationService {
     }
 
     private void sendPhoneNumber() {
-
-    String phoneNumber = tdLibAuthFileService.read().phoneNumber();
+        String phoneNumber = tdLibAuthFileService.read().phoneNumber();
 
         if (phoneNumber == null || phoneNumber.isBlank()) {
             log.warn("TDLib phone number is empty");
             return;
         }
 
-        tdLibClientService.send("""
-                {
-                "@type": "setAuthenticationPhoneNumber",
-                "phone_number": "%s"
-                }
-                """.formatted(phoneNumber));
+        submitPhoneNumber(phoneNumber);
     }
 
     private void requestChats() {
@@ -222,4 +228,67 @@ public class TdLibAuthorizationService {
                     """.formatted(chatId));
         }
     }
+
+
+    public void submitPhoneNumber(String phoneNumber) {
+        if (phoneNumber == null || phoneNumber.isBlank()) {
+            throw new IllegalArgumentException("Phone number cannot be empty");
+        }
+
+        String value = phoneNumber.trim();
+        tdLibAuthFileService.savePhoneNumber(value);
+
+        tdLibClientService.send("""
+                {
+                "@type": "setAuthenticationPhoneNumber",
+                "phone_number": %s
+                }
+                """.formatted(toJson(value)));
+
+        log.info("TDLib phone number submitted");
+    }
+
+    public void submitAuthenticationCode(String code) {
+        if (code == null || code.isBlank()) {
+            throw new IllegalArgumentException("Authentication code cannot be empty");
+        }
+
+        String value = code.trim();
+        tdLibAuthFileService.saveAuthCode(value);
+
+        tdLibClientService.send("""
+                {
+                "@type": "checkAuthenticationCode",
+                "code": %s
+                }
+                """.formatted(toJson(value)));
+
+        log.info("TDLib authentication code submitted");
+    }
+
+    public void submitTwoFactorPassword(String password) {
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException("2FA password cannot be empty");
+        }
+
+        tdLibAuthFileService.saveTwoFactorPassword(password);
+
+        tdLibClientService.send("""
+                {
+                "@type": "checkAuthenticationPassword",
+                "password": %s
+                }
+                """.formatted(toJson(password)));
+
+        log.info("TDLib 2FA password submitted");
+    }
+
+    private String toJson(String value) {
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Cannot encode TDLib request value", e);
+        }
+    }
+
 }
