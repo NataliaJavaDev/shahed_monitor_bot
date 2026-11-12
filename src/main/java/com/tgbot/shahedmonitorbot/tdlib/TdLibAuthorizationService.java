@@ -25,6 +25,7 @@ public class TdLibAuthorizationService {
     private final RecentHistoryBootstrapService recentHistoryBootstrapService;
     private final TdLibAuthFileService tdLibAuthFileService;
     private final ObjectMapper objectMapper;
+    private final TdLibAdminChatDiscoveryService tdLibAdminChatDiscoveryService;
 
     private static final Logger log = LoggerFactory.getLogger(TdLibAuthorizationService.class);
     
@@ -38,7 +39,8 @@ public class TdLibAuthorizationService {
         TdLibStatusService tdLibStatusService,
         RecentHistoryBootstrapService recentHistoryBootstrapService,
         TdLibAuthFileService tdLibAuthFileService,
-        ObjectMapper objectMapper
+        ObjectMapper objectMapper,
+        TdLibAdminChatDiscoveryService tdLibAdminChatDiscoveryService
     ) {
         this.tdLibClientService = tdLibClientService;
         this.appProperties = appProperties;
@@ -49,6 +51,7 @@ public class TdLibAuthorizationService {
         this.recentHistoryBootstrapService = recentHistoryBootstrapService;
         this.tdLibAuthFileService = tdLibAuthFileService;
         this.objectMapper = objectMapper;
+        this.tdLibAdminChatDiscoveryService = tdLibAdminChatDiscoveryService;
     }
 
     @PostConstruct
@@ -72,6 +75,7 @@ public class TdLibAuthorizationService {
             tdLibUpdateHandler.handle(update);
             temporaryHistoryExportService.handle(update);
             tdLibHistoryRequestService.handle(update);
+            tdLibAdminChatDiscoveryService.handle(update);
 
             if (update.contains("\"@type\":\"error\"")) {
                 log.error("TDLib error: {}", update);
@@ -126,10 +130,11 @@ public class TdLibAuthorizationService {
 
             if (update.contains("\"authorizationStateReady\"")) {
                 tdLibStatusService.markReady();
-
                 log.info("TDLib authorization ready");
+
+                tdLibAdminChatDiscoveryService.start();
+
                 requestChats();
-                // temporaryHistoryExportService.startExport();
             }
 
             if (update.contains("\"authorizationStateClosing\"")
@@ -223,7 +228,8 @@ public class TdLibAuthorizationService {
                 tdLibClientService.send("""
                     {
                         "@type": "getChat",
-                        "chat_id": %s
+                        "chat_id": %s,
+                        "@extra": "TDLIB_ADMIN_DISCOVERY_GET_CHAT"
                     }
                     """.formatted(chatId));
         }
