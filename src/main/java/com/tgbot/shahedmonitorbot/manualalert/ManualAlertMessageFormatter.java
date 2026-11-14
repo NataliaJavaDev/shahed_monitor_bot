@@ -1,26 +1,26 @@
 package com.tgbot.shahedmonitorbot.manualalert;
 
-import com.tgbot.shahedmonitorbot.monitoring.reason.AlertReason;
-import com.tgbot.shahedmonitorbot.monitoring.reason.AlertReasonItem;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ManualAlertMessageFormatter {
 
-    public String format(
-            AlertType type,
-            AlertReason reason
-    ) {
+    public String format(AlertType type) {
         return switch (type) {
 
             case ALERT -> """
                     \u2063
                     🚨 ПОВІТРЯНА ТРИВОГА НА БІЛОЦЕРКІВЩИНІ
                     
-                    %s
                     Негайно пройдіть в укриття.
-                    """
-                    .formatted(buildReason(reason));
+                    """;
+
+            case YELLOW_ALERT -> """
+                    \u2063
+                    🟡 ЖОВТИЙ РІВЕНЬ НЕБЕЗПЕКИ НА БІЛОЦЕРКІВЩИНІ
+                    
+                    Будьте уважні та готові пройти в укриття.
+                    """;
 
             case HIGH_RISK -> """
                     \u2063
@@ -36,24 +36,5 @@ public class ManualAlertMessageFormatter {
                     Загрозу скасовано.
                     """;
         };
-    }
-
-    private String buildReason(AlertReason reason) {
-
-        if (reason == null || reason.items().isEmpty()) {
-            return "";
-        }
-
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("Виявлена загроза:").append(System.lineSeparator());
-
-        for (AlertReasonItem item : reason.items()) {
-
-            sb.append("• ").append(item.category());
-            sb.append(System.lineSeparator());
-        }
-
-        return sb.toString();
     }
 }

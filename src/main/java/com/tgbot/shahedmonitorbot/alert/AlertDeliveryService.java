@@ -19,4 +19,10 @@ public class AlertDeliveryService {
         senderService.sendToChat(properties.telegram().targetChannelId(), message);
         senderService.sendToChat(properties.telegram().debugChannelId(), message);
     }
+
+    //тільки у тестову групу
+    public void sendOnlyDebugChannel(String message) {
+        senderService.sendToChat(properties.telegram().targetChannelId(), message);
+        senderService.sendToChat(properties.telegram().debugChannelId(), message);
+    }
 }
