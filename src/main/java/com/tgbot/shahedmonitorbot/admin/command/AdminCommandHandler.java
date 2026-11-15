@@ -517,6 +517,14 @@ public class AdminCommandHandler {
                 sendManualAlert(chatId, AlertType.ALERT, AdminMessage.ALERT_SENT);
                 return true;
 
+            case RED_ALERT:
+                sendManualAlert(chatId, AlertType.RED_ALERT, AdminMessage.RED_ALERT_SENT);
+                return true;
+
+            case YELLOW_ALERT:
+                sendManualAlert(chatId, AlertType.YELLOW_ALERT, AdminMessage.YELLOW_ALERT_SENT);
+                return true;
+
             case HIGH_RISK:
                 sendManualAlert(chatId, AlertType.HIGH_RISK, AdminMessage.HIGH_RISK_SENT);
                 return true;
@@ -550,20 +558,20 @@ public class AdminCommandHandler {
             case AUTH_NUMBER:
                 sessionService.setState(userId, AdminSessionState.WAITING_FOR_AUTH_NUMBER);
                 senderService.sendToChat(chatId,
-                        "Введи номер телефону Telegram у міжнародному форматі.\n" +
-                        "Наприклад: +380XXXXXXXXX");
+                    "Введи номер телефону Telegram у міжнародному форматі.\n" +
+                    "Наприклад: +380XXXXXXXXX");
                 return true;
 
             case TDLIB_AUTH_CODE:
                 sessionService.setState(userId, AdminSessionState.WAITING_FOR_TDLIB_AUTH_CODE);
                 senderService.sendToChat(chatId,
-                        "Введи код авторизації, отриманий від Telegram.");
+                    "Введи код авторизації, отриманий від Telegram.");
                 return true;
 
             case TWO_F_AUTH_TDLIB:
                 sessionService.setState(userId, AdminSessionState.WAITING_FOR_TDLIB_2FA_PASSWORD);
                 senderService.sendToChat(chatId,
-                        "Введи пароль двофакторної автентифікації Telegram.");
+                    "Введи пароль двофакторної автентифікації Telegram.");
                 return true;
 
             case SOURCES:

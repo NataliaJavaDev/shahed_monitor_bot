@@ -68,7 +68,8 @@ public class AdminMenuService {
     public ReplyKeyboardMarkup alertReplyKeyboard() {
 
         KeyboardRow row1 = new KeyboardRow();
-        row1.add(AdminButton.ALERT.text());
+        row1.add(AdminButton.RED_ALERT.text());
+        row1.add(AdminButton.YELLOW_ALERT.text());
 
         KeyboardRow row2 = new KeyboardRow();
         row2.add(AdminButton.HIGH_RISK.text());
