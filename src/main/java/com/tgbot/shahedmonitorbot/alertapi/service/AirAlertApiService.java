@@ -7,16 +7,11 @@ import com.tgbot.shahedmonitorbot.config.AppProperties;
 import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
 import com.tgbot.shahedmonitorbot.manualalert.AlertType;
 import com.tgbot.shahedmonitorbot.monitoring.AlertLifecycleService;
+import com.tgbot.shahedmonitorbot.alert.AlertDeliveryService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -27,39 +22,39 @@ public class AirAlertApiService {
     private static final Logger log = LoggerFactory.getLogger(AirAlertApiService.class);
     private static final ZoneId KYIV_ZONE = ZoneId.of("Europe/Kyiv");
 
-    private static final Path DIFF_LOG = Path.of("alerts-diff.log");
+    // ТИМЧАСОВО: дублювати ключові події перевірки API в debug-чат Telegram.
+    private static final boolean DEBUG_TO_TELEGRAM = true;
 
     private final AirAlertApiClient client;
     private final AppProperties properties;
     private final ManualAlertService manualAlertService;
     private final AlertLifecycleService alertLifecycleService;
+    private final AlertDeliveryService alertDeliveryService;
 
     private volatile ApiAlertStatus lastStatus = new ApiAlertStatus(
-        DangerLevel.NONE,
-        false,
-        LocalDateTime.now(KYIV_ZONE)
+            DangerLevel.NONE,
+            false,
+            LocalDateTime.now(KYIV_ZONE)
     );
-
-    // private ApiAlertStatus lastStatus = new ApiAlertStatus(false,
-    //     false,
-    //     LocalDateTime.now(KYIV_ZONE));
 
     /** false, доки не було першого успішного опиту після старту. */
     private boolean initialized = false;
 
-    /** ТИМЧАСОВО: попередній зріз записів для diff-логу. */
-    private Map<String, String> lastSnapshot = new HashMap<>();
+    /** Стан самих опитувань API (успіхи та помилки) для виводу статусу. */
+    private volatile ApiCheckHealth health = ApiCheckHealth.initial();
 
     public AirAlertApiService(
-        AirAlertApiClient client,
-        AppProperties properties,
-        ManualAlertService manualAlertService,
-        AlertLifecycleService alertLifecycleService
+            AirAlertApiClient client,
+            AppProperties properties,
+            ManualAlertService manualAlertService,
+            AlertLifecycleService alertLifecycleService,
+            AlertDeliveryService alertDeliveryService
     ) {
         this.client = client;
         this.properties = properties;
         this.manualAlertService = manualAlertService;
         this.alertLifecycleService = alertLifecycleService;
+        this.alertDeliveryService = alertDeliveryService;
     }
 
     public void checkAlerts() {
@@ -71,12 +66,18 @@ public class AirAlertApiService {
             if (alerts == null) {
                 // Порожня/пошкоджена відповідь - не відбій. Стан не змінюємо.
                 log.warn("Alert API returned null body, state left unchanged");
+                recordFailure("Порожня відповідь API");
+                reportFailure("⚠️ [API] Порожня відповідь, стан не змінено");
                 return;
             }
 
-            logDiff(alerts);
-
             ApiAlertStatus currentStatus = detectAlertStatus(alerts);
+            boolean recovered = health.consecutiveFailures() > 0;
+            recordSuccess();
+
+            if (recovered) {
+                debugToTelegram("✅ [API] Зв'язок з API відновлено");
+            }
 
             if (!initialized) {
                 initialize(currentStatus);
@@ -90,6 +91,10 @@ public class AirAlertApiService {
                 log.info("API alert status changed: {} -> {}",
                         formatStatusForLog(lastStatus),
                         formatStatusForLog(currentStatus));
+                debugToTelegram("🔄 [API] Статус змінився:\n"
+                        + formatStatusForLog(lastStatus)
+                        + "\n->\n"
+                        + formatStatusForLog(currentStatus));
             } else {
                 log.debug("API alert status unchanged: {}", formatStatusForLog(currentStatus));
             }
@@ -98,6 +103,8 @@ public class AirAlertApiService {
 
         } catch (Exception e) {
             log.error("Alert API check failed: {}", e.getMessage(), e);
+            recordFailure(describeError(e));
+            reportFailure("❌ [API] Помилка перевірки: " + describeError(e));
         }
     }
 
@@ -107,14 +114,26 @@ public class AirAlertApiService {
      */
     private void initialize(ApiAlertStatus currentStatus) {
 
-        if (currentStatus.districtAlertActive()) {
-            alertLifecycleService.enableMonitoringFromApi();
-        }
-
+        // ТИМЧАСОВО (для тестування): при старті повторно повідомляємо поточний стан.
+        // Спочатку фіксуємо стан, щоб збій відправки не призводив до повторів на кожному опиті.
         lastStatus = currentStatus;
         initialized = true;
 
+        if (currentStatus.districtAlertActive()) {
+            alertLifecycleService.enableMonitoringFromApi();
+            manualAlertService.sendApiAlert(
+                    currentStatus.districtLevel() == DangerLevel.RED
+                            ? AlertType.ALERT
+                            : AlertType.YELLOW_ALERT
+            );
+        }
+
+        if (currentStatus.highRiskActive()) {
+            manualAlertService.sendApiAlert(AlertType.HIGH_RISK);
+        }
+
         log.info("API alert status initialized: {}", formatStatusForLog(currentStatus));
+        debugToTelegram("ℹ️ [API] Старт, початковий стан: " + formatStatusForLog(currentStatus));
     }
 
     private void processDistrictAlertChange(ApiAlertStatus previousStatus, ApiAlertStatus currentStatus) {
@@ -227,61 +246,44 @@ public class AirAlertApiService {
         return lastStatus;
     }
 
-    // ------------------------------------------------------------------
-    // ТИМЧАСОВА ДІАГНОСТИКА: пише в alerts-diff.log лише зміни записів
-    // району, громади high-risk та Київської області. Після з'ясування,
-    // як приходить підвищена небезпека, цей блок і виклик logDiff(alerts)
-    // у checkAlerts() можна видалити.
-    // ------------------------------------------------------------------
+    public ApiCheckHealth getHealth() {
+        return health;
+    }
 
-    private void logDiff(RegionAlertDto[] alerts) {
+    private void recordSuccess() {
+        health = health.success(LocalDateTime.now(KYIV_ZONE));
+    }
+
+    private void recordFailure(String message) {
+        health = health.failure(LocalDateTime.now(KYIV_ZONE), message);
+    }
+
+    private void debugToTelegram(String text) {
+
+        if (!DEBUG_TO_TELEGRAM) {
+            return;
+        }
 
         try {
-
-            String districtId = properties.alertApi().alarmRegionId();
-            String highRiskId = properties.alertApi().highRiskRegionId();
-
-            Map<String, String> now = Arrays.stream(alerts)
-                    .filter(Objects::nonNull)
-                    .filter(a -> a.regionId() != null)
-                    .filter(a -> districtId.equals(a.regionId())
-                            || highRiskId.equals(a.regionId())
-                            || (a.regionName() != null && a.regionName().contains("Київськ")))
-                    .collect(Collectors.toMap(
-                            RegionAlertDto::regionId,
-                            RegionAlertDto::toString,
-                            (x, y) -> y
-                    ));
-
-            now.forEach((id, value) -> {
-                if (!value.equals(lastSnapshot.get(id))) {
-                    diffLog("+ " + value);
-                }
-            });
-
-            lastSnapshot.keySet().stream()
-                    .filter(id -> !now.containsKey(id))
-                    .forEach(id -> diffLog("- " + id));
-
-            lastSnapshot = new HashMap<>(now);
-
+            alertDeliveryService.sendDebug(text);
         } catch (Exception e) {
-            // Діагностика ніколи не повинна ламати основну логіку.
-            log.warn("logDiff failed: {}", e.getMessage());
+            log.warn("Debug send to Telegram failed: {}", e.getMessage());
         }
     }
 
-    private void diffLog(String message) {
+    /** Помилку шлемо лише при першій у серії, щоб не спамити кожним опитом. */
+    private void reportFailure(String text) {
 
-        try {
-            Files.writeString(
-                    DIFF_LOG,
-                    LocalDateTime.now(KYIV_ZONE) + " " + message + System.lineSeparator(),
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.APPEND
-            );
-        } catch (IOException e) {
-            log.warn("diff log write failed: {}", e.getMessage());
+        if (health.consecutiveFailures() == 1) {
+            debugToTelegram(text);
         }
+    }
+
+    private String describeError(Exception e) {
+
+        String text = e.getClass().getSimpleName()
+                + (e.getMessage() == null ? "" : ": " + e.getMessage());
+
+        return text.length() > 300 ? text.substring(0, 300) + "..." : text;
     }
 }

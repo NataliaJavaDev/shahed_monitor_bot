@@ -21,8 +21,7 @@ public class AlertDeliveryService {
     }
 
     //тільки у тестову групу
-    public void sendOnlyDebugChannel(String message) {
-        senderService.sendToChat(properties.telegram().targetChannelId(), message);
+    public void sendDebug(String message) {
         senderService.sendToChat(properties.telegram().debugChannelId(), message);
     }
 }
