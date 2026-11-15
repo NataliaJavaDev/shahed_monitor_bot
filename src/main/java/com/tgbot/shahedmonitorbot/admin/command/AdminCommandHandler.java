@@ -513,10 +513,6 @@ public class AdminCommandHandler {
                 senderService.sendToChatWithReplyKeyboard(chatId, AdminMessage.ALERT_MENU_TITLE.text(), menuService.alertReplyKeyboard());
                 return true;
 
-            case ALERT:
-                sendManualAlert(chatId, AlertType.ALERT, AdminMessage.ALERT_SENT);
-                return true;
-
             case RED_ALERT:
                 sendManualAlert(chatId, AlertType.RED_ALERT, AdminMessage.RED_ALERT_SENT);
                 return true;

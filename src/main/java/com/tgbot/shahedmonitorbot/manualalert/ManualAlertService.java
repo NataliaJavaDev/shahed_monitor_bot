@@ -2,8 +2,6 @@ package com.tgbot.shahedmonitorbot.manualalert;
 
 import com.tgbot.shahedmonitorbot.alert.AlertDeliveryService;
 import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
-import com.tgbot.shahedmonitorbot.monitoring.history.AlertReasonAnalyzerService;
-import com.tgbot.shahedmonitorbot.monitoring.reason.AlertReason;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,45 +10,36 @@ public class ManualAlertService {
     private final AlertDeliveryService alertDeliveryService;
     private final ManualAlertMessageFormatter formatter;
     private final MonitoringStateService monitoringStateService;
-    private final AlertReasonAnalyzerService alertReasonAnalyzerService;
 
     public ManualAlertService(
             AlertDeliveryService alertDeliveryService,
             ManualAlertMessageFormatter formatter,
-            MonitoringStateService monitoringStateService,
-            AlertReasonAnalyzerService alertReasonAnalyzerService
+            MonitoringStateService monitoringStateService
     ) {
         this.alertDeliveryService = alertDeliveryService;
         this.formatter = formatter;
         this.monitoringStateService = monitoringStateService;
-        this.alertReasonAnalyzerService = alertReasonAnalyzerService;
     }
 
     public void sendAlert(AlertType type) {
 
-        // alertDeliveryService.send("DEBUG: sendAlert()");
-
         updateMonitoringFromManual(type);
-        sendWithReason(type);
+        send(type);
     }
 
     public void sendApiAlert(AlertType type) {
 
-        // alertDeliveryService.send("DEBUG: sendApiAlert()");
-
-        sendWithReason(type);
+        send(type);
     }
 
-    private void send(AlertType type, AlertReason reason) {
+    private void send(AlertType type) {
 
-        alertDeliveryService.send(formatter.format(type, reason));
+        alertDeliveryService.send(formatter.format(type));
     }
 
-    private void updateMonitoringFromManual(
-            AlertType type
-    ) {
+    private void updateMonitoringFromManual(AlertType type) {
 
-        if (type == AlertType.ALERT) {
+        if (type == AlertType.RED_ALERT || type == AlertType.YELLOW_ALERT) {
             monitoringStateService.enableMonitoringManually();
             return;
         }
@@ -60,35 +49,8 @@ public class ManualAlertService {
         }
     }
 
-    private void sendWithReason(AlertType type) {
-
-        if (type != AlertType.ALERT) {
-            send(type, null);
-            return;
-        }
-
-        try {
-
-            AlertReason reason = alertReasonAnalyzerService.analyze();
-
-            // alertDeliveryService.send("DEBUG\n" + reason);
-
-            send(type, reason);
-
-        } catch (Exception e) {
-
-            alertDeliveryService.send("""
-            EXCEPTION
-
-            %s
-            """.formatted(e));
-
-            send(type, null);
-        }
-    }
-
     public void sendDebug(String text) {
-        
+
         // alertDeliveryService.send("DEBUG\n\n" + text);
     }
 }
