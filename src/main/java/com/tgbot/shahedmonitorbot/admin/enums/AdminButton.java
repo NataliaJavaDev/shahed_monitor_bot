@@ -30,6 +30,8 @@ public enum AdminButton {
 
     ALERTS("🚨 Керування тривогами"),
     ALERT("🚨 Тривога"),
+    RED_ALERT("🔴 Червоний рівень небезпеки"),
+    YELLOW_ALERT("🟡 Жовтий рівень небезпеки"),
     HIGH_RISK("⚠️ Підвищена небезпека"),
     ALL_CLEAR("✅ Відбій"),
 
