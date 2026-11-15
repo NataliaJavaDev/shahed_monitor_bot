@@ -185,10 +185,18 @@ public class TdLibUpdateHandler {
                 return;
             }
 
-            if (analysis.intent() == MessageIntent.GLOBAL_THREAT
-                || analysis.intent() == MessageIntent.FORECAST
-            ) {
+            // if (analysis.intent() == MessageIntent.GLOBAL_THREAT
+            //     || analysis.intent() == MessageIntent.FORECAST
+            // ) {
+            //     sendSpecialAnalysis(analysis, source.title());
+            //     return;
+            // }
 
+            if (analysis.intent() == MessageIntent.GLOBAL_THREAT) {
+                return;
+            }
+
+            if (analysis.intent() == MessageIntent.FORECAST) {
                 sendSpecialAnalysis(analysis, source.title());
                 return;
             }
