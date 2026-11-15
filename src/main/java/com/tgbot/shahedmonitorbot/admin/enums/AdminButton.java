@@ -29,7 +29,6 @@ public enum AdminButton {
     REMOVE_MESSAGE_INTENTS("➖ Видалити слово"),
 
     ALERTS("🚨 Керування тривогами"),
-    ALERT("🚨 Тривога"),
     RED_ALERT("🔴 Червоний рівень небезпеки"),
     YELLOW_ALERT("🟡 Жовтий рівень небезпеки"),
     HIGH_RISK("⚠️ Підвищена небезпека"),

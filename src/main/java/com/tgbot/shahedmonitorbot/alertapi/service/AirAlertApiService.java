@@ -123,7 +123,7 @@ public class AirAlertApiService {
             alertLifecycleService.enableMonitoringFromApi();
             manualAlertService.sendApiAlert(
                     currentStatus.districtLevel() == DangerLevel.RED
-                            ? AlertType.ALERT
+                            ? AlertType.RED_ALERT
                             : AlertType.YELLOW_ALERT
             );
         }
@@ -159,7 +159,7 @@ public class AirAlertApiService {
         }
 
         manualAlertService.sendApiAlert(
-                now == DangerLevel.RED ? AlertType.ALERT : AlertType.YELLOW_ALERT
+                now == DangerLevel.RED ? AlertType.RED_ALERT : AlertType.YELLOW_ALERT
         );
     }
 
