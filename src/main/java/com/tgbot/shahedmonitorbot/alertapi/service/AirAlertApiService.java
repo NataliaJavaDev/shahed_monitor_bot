@@ -1,20 +1,29 @@
 package com.tgbot.shahedmonitorbot.alertapi.service;
 
-import com.tgbot.shahedmonitorbot.alertapi.client.AirAlertApiClient;
-import com.tgbot.shahedmonitorbot.alertapi.dto.*;
-import com.tgbot.shahedmonitorbot.alertapi.model.*;
-import com.tgbot.shahedmonitorbot.config.AppProperties;
-import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
-import com.tgbot.shahedmonitorbot.manualalert.AlertType;
-import com.tgbot.shahedmonitorbot.monitoring.AlertLifecycleService;
 import com.tgbot.shahedmonitorbot.alert.AlertDeliveryService;
+import com.tgbot.shahedmonitorbot.alertapi.client.AirAlertApiClient;
+import com.tgbot.shahedmonitorbot.alertapi.dto.ActiveAlertDto;
+import com.tgbot.shahedmonitorbot.alertapi.dto.ActiveAlertLevelDto;
+import com.tgbot.shahedmonitorbot.alertapi.dto.RegionAlertDto;
+import com.tgbot.shahedmonitorbot.alertapi.model.ApiAlertStatus;
+import com.tgbot.shahedmonitorbot.alertapi.model.ApiCheckHealth;
+import com.tgbot.shahedmonitorbot.alertapi.model.DangerLevel;
+import com.tgbot.shahedmonitorbot.config.AppProperties;
+import com.tgbot.shahedmonitorbot.manualalert.AlertType;
+import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
+import com.tgbot.shahedmonitorbot.monitoring.AlertLifecycleService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 
 @Service
 public class AirAlertApiService {
@@ -118,6 +127,7 @@ public class AirAlertApiService {
         // Спочатку фіксуємо стан, щоб збій відправки не призводив до повторів на кожному опиті.
         lastStatus = currentStatus;
         initialized = true;
+        manualAlertService.syncLevel(currentStatus.districtLevel());
 
         if (currentStatus.districtAlertActive()) {
             alertLifecycleService.enableMonitoringFromApi();
@@ -158,6 +168,8 @@ public class AirAlertApiService {
             alertLifecycleService.enableMonitoringFromApi();
         }
 
+        // Повідомлення про заміну рівня (RED <-> YELLOW) обирає ManualAlertService
+        // за останнім відомим рівнем, тому тут передаємо просто поточний рівень.
         manualAlertService.sendApiAlert(
                 now == DangerLevel.RED ? AlertType.RED_ALERT : AlertType.YELLOW_ALERT
         );
