@@ -231,7 +231,7 @@
   }, {
     "chatId" : "-1001765605498",
     "title" : "Чому тривога",
-    "status" : "ACTIVE"
+    "status" : "IGNORED"
   }, {
     "chatId" : "-1002193251936",
     "title" : "Чисте небо Київська область та Київ.",
@@ -239,6 +239,38 @@
   }, {
     "chatId" : "-1001223955273",
     "title" : "Повітряні Сили ЗС України / Air Force of the Armed Forces of Ukraine",
+    "status" : "IGNORED"
+  }, {
+    "chatId" : "-1001806611187",
+    "title" : "\uD83D\uDD0A⚠️єРадар | Повітряна тривога | Ракетна небезпека",
+    "status" : "ACTIVE"
+  }, {
+    "chatId" : "-1004370212137",
+    "title" : "\uD83D\uDEA7 \uD83D\uDD27 Для розробника перевірка чатбота",
+    "status" : "IGNORED"
+  }, {
+    "chatId" : "-1003977205477",
+    "title" : "Тест БЦ Таргет група",
+    "status" : "IGNORED"
+  }, {
+    "chatId" : "-5495320455",
+    "title" : "Чат бот перевірка",
+    "status" : "IGNORED"
+  }, {
+    "chatId" : "-1001128040237",
+    "title" : "BCTV Біла Церква БЦТВ",
+    "status" : "IGNORED"
+  }, {
+    "chatId" : "-1001246502139",
+    "title" : "\uD83C\uDDFA\uD83C\uDDE6 Київська обласна військова адміністрація",
+    "status" : "IGNORED"
+  }, {
+    "chatId" : "-1003116942863",
+    "title" : "Безпечний простір 2.0❤️",
+    "status" : "IGNORED"
+  }, {
+    "chatId" : "-1001641260594",
+    "title" : "monitor",
     "status" : "IGNORED"
   } ]
 }
