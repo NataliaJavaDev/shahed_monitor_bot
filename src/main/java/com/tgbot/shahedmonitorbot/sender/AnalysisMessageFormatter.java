@@ -63,24 +63,24 @@ public class AnalysisMessageFormatter {
                 💬 Оригінальне повідомлення:
 
                 %s
-                """.formatted(
-                sourceTitle,
-                analysis.intent(),
-                analysis.duplicate(),
-                formatNullable(
-                        analysis.globalThreatMatch() == null
-                                ? null
-                                : analysis.globalThreatMatch().matchedMarker()
-                ),
-                formatNullable(
-                        analysis.forecastMatch() == null
-                                ? null
-                                : analysis.forecastMatch().matchedMarker()
-                ),
-                formatNullable(match == null ? null : match.targetCategory()),
-                formatNullable(match == null ? null : match.direction()),
-                formatNullable(match == null ? null : match.locationCategory()),
-                originalText
+            """.formatted(
+            sourceTitle,
+            analysis.intent(),
+            analysis.duplicate(),
+            formatNullable(
+                analysis.globalThreatMatch() == null
+                    ? null
+                    : analysis.globalThreatMatch().matchedMarker()
+            ),
+            formatNullable(
+                analysis.forecastMatch() == null
+                    ? null
+                    : analysis.forecastMatch().matchedMarker()
+            ),
+            formatNullable(match == null ? null : match.targetCategory()),
+            formatNullable(match == null ? null : match.direction()),
+            formatNullable(match == null ? null : match.locationCategory()),
+            originalText
         );
     }
 
@@ -89,7 +89,6 @@ public class AnalysisMessageFormatter {
         if (value == null || value.isBlank()) {
             return "-";
         }
-
         return value;
     }
 }

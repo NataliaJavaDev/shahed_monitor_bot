@@ -11,8 +11,8 @@ public class TdJsonLibraryLoader {
 
     public TdJsonLibraryLoader(AppProperties appProperties) {
         this.library = Native.load(
-                appProperties.tdlib().libraryPath(),
-                TdJsonLibrary.class
+            appProperties.tdlib().libraryPath(),
+            TdJsonLibrary.class
         );
     }
 

@@ -22,15 +22,15 @@ public class ContextResolverService {
             .filter(previous -> previous.targetCategory() != null)
             .filter(previous -> !previous.targetCategory().isBlank())
             .map(previous -> new ContextResolution(
-                    new MonitorMatch(
-                        previous.matchedTarget(),
-                        previous.targetCategory(),
-                        initialMatch.direction(),
-                        initialMatch.matchedLocation(),
-                        initialMatch.locationCategory(),
-                        MatchType.TARGET_AND_LOCATION
-                    ),
-                    true
+                new MonitorMatch(
+                    previous.matchedTarget(),
+                    previous.targetCategory(),
+                    initialMatch.direction(),
+                    initialMatch.matchedLocation(),
+                    initialMatch.locationCategory(),
+                    MatchType.TARGET_AND_LOCATION
+                ),
+                true
             ))
             .orElse(new ContextResolution(initialMatch, false));
     }

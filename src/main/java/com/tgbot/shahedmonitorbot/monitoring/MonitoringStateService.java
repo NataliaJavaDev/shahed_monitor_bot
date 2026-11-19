@@ -36,7 +36,6 @@ public class MonitoringStateService {
         if (!isAutoMode()) {
             return;
         }
-
         monitoringEnabled = true;
     }
 
@@ -48,7 +47,6 @@ public class MonitoringStateService {
         if (!isAutoMode()) {
             return;
         }
-
         monitoringEnabled = false;
     }
 
@@ -56,7 +54,6 @@ public class MonitoringStateService {
      * Ручне ввімкнення переводить систему в MANUAL.
      */
     public void enableMonitoringManually() {
-
         controlMode = MonitoringControlMode.MANUAL;
         monitoringEnabled = true;
     }
@@ -65,7 +62,6 @@ public class MonitoringStateService {
      * Ручне вимкнення завжди повертає систему в AUTO.
      */
     public void disableMonitoringManually() {
-
         monitoringEnabled = false;
         controlMode = MonitoringControlMode.AUTO;
     }

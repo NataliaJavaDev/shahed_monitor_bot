@@ -29,7 +29,6 @@ public class TdLibHistoryRequestService {
     private final Map<String, HistoryRequest> activeRequests = new ConcurrentHashMap<>();
 
     public TdLibHistoryRequestService(TdLibClientService tdLibClientService, ObjectMapper objectMapper) {
-
         this.tdLibClientService = tdLibClientService;
         this.objectMapper = objectMapper;
     }
@@ -71,14 +70,11 @@ public class TdLibHistoryRequestService {
             future = future.thenCompose(result ->
                 requestHistory(chatId, lookback)
                     .thenApply(messages -> {
-
                         result.put(chatId, messages);
-
                         return result;
                     })
             );
         }
-
         return future;
     }
 
@@ -94,7 +90,6 @@ public class TdLibHistoryRequestService {
             }
 
             root = objectMapper.readTree(update);
-
             String extra = root.path("@extra").asText("");
 
             if (!extra.startsWith(EXTRA_PREFIX)) {
@@ -102,7 +97,6 @@ public class TdLibHistoryRequestService {
             }
 
             String requestId = extra.substring(EXTRA_PREFIX.length());
-
             request = activeRequests.get(requestId);
 
             if (request == null) {
@@ -128,13 +122,12 @@ public class TdLibHistoryRequestService {
                 }
 
                 LocalDateTime messageTime =
-                        LocalDateTime.ofInstant(
-                            Instant.ofEpochSecond(message.path("date").asLong()),
-                            KYIV_ZONE
-                        );
+                    LocalDateTime.ofInstant(
+                        Instant.ofEpochSecond(message.path("date").asLong()),
+                        KYIV_ZONE
+                    );
 
                 if (messageTime.isBefore(request.getFrom())) {
-
                     reachedFromTime = true;
                     break;
                 }
@@ -144,29 +137,21 @@ public class TdLibHistoryRequestService {
                 if (text.isBlank()) {
                     continue;
                 }
-
-                request.getMessages()
-                    .add(new TdHistoryMessage(messageId, messageTime, text));
+                request.getMessages().add(new TdHistoryMessage(messageId, messageTime, text));
             }
 
             if (reachedFromTime) {
-
                 finishRequest(request);
                 return;
             }
-
             requestHistoryPage(request, request.getOldestMessageId());
 
         } catch (Exception e) {
-
             failRequest(request, e);
         }
     }
 
-    private void requestHistoryPage(
-        HistoryRequest request,
-        long fromMessageId
-    ) {
+    private void requestHistoryPage(HistoryRequest request, long fromMessageId) {
 
         int offset = 0;
 
@@ -180,30 +165,25 @@ public class TdLibHistoryRequestService {
                 "limit":100,
                 "only_local":false
                 }
-                """.formatted(
-                EXTRA_PREFIX,
-                request.getRequestId(),
-                request.getChatId(),
-                fromMessageId,
-                offset
+            """.formatted(
+            EXTRA_PREFIX,
+            request.getRequestId(),
+            request.getChatId(),
+            fromMessageId,
+            offset
         ));
     }
 
     private void finishRequest(HistoryRequest request) {
-
         activeRequests.remove(request.getRequestId());
         request.getFuture().complete(List.copyOf(request.getMessages()));
     }
 
-    private void failRequest(
-        HistoryRequest request,
-        Exception e
-    ) {
+    private void failRequest(HistoryRequest request, Exception e) {
 
         if (request == null) {
             return;
         }
-
         activeRequests.remove(request.getRequestId());
         request.getFuture().completeExceptionally(e);
     }
@@ -214,19 +194,12 @@ public class TdLibHistoryRequestService {
         String contentType = content.path("@type").asText();
 
         if ("messageText".equals(contentType)) {
-
-            return content.path("text")
-                    .path("text")
-                    .asText("");
+            return content.path("text").path("text").asText("");
         }
 
         if ("messagePhoto".equals(contentType)) {
-
-            return content.path("caption")
-                    .path("text")
-                    .asText("");
+            return content.path("caption").path("text").asText("");
         }
-
         return "";
     }
 }

@@ -28,7 +28,6 @@ public class DictionaryInitializer {
                 "Dynamic configuration file was not found"
             );
         }
-
         storage.replace(config);
     }
 }

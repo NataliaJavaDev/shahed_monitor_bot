@@ -22,7 +22,6 @@ public class TargetAdminService {
 	}
 
 	public synchronized List<String> getTargets() {
-
 		return storage.get()
 			.dictionaries()
 			.targets()
@@ -32,7 +31,6 @@ public class TargetAdminService {
 	}
 
 	public synchronized List<String> getCategories() {
-
 		return storage.get()
 			.dictionaries()
 			.targets()
@@ -131,7 +129,6 @@ public class TargetAdminService {
 				currentConfig.noise(),
 				currentConfig.messageIntents()
 			));
-
 			return true;
 		}
 
@@ -155,7 +152,6 @@ public class TargetAdminService {
 			currentConfig.noise(),
 			currentConfig.messageIntents()
 		));
-
 		return true;
 	}
 
@@ -201,10 +197,8 @@ public class TargetAdminService {
 				currentConfig.noise(),
 				currentConfig.messageIntents()
 			));
-
 			return true;
 		}
-
 		return false;
 	}
 

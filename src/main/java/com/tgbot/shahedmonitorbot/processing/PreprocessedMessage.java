@@ -1,7 +1,7 @@
 package com.tgbot.shahedmonitorbot.processing;
 
 public record PreprocessedMessage(
-        String cleanedText,
-        boolean tooLongForLocalAnalysis
+    String cleanedText,
+    boolean tooLongForLocalAnalysis
 ) {
 }

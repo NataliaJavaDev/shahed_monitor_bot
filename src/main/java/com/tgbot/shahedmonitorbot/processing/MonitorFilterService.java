@@ -101,7 +101,6 @@ public class MonitorFilterService {
         if (values == null || values.isEmpty()) {
             return null;
         }
-
         return values.stream().filter(normalizedText::contains).findFirst().orElse(null);
     }
 }

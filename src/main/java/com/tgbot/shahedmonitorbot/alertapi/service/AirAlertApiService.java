@@ -2,15 +2,10 @@ package com.tgbot.shahedmonitorbot.alertapi.service;
 
 import com.tgbot.shahedmonitorbot.alert.AlertDeliveryService;
 import com.tgbot.shahedmonitorbot.alertapi.client.AirAlertApiClient;
-import com.tgbot.shahedmonitorbot.alertapi.dto.ActiveAlertDto;
-import com.tgbot.shahedmonitorbot.alertapi.dto.ActiveAlertLevelDto;
-import com.tgbot.shahedmonitorbot.alertapi.dto.RegionAlertDto;
-import com.tgbot.shahedmonitorbot.alertapi.model.ApiAlertStatus;
-import com.tgbot.shahedmonitorbot.alertapi.model.ApiCheckHealth;
-import com.tgbot.shahedmonitorbot.alertapi.model.DangerLevel;
+import com.tgbot.shahedmonitorbot.alertapi.dto.*;
+import com.tgbot.shahedmonitorbot.alertapi.model.*;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
-import com.tgbot.shahedmonitorbot.manualalert.AlertType;
-import com.tgbot.shahedmonitorbot.manualalert.ManualAlertService;
+import com.tgbot.shahedmonitorbot.manualalert.*;
 import com.tgbot.shahedmonitorbot.monitoring.AlertLifecycleService;
 
 import org.slf4j.Logger;
@@ -46,9 +41,9 @@ public class AirAlertApiService {
     private final AlertDeliveryService alertDeliveryService;
 
     private volatile ApiAlertStatus lastStatus = new ApiAlertStatus(
-            DangerLevel.NONE,
-            false,
-            LocalDateTime.now(KYIV_ZONE)
+        DangerLevel.NONE,
+        false,
+        LocalDateTime.now(KYIV_ZONE)
     );
 
     /** false, доки не було першого успішного опиту після старту. */
@@ -61,11 +56,11 @@ public class AirAlertApiService {
     private volatile ApiCheckHealth health = ApiCheckHealth.initial();
 
     public AirAlertApiService(
-            AirAlertApiClient client,
-            AppProperties properties,
-            ManualAlertService manualAlertService,
-            AlertLifecycleService alertLifecycleService,
-            AlertDeliveryService alertDeliveryService
+        AirAlertApiClient client,
+        AppProperties properties,
+        ManualAlertService manualAlertService,
+        AlertLifecycleService alertLifecycleService,
+        AlertDeliveryService alertDeliveryService
     ) {
         this.client = client;
         this.properties = properties;
@@ -329,9 +324,9 @@ public class AirAlertApiService {
         }
 
         return alert.activeAlertLevels().stream()
-                .filter(Objects::nonNull)
-                .map(ActiveAlertLevelDto::alertLevel)
-                .collect(Collectors.joining(",", "[", "]"));
+            .filter(Objects::nonNull)
+            .map(ActiveAlertLevelDto::alertLevel)
+            .collect(Collectors.joining(",", "[", "]"));
     }
 
     private boolean hasStatusChanged(ApiAlertStatus previousStatus, ApiAlertStatus currentStatus) {

@@ -41,26 +41,9 @@ public class DictionaryMenuService {
 			rows.add(categoryRow);
 		}
 	
-		rows.add(
-			singleRow(
-				getAddText(type),
-				"dictionary:add-category:" + type.name()
-			)
-		);
-	
-		rows.add(
-			singleRow(
-				getRemoveText(type),
-				"dictionary:delete-mode:" + type.name()
-			)
-		);
-	
-		rows.add(
-			singleRow(
-				"⬅️ Назад",
-				"dictionary:back"
-			)
-		);
+		rows.add(singleRow(getAddText(type), "dictionary:add-category:" + type.name()));
+		rows.add(singleRow(getRemoveText(type), "dictionary:delete-mode:" + type.name()));
+		rows.add(singleRow("⬅️ Назад", "dictionary:back"));
 	
 		return markup(rows);
 	}
@@ -76,16 +59,7 @@ public class DictionaryMenuService {
 		for (int i = 0; i < categories.size(); i++) {
 
 			String category = categories.get(i);
-
-			categoryRow.add(
-				button(
-					"🗑 " + category,
-					"dictionary:delete-category:"
-						+ type.name()
-						+ ":"
-						+ i
-				)
-			);
+			categoryRow.add(button("🗑 " + category, "dictionary:delete-category:" + type.name() + ":" + i));
 
 			if (categoryRow.size() == 2) {
 				rows.add(categoryRow);
@@ -97,13 +71,7 @@ public class DictionaryMenuService {
 			rows.add(categoryRow);
 		}
 
-		rows.add(
-			singleRow(
-				"⬅️ Назад",
-				"dictionary:categories:" + type.name()
-			)
-		);
-
+		rows.add(singleRow("⬅️ Назад", "dictionary:categories:" + type.name()));
 		return markup(rows);
 	}
 
@@ -117,36 +85,13 @@ public class DictionaryMenuService {
 		// Додати + Видалити аліас
 		InlineKeyboardRow actionRow = new InlineKeyboardRow();
 
-		actionRow.add(
-			button(
-				"➕ Додати аліас",
-				"dictionary:add-alias:"
-					+ type.name()
-					+ ":"
-					+ category
-			)
-		);
-
-		actionRow.add(
-			button(
-				"➖ Видалити аліас",
-				"dictionary:remove-alias:"
-					+ type.name()
-					+ ":"
-					+ category
-			)
-		);
+		actionRow.add(button("➕ Додати аліас", "dictionary:add-alias:" + type.name() + ":" + category));
+		actionRow.add(button("➖ Видалити аліас", "dictionary:remove-alias:" + type.name() + ":" + category));
 
 		rows.add(actionRow);
 
 		// Назад
-		rows.add(
-			singleRow(
-				"⬅️ Назад",
-				"dictionary:categories:" + type.name()
-			)
-		);
-
+		rows.add(singleRow("⬅️ Назад", "dictionary:categories:" + type.name()));
 		return markup(rows);
 	}
 
@@ -158,26 +103,15 @@ public class DictionaryMenuService {
 		return "➖ Видалити категорію";
 	}
 
-	private InlineKeyboardButton button(
-		String text,
-		String callbackData
-	) {
-
-		return InlineKeyboardButton.builder()
-			.text(text)
-			.callbackData(callbackData)
-			.build();
+	private InlineKeyboardButton button(String text, String callbackData) {
+		return InlineKeyboardButton.builder().text(text).callbackData(callbackData).build();
 	}
 
-	private InlineKeyboardRow singleRow(
-		String text,
-		String callbackData
-	) {
+	private InlineKeyboardRow singleRow(String text, String callbackData) {
 
 		InlineKeyboardRow row = new InlineKeyboardRow();
 
 		row.add(button(text, callbackData));
-
 		return row;
 	}
 

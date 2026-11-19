@@ -37,10 +37,11 @@ public class AdminMenuService {
         KeyboardRow row2 = new KeyboardRow();
         row2.add(AdminButton.DIRECTIONS.text());
         row2.add(AdminButton.ATTENTION.text());
-        row2.add(AdminButton.NOISE.text());
+        // row2.add(AdminButton.NOISE.text());
 
         KeyboardRow row3 = new KeyboardRow();
-        row3.add(AdminButton.GLOBAL_THREAT.text());
+        row3.add(AdminButton.NOISE.text());
+        // row3.add(AdminButton.GLOBAL_THREAT.text());
         row3.add(AdminButton.FORECAST.text());
 
         KeyboardRow row4 = new KeyboardRow();

@@ -8,9 +8,7 @@ public class AlertLifecycleService {
 
     private final MonitoringStateService monitoringStateService;
 
-    public AlertLifecycleService(
-            MonitoringStateService monitoringStateService
-    ) {
+    public AlertLifecycleService(MonitoringStateService monitoringStateService) {
         this.monitoringStateService = monitoringStateService;
     }
 

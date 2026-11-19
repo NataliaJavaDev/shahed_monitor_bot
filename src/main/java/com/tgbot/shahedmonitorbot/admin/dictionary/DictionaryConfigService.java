@@ -1,6 +1,5 @@
 package com.tgbot.shahedmonitorbot.admin.dictionary;
 
-import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSource;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,9 +19,7 @@ public class DictionaryConfigService {
 		this.jsonService = jsonService;
 	}
 
-	public synchronized void update(
-		UnaryOperator<DictionaryConfig> updater
-	) {
+	public synchronized void update(UnaryOperator<DictionaryConfig> updater) {
 		DynamicConfig current = storage.get();
 		DictionaryConfig updated = updater.apply(current.dictionaries());
 

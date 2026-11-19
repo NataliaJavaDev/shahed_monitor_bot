@@ -15,34 +15,25 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Service
 public class TdLibAdminChatDiscoveryService {
 
-    private static final Logger log =
-            LoggerFactory.getLogger(TdLibAdminChatDiscoveryService.class);
+    private static final Logger log = LoggerFactory.getLogger(TdLibAdminChatDiscoveryService.class);
 
-    private static final String GET_ME_EXTRA =
-            "TDLIB_ADMIN_DISCOVERY_GET_ME";
-
-    private static final String GET_CHAT_EXTRA =
-            "TDLIB_ADMIN_DISCOVERY_GET_CHAT";
-
-    private static final String MEMBER_EXTRA_PREFIX =
-            "TDLIB_ADMIN_DISCOVERY_MEMBER:";
+    private static final String GET_ME_EXTRA = "TDLIB_ADMIN_DISCOVERY_GET_ME";
+    private static final String GET_CHAT_EXTRA = "TDLIB_ADMIN_DISCOVERY_GET_CHAT";
+    private static final String MEMBER_EXTRA_PREFIX = "TDLIB_ADMIN_DISCOVERY_MEMBER:";
 
     private final TdLibClientService tdLibClientService;
     private final ObjectMapper objectMapper;
 
     private final AtomicBoolean started = new AtomicBoolean(false);
 
-    private final Map<Long, String> pendingChats =
-            new ConcurrentHashMap<>();
-
-    private final Set<Long> requestedMemberChecks =
-            ConcurrentHashMap.newKeySet();
+    private final Map<Long, String> pendingChats = new ConcurrentHashMap<>();
+    private final Set<Long> requestedMemberChecks = ConcurrentHashMap.newKeySet();
 
     private volatile long currentUserId;
 
     public TdLibAdminChatDiscoveryService(
-            TdLibClientService tdLibClientService,
-            ObjectMapper objectMapper
+        TdLibClientService tdLibClientService,
+        ObjectMapper objectMapper
     ) {
         this.tdLibClientService = tdLibClientService;
         this.objectMapper = objectMapper;
@@ -60,7 +51,7 @@ public class TdLibAdminChatDiscoveryService {
                     "@type": "getMe",
                     "@extra": "%s"
                 }
-                """.formatted(GET_ME_EXTRA));
+            """.formatted(GET_ME_EXTRA));
     }
 
     public void handle(String update) {
@@ -116,12 +107,7 @@ public class TdLibAdminChatDiscoveryService {
         }
 
         pendingChats.put(chatId, title);
-
-        log.debug(
-                "Found supergroup: {} (ID: {})",
-                title,
-                chatId
-        );
+        log.debug("Found supergroup: {} (ID: {})", title, chatId);
 
         if (currentUserId != 0) {
             requestMemberStatus(chatId);
@@ -147,41 +133,36 @@ public class TdLibAdminChatDiscoveryService {
                     },
                     "@extra": "%s%d"
                 }
-                """.formatted(
-                chatId,
-                currentUserId,
-                MEMBER_EXTRA_PREFIX,
-                chatId
+            """.formatted(
+            chatId,
+            currentUserId,
+            MEMBER_EXTRA_PREFIX,
+            chatId
         ));
     }
 
     private void handleMemberResult(
-            JsonNode result,
-            String type,
-            String extra
+        JsonNode result,
+        String type,
+        String extra
     ) {
         long chatId;
 
         try {
-            chatId = Long.parseLong(
-                    extra.substring(MEMBER_EXTRA_PREFIX.length())
-            );
+            chatId = Long.parseLong(extra.substring(MEMBER_EXTRA_PREFIX.length()));
         } catch (NumberFormatException e) {
             log.warn("Invalid member discovery response ID: {}", extra);
             return;
         }
 
-        String title = pendingChats.getOrDefault(
-                chatId,
-                "Без назви"
-        );
+        String title = pendingChats.getOrDefault(chatId, "Без назви");
 
         if ("error".equals(type)) {
             log.warn(
-                    "Could not check TDLib membership in '{}' ({}): {}",
-                    title,
-                    chatId,
-                    result.path("message").asText("Unknown error")
+                "Could not check TDLib membership in '{}' ({}): {}",
+                title,
+                chatId,
+                result.path("message").asText("Unknown error")
             );
             return;
         }
@@ -190,26 +171,19 @@ public class TdLibAdminChatDiscoveryService {
             return;
         }
 
-        String status = result.path("status")
-                .path("@type")
-                .asText();
+        String status = result.path("status").path("@type").asText();
 
         if ("chatMemberStatusCreator".equals(status)
                 || "chatMemberStatusAdministrator".equals(status)
                 || "chatMemberStatusEditor".equals(status)) {
 
-            log.info(
-                    "TDLIB ADMIN GROUP FOUND: title='{}', chat_id={}, status={}",
-                    title,
-                    chatId,
-                    status
+            log.info("TDLIB ADMIN GROUP FOUND: title='{}', chat_id={}, status={}",
+                title,
+                chatId,
+                status
             );
         } else {
-            log.debug(
-                    "TDLib user is not an administrator in '{}': status={}",
-                    title,
-                    status
-            );
+            log.debug("TDLib user is not an administrator in '{}': status={}", title, status);
         }
     }
 }

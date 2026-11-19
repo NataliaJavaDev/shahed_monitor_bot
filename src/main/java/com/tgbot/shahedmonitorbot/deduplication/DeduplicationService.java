@@ -1,10 +1,7 @@
 package com.tgbot.shahedmonitorbot.deduplication;
 
 import com.tgbot.shahedmonitorbot.config.AppProperties;
-import com.tgbot.shahedmonitorbot.processing.ForecastMatch;
-import com.tgbot.shahedmonitorbot.processing.GlobalThreatMatch;
-import com.tgbot.shahedmonitorbot.processing.MonitorMatch;
-import com.tgbot.shahedmonitorbot.processing.ThreatMatch;
+import com.tgbot.shahedmonitorbot.processing.*;
 import com.tgbot.shahedmonitorbot.util.TextNormalizer;
 import org.springframework.stereotype.Service;
 

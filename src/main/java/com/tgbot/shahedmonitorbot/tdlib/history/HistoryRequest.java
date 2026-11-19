@@ -16,7 +16,6 @@ public class HistoryRequest {
     private final List<TdHistoryMessage> messages = new ArrayList<>();
 
     public HistoryRequest(String requestId, String chatId, LocalDateTime from) {
-        
         this.requestId = requestId;
         this.chatId = chatId;
         this.from = from;

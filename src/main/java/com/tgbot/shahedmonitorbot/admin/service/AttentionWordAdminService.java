@@ -154,10 +154,8 @@ public class AttentionWordAdminService {
             }
 
             replaceAttention(categories);
-
             return true;
         }
-
         return false;
     }
 

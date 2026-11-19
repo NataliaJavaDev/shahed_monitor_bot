@@ -61,12 +61,7 @@ public class DictionaryAdminService {
 		};
 	}
 
-	public boolean addAlias(
-		DictionaryType type,
-		String category,
-		String alias
-	) {
-
+	public boolean addAlias(DictionaryType type, String category, String alias) {
 		return switch (type) {
 			case TARGETS -> targetAdminService.addTarget(alias, category);
 			case LOCATIONS -> locationAdminService.addLocation(alias, category);
@@ -75,12 +70,7 @@ public class DictionaryAdminService {
 		};
 	}
 
-	public boolean removeAlias(
-		DictionaryType type,
-		String category,
-		String alias
-	) {
-
+	public boolean removeAlias(DictionaryType type, String category, String alias) {
 		return switch (type) {
 			case TARGETS -> targetAdminService.removeTarget(alias);
 			case LOCATIONS -> locationAdminService.removeLocation(alias);
@@ -89,11 +79,7 @@ public class DictionaryAdminService {
 		};
 	}
 
-	public boolean addCategory(
-		DictionaryType type,
-		String category
-	) {
-
+	public boolean addCategory(DictionaryType type, String category) {
 		return switch (type) {
 			case TARGETS -> targetAdminService.addCategory(category);
 			case LOCATIONS -> locationAdminService.addCategory(category);
@@ -101,11 +87,7 @@ public class DictionaryAdminService {
 		};
 	}
 
-	public boolean removeCategory(
-		DictionaryType type,
-		String category
-	) {
-
+	public boolean removeCategory(DictionaryType type, String category) {
 		return switch (type) {
 			case TARGETS -> targetAdminService.removeCategory(category);
 			case LOCATIONS -> locationAdminService.removeCategory(category);
@@ -114,7 +96,6 @@ public class DictionaryAdminService {
 	}
 
 	public boolean add(DictionaryType type, String value) {
-
 		return switch (type) {
 			case TARGETS -> targetAdminService.addTarget(value);
 			case LOCATIONS -> locationAdminService.addLocation(value);
@@ -127,11 +108,7 @@ public class DictionaryAdminService {
 		};
 	}
 
-	public boolean remove(
-		DictionaryType type,
-		String value
-	) {
-
+	public boolean remove(DictionaryType type, String value) {
 		return switch (type) {
 			case TARGETS -> targetAdminService.removeTarget(value);
 			case LOCATIONS -> locationAdminService.removeLocation(value);
@@ -144,12 +121,7 @@ public class DictionaryAdminService {
 		};
 	}
 
-	public boolean execute(
-		DictionaryType type,
-		DictionaryAction action,
-		String value
-	) {
-
+	public boolean execute(DictionaryType type, DictionaryAction action, String value) {
 		return switch (action) {
 			case ADD -> add(type, value);
 			case REMOVE -> remove(type, value);
@@ -158,7 +130,6 @@ public class DictionaryAdminService {
 	}
 
 	private List<String> getAttentionAliases() {
-
 		return storage.get()
 			.dictionaries()
 			.attention()
@@ -303,9 +274,8 @@ public class DictionaryAdminService {
 		if (!removed) {
 			return false;
 		}
-
+		
 		updateSimpleDictionary(type, values);
-
 		return true;
 	}
 
