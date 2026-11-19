@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class AirAlertApiService {
@@ -33,6 +34,10 @@ public class AirAlertApiService {
 
     // ТИМЧАСОВО: дублювати ключові події перевірки API в debug-чат Telegram.
     private static final boolean DEBUG_TO_TELEGRAM = true;
+
+    // ТИМЧАСОВО: додаткові id, які теж вважаються підвищеною небезпекою
+    // (перевіряємо, під яким id вона приходить). Порожній список = вимкнено.
+    private static final List<String> HIGH_RISK_EXTRA_IDS = List.of("1066");
 
     private final AirAlertApiClient client;
     private final AppProperties properties;
@@ -48,6 +53,9 @@ public class AirAlertApiService {
 
     /** false, доки не було першого успішного опиту після старту. */
     private boolean initialized = false;
+
+    /** ТИМЧАСОВО: попередній зріз відстежуваних регіонів для debug-повідомлень. */
+    private String lastWatchSnapshot = "";
 
     /** Стан самих опитувань API (успіхи та помилки) для виводу статусу. */
     private volatile ApiCheckHealth health = ApiCheckHealth.initial();
@@ -81,6 +89,7 @@ public class AirAlertApiService {
             }
 
             ApiAlertStatus currentStatus = detectAlertStatus(alerts);
+            reportWatchedRegions(alerts);
             boolean recovered = health.consecutiveFailures() > 0;
             recordSuccess();
 
@@ -98,12 +107,12 @@ public class AirAlertApiService {
 
             if (hasStatusChanged(lastStatus, currentStatus)) {
                 log.info("API alert status changed: {} -> {}",
-                        formatStatusForLog(lastStatus),
-                        formatStatusForLog(currentStatus));
+                    formatStatusForLog(lastStatus),
+                    formatStatusForLog(currentStatus));
                 debugToTelegram("🔄 [API] Статус змінився:\n"
-                        + formatStatusForLog(lastStatus)
-                        + "\n->\n"
-                        + formatStatusForLog(currentStatus));
+                    + formatStatusForLog(lastStatus)
+                    + "\n->\n"
+                    + formatStatusForLog(currentStatus));
             } else {
                 log.debug("API alert status unchanged: {}", formatStatusForLog(currentStatus));
             }
@@ -132,9 +141,9 @@ public class AirAlertApiService {
         if (currentStatus.districtAlertActive()) {
             alertLifecycleService.enableMonitoringFromApi();
             manualAlertService.sendApiAlert(
-                    currentStatus.districtLevel() == DangerLevel.RED
-                            ? AlertType.RED_ALERT
-                            : AlertType.YELLOW_ALERT
+                currentStatus.districtLevel() == DangerLevel.RED
+                    ? AlertType.RED_ALERT
+                    : AlertType.YELLOW_ALERT
             );
         }
 
@@ -170,9 +179,7 @@ public class AirAlertApiService {
 
         // Повідомлення про заміну рівня (RED <-> YELLOW) обирає ManualAlertService
         // за останнім відомим рівнем, тому тут передаємо просто поточний рівень.
-        manualAlertService.sendApiAlert(
-                now == DangerLevel.RED ? AlertType.RED_ALERT : AlertType.YELLOW_ALERT
-        );
+        manualAlertService.sendApiAlert(now == DangerLevel.RED ? AlertType.RED_ALERT : AlertType.YELLOW_ALERT);
     }
 
     private void processHighRiskChange(ApiAlertStatus previousStatus, ApiAlertStatus currentStatus) {
@@ -196,20 +203,24 @@ public class AirAlertApiService {
         String highRiskId = properties.alertApi().highRiskRegionId();
 
         DangerLevel level = Arrays.stream(alerts)
-                .filter(Objects::nonNull)
-                .filter(alert -> districtId.equals(alert.regionId()))
-                .flatMap(alert -> extractLevels(alert).stream())
-                .max(Comparator.naturalOrder())
-                .orElse(DangerLevel.NONE);
+            .filter(Objects::nonNull)
+            .filter(alert -> districtId.equals(alert.regionId()))
+            .flatMap(alert -> extractLevels(alert).stream())
+            .max(Comparator.naturalOrder())
+            .orElse(DangerLevel.NONE);
+
+        List<String> highRiskIds = new ArrayList<>();
+        highRiskIds.add(highRiskId);
+        highRiskIds.addAll(HIGH_RISK_EXTRA_IDS);
 
         boolean highRiskActive = Arrays.stream(alerts)
-                .filter(Objects::nonNull)
-                .anyMatch(alert -> highRiskId.equals(alert.regionId()));
+            .filter(Objects::nonNull)
+            .anyMatch(alert -> highRiskIds.contains(alert.regionId()));
 
         return new ApiAlertStatus(
-                level,
-                highRiskActive,
-                LocalDateTime.now(KYIV_ZONE)
+            level,
+            highRiskActive,
+            LocalDateTime.now(KYIV_ZONE)
         );
     }
 
@@ -244,14 +255,92 @@ public class AirAlertApiService {
         return result;
     }
 
+    // ------------------------------------------------------------------
+    // ТИМЧАСОВА ДІАГНОСТИКА: при кожній зміні записів району та id
+    // підвищеної небезпеки шле в debug-чат, що саме віддає API.
+    // ------------------------------------------------------------------
+
+    private void reportWatchedRegions(RegionAlertDto[] alerts) {
+
+        try {
+
+            String snapshot = describeWatchedRegions(alerts);
+
+            if (!snapshot.equals(lastWatchSnapshot)) {
+                lastWatchSnapshot = snapshot;
+                debugToTelegram("🔎 [API] Відстежувані регіони:\n" + snapshot);
+            }
+
+        } catch (Exception e) {
+            log.warn("reportWatchedRegions failed: {}", e.getMessage());
+        }
+    }
+
+    private String describeWatchedRegions(RegionAlertDto[] alerts) {
+
+        List<String> ids = new ArrayList<>();
+        ids.add(properties.alertApi().alarmRegionId());
+        ids.add(properties.alertApi().highRiskRegionId());
+        ids.addAll(HIGH_RISK_EXTRA_IDS);
+
+        StringBuilder builder = new StringBuilder();
+
+        for (String id : ids.stream().distinct().toList()) {
+
+            List<RegionAlertDto> found = Arrays.stream(alerts)
+                .filter(Objects::nonNull)
+                .filter(alert -> id.equals(alert.regionId()))
+                .toList();
+
+            builder.append(id).append(": ");
+
+            if (found.isEmpty()) {
+                builder.append("немає");
+            } else {
+                builder.append(found.stream()
+                    .map(this::describeRegion)
+                    .collect(Collectors.joining("; ")));
+            }
+
+            builder.append("\n");
+        }
+
+        return builder.toString().trim();
+    }
+
+    private String describeRegion(RegionAlertDto region) {
+
+        String name = region.regionName() == null ? "" : region.regionName() + " ";
+
+        if (region.activeAlerts() == null || region.activeAlerts().isEmpty()) {
+            return name + "є (без activeAlerts)";
+        }
+
+        return name + region.activeAlerts().stream()
+            .filter(Objects::nonNull)
+            .map(alert -> alert.type() + levelsOf(alert))
+            .collect(Collectors.joining(", "));
+    }
+
+    private String levelsOf(ActiveAlertDto alert) {
+
+        if (alert.activeAlertLevels() == null || alert.activeAlertLevels().isEmpty()) {
+            return "";
+        }
+
+        return alert.activeAlertLevels().stream()
+                .filter(Objects::nonNull)
+                .map(ActiveAlertLevelDto::alertLevel)
+                .collect(Collectors.joining(",", "[", "]"));
+    }
+
     private boolean hasStatusChanged(ApiAlertStatus previousStatus, ApiAlertStatus currentStatus) {
         return previousStatus.districtLevel() != currentStatus.districtLevel()
-                || previousStatus.highRiskActive() != currentStatus.highRiskActive();
+            || previousStatus.highRiskActive() != currentStatus.highRiskActive();
     }
 
     private String formatStatusForLog(ApiAlertStatus status) {
-        return "districtLevel=" + status.districtLevel()
-                + ", highRiskActive=" + status.highRiskActive();
+        return "districtLevel=" + status.districtLevel() + ", highRiskActive=" + status.highRiskActive();
     }
 
     public ApiAlertStatus getLastStatus() {
@@ -292,10 +381,7 @@ public class AirAlertApiService {
     }
 
     private String describeError(Exception e) {
-
-        String text = e.getClass().getSimpleName()
-                + (e.getMessage() == null ? "" : ": " + e.getMessage());
-
+        String text = e.getClass().getSimpleName() + (e.getMessage() == null ? "" : ": " + e.getMessage());
         return text.length() > 300 ? text.substring(0, 300) + "..." : text;
     }
 }
