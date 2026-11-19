@@ -22,7 +22,6 @@ public class LocationAdminService {
 	}
 
 	public synchronized List<String> getLocations() {
-
 		return storage.get()
 			.dictionaries()
 			.locations()
@@ -32,7 +31,6 @@ public class LocationAdminService {
 	}
 
 	public synchronized List<String> getCategories() {
-
 		return storage.get()
 			.dictionaries()
 			.locations()
@@ -155,7 +153,6 @@ public class LocationAdminService {
 			currentConfig.noise(),
 			currentConfig.messageIntents()
 		));
-
 		return true;
 	}
 
@@ -201,10 +198,8 @@ public class LocationAdminService {
 				currentConfig.noise(),
 				currentConfig.messageIntents()
 			));
-
 			return true;
 		}
-
 		return false;
 	}
 

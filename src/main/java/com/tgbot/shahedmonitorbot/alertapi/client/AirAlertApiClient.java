@@ -14,8 +14,7 @@ public class AirAlertApiClient {
     private final RestClient restClient;
     private final AppProperties properties;
 
-    private static final Logger log =
-            LoggerFactory.getLogger(AirAlertApiClient.class);
+    private static final Logger log = LoggerFactory.getLogger(AirAlertApiClient.class);
 
     public AirAlertApiClient(
             RestClient.Builder restClientBuilder,
@@ -28,18 +27,17 @@ public class AirAlertApiClient {
                 properties.alertApi().apiKey())
                 .build();
 
-        log.info("Alert API client initialized. Base URL: {}, API key exists: {}", 
-                properties.alertApi().baseUrl(),
-                !properties.alertApi().apiKey().isBlank());
+        log.info("Alert API client initialized. Base URL: {}, API key exists: {}",
+            properties.alertApi().baseUrl(), !properties.alertApi().apiKey().isBlank());
     }
 
     public RegionAlertDto[] fetchAlerts() {
 
         try {
             return this.restClient.get()
-                    .uri("/alerts")
-                    .retrieve()
-                    .body(RegionAlertDto[].class);
+                .uri("/alerts")
+                .retrieve()
+                .body(RegionAlertDto[].class);
         } catch (Exception e) {
             log.error("Alert API request failed: ", e);
             throw e;

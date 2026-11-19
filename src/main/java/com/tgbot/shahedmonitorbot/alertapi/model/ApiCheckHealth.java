@@ -6,10 +6,10 @@ import java.time.LocalDateTime;
  * Стан самих опитувань API: коли востаннє вдалося, коли була помилка і яка.
  */
 public record ApiCheckHealth(
-        LocalDateTime lastSuccessAt,
-        LocalDateTime lastErrorAt,
-        String lastError,
-        int consecutiveFailures
+    LocalDateTime lastSuccessAt,
+    LocalDateTime lastErrorAt,
+    String lastError,
+    int consecutiveFailures
 ) {
 
     public static ApiCheckHealth initial() {

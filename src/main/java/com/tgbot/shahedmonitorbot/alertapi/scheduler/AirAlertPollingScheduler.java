@@ -11,8 +11,7 @@ import org.springframework.stereotype.Component;
 public class AirAlertPollingScheduler {
 
     private final AirAlertApiService service;
-    private static final Logger log =
-            LoggerFactory.getLogger(AirAlertPollingScheduler.class);
+    private static final Logger log = LoggerFactory.getLogger(AirAlertPollingScheduler.class);
 
     public AirAlertPollingScheduler(AirAlertApiService service) {
         this.service = service;

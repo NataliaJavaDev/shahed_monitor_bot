@@ -51,7 +51,6 @@ public class TdLibAuthorizationService {
 
     @PostConstruct
     public void startAuthorization() {
-
         Thread thread = new Thread(this::authorizationLoop);
         thread.setName("tdlib-authorization-thread");
         thread.start();
@@ -93,7 +92,7 @@ public class TdLibAuthorizationService {
                         "@type": "checkDatabaseEncryptionKey",
                         "encryption_key": ""
                         }
-                        """);
+                    """);
             }
 
             if (update.contains("\"authorizationStateWaitPhoneNumber\"")) {
@@ -108,7 +107,6 @@ public class TdLibAuthorizationService {
                     log.warn("TDLib is waiting for authentication code");
                     continue;
                 }
-
                 submitAuthenticationCode(code);
             }
 
@@ -119,7 +117,6 @@ public class TdLibAuthorizationService {
                     log.warn("TDLib is waiting for 2FA password");
                     continue;
                 }
-
                 submitTwoFactorPassword(password);
             }
 
@@ -128,7 +125,6 @@ public class TdLibAuthorizationService {
                 log.info("TDLib authorization ready");
 
                 tdLibAdminChatDiscoveryService.start();
-
                 requestChats();
             }
 
@@ -137,7 +133,6 @@ public class TdLibAuthorizationService {
                     || update.contains("\"authorizationStateLoggingOut\"")) {
 
                 tdLibStatusService.markNotReady();
-
                 log.warn("TDLib authorization is not ready");
             }
         }
@@ -161,11 +156,11 @@ public class TdLibAuthorizationService {
                   "application_version": "1.0",
                   "enable_storage_optimizer": true
                 }
-                """.formatted(
-                tdlib.databaseDirectory(),
-                tdlib.filesDirectory(),
-                tdlib.apiId(),
-                tdlib.apiHash()
+            """.formatted(
+            tdlib.databaseDirectory(),
+            tdlib.filesDirectory(),
+            tdlib.apiId(),
+            tdlib.apiHash()
         ));
     }
 
@@ -176,7 +171,6 @@ public class TdLibAuthorizationService {
             log.warn("TDLib phone number is empty");
             return;
         }
-
         submitPhoneNumber(phoneNumber);
     }
 
@@ -193,7 +187,7 @@ public class TdLibAuthorizationService {
             },
             "limit":100
             }
-            """);
+        """);
     }
 
     private void requestChatDetails(String update) {
@@ -226,7 +220,7 @@ public class TdLibAuthorizationService {
                         "chat_id": %s,
                         "@extra": "TDLIB_ADMIN_DISCOVERY_GET_CHAT"
                     }
-                    """.formatted(chatId));
+                """.formatted(chatId));
         }
     }
 
@@ -240,11 +234,11 @@ public class TdLibAuthorizationService {
         tdLibAuthFileService.savePhoneNumber(value);
 
         tdLibClientService.send("""
-                {
-                "@type": "setAuthenticationPhoneNumber",
-                "phone_number": %s
-                }
-                """.formatted(toJson(value)));
+            {
+            "@type": "setAuthenticationPhoneNumber",
+            "phone_number": %s
+            }
+        """.formatted(toJson(value)));
 
         log.info("TDLib phone number submitted");
     }
@@ -262,7 +256,7 @@ public class TdLibAuthorizationService {
                 "@type": "checkAuthenticationCode",
                 "code": %s
                 }
-                """.formatted(toJson(value)));
+            """.formatted(toJson(value)));
 
         log.info("TDLib authentication code submitted");
     }
@@ -279,7 +273,7 @@ public class TdLibAuthorizationService {
                 "@type": "checkAuthenticationPassword",
                 "password": %s
                 }
-                """.formatted(toJson(password)));
+            """.formatted(toJson(password)));
 
         log.info("TDLib 2FA password submitted");
     }
@@ -291,5 +285,4 @@ public class TdLibAuthorizationService {
             throw new IllegalStateException("Cannot encode TDLib request value", e);
         }
     }
-
 }

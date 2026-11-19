@@ -23,16 +23,16 @@ public class MessageAnalysisService {
     private final MonitoringStateService monitoringStateService;
 
     public MessageAnalysisService(
-            MonitorFilterService monitorFilterService,
-            ContextResolverService contextResolverService,
-            DeduplicationService deduplicationService,
-            EventContextService eventContextService,
-            MessageIntentDetectorService messageIntentDetectorService,
-            ThreatDetectorService threatDetectorService,
-            GlobalThreatDetectorService globalThreatDetectorService,
-            ForecastDetectorService forecastDetectorService,
-            MessagePreprocessorService messagePreprocessorService,
-            MonitoringStateService monitoringStateService
+        MonitorFilterService monitorFilterService,
+        ContextResolverService contextResolverService,
+        DeduplicationService deduplicationService,
+        EventContextService eventContextService,
+        MessageIntentDetectorService messageIntentDetectorService,
+        ThreatDetectorService threatDetectorService,
+        GlobalThreatDetectorService globalThreatDetectorService,
+        ForecastDetectorService forecastDetectorService,
+        MessagePreprocessorService messagePreprocessorService,
+        MonitoringStateService monitoringStateService
     ) {
         this.monitorFilterService = monitorFilterService;
         this.contextResolverService = contextResolverService;
@@ -77,21 +77,18 @@ public class MessageAnalysisService {
             }
 
             return analyzeMatch(
-                    chatId,
-                    match.get(),
-                    intent,
-                    contextRestored,
-                    cleanedText
+                chatId,
+                match.get(),
+                intent,
+                contextRestored,
+                cleanedText
             );
         }
 
         Optional<GlobalThreatMatch> globalThreat = globalThreatDetectorService.findGlobalThreat(cleanedText);
 
         if (globalThreat.isPresent()) {
-            return analyzeGlobalThreat(
-                    globalThreat.get(),
-                    cleanedText
-            );
+            return analyzeGlobalThreat(globalThreat.get(), cleanedText);
         }
 
         Optional<ForecastMatch> forecast = forecastDetectorService.findForecast(cleanedText);
@@ -103,16 +100,15 @@ public class MessageAnalysisService {
         if (intent == MessageIntent.THREAT_DETECTED) {
             return analyzeThreat(cleanedText, intent);
         }
-
         return null;
     }
 
     private MessageAnalysis analyzeMatch(
-            String chatId,
-            MonitorMatch initialMatch,
-            MessageIntent intent,
-            boolean contextRestored,
-            String text
+        String chatId,
+        MonitorMatch initialMatch,
+        MessageIntent intent,
+        boolean contextRestored,
+        String text
     ) {
 
         MessageIntent finalIntent = resolveFinalIntent(intent, initialMatch, contextRestored);
@@ -127,15 +123,15 @@ public class MessageAnalysisService {
         }
 
         return new MessageAnalysis(
-                finalMatch,
-                null,
-                null,
-                null,
-                finalIntent,
-                duplicate,
-                resolution.contextUsed() || contextRestored,
-                deduplicationKey,
-                text
+            finalMatch,
+            null,
+            null,
+            null,
+            finalIntent,
+            duplicate,
+            resolution.contextUsed() || contextRestored,
+            deduplicationKey,
+            text
         );
     }
 
@@ -168,9 +164,9 @@ public class MessageAnalysisService {
     }
 
     private MessageIntent resolveFinalIntent(
-            MessageIntent detectedIntent,
-            MonitorMatch match,
-            boolean contextRestored
+        MessageIntent detectedIntent,
+        MonitorMatch match,
+        boolean contextRestored
     ) {
         
         if (contextRestored) {
@@ -180,67 +176,62 @@ public class MessageAnalysisService {
         if (match.matchType() == MatchType.TARGET_AND_LOCATION) {
             return MessageIntent.NEW_EVENT;
         }
-
         return detectedIntent;
     }
 
     private MessageAnalysis analyzeThreat(String text, MessageIntent intent) {
         return threatDetectorService.findThreat(text)
-                .map(threatMatch -> {
-                    String deduplicationKey = deduplicationService.buildThreatDeduplicationKey(threatMatch);
-
-                    boolean duplicate = deduplicationService.isDuplicate(threatMatch);
-
-                    return new MessageAnalysis(
-                            null,
-                            threatMatch,
-                            null,
-                            null,
-                            intent,
-                            duplicate,
-                            false,
-                            deduplicationKey,
-                            text
-                    );
-                })
-                .orElse(null);
+            .map(threatMatch -> {
+                String deduplicationKey = deduplicationService.buildThreatDeduplicationKey(threatMatch);
+                boolean duplicate = deduplicationService.isDuplicate(threatMatch);
+                return new MessageAnalysis(
+                    null,
+                    threatMatch,
+                    null,
+                    null,
+                    intent,
+                    duplicate,
+                    false,
+                    deduplicationKey,
+                    text
+                );
+            })
+            .orElse(null);
     }
 
     private MessageAnalysis analyzeGlobalThreat(GlobalThreatMatch globalThreatMatch, String text) {
 
         String deduplicationKey = deduplicationService.buildGlobalThreatDeduplicationKey(globalThreatMatch);
-
         boolean duplicate = deduplicationService.isDuplicate(globalThreatMatch);
 
         return new MessageAnalysis(
-                null,
-                null,
-                globalThreatMatch,
-                null,
-                MessageIntent.GLOBAL_THREAT,
-                duplicate,
-                false,
-                deduplicationKey,
-                text
+            null,
+            null,
+            globalThreatMatch,
+            null,
+            MessageIntent.GLOBAL_THREAT,
+            duplicate,
+            false,
+            deduplicationKey,
+            text
         );
     }
 
     private MessageAnalysis analyzeForecast(ForecastMatch forecastMatch, String text) {
 
         String deduplicationKey = deduplicationService.buildForecastDeduplicationKey(forecastMatch);
-
         boolean duplicate = deduplicationService.isDuplicate(forecastMatch);
 
         return new MessageAnalysis(
-                null,
-                null,
-                null,
-                forecastMatch,
-                MessageIntent.FORECAST,
-                duplicate,
-                false,
-                deduplicationKey,
-                text
+            null,
+            null,
+            null,
+            forecastMatch,
+            MessageIntent.FORECAST,
+            duplicate,
+            false,
+            deduplicationKey,
+            text
         );
     }
 }

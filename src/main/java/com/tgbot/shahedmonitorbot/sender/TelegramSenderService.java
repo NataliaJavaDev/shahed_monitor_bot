@@ -89,11 +89,7 @@ public class TelegramSenderService {
         try {
 
             telegramClient.execute(message);
-
-            log.info("Telegram message {} edited in chat {}",
-                messageId,
-                chatId
-            );
+            log.info("Telegram message {} edited in chat {}", messageId, chatId);
 
         } catch (Exception exception) {
 
@@ -118,11 +114,8 @@ public class TelegramSenderService {
             .build();
 
         try {
-
             telegramClient.execute(answer);
-
         } catch (Exception exception) {
-
             log.error("Telegram callback answer error", exception);
         }
     }
@@ -139,16 +132,11 @@ public class TelegramSenderService {
 
             telegramClient.execute(photo);
             log.info("Telegram photo sent to chat {}", chatId);
-
             return true;
 
         } catch (Exception exception) {
 
-            log.error("Telegram photo send error. Chat: {}",
-                chatId,
-                exception
-            );
-
+            log.error("Telegram photo send error. Chat: {}", chatId, exception);
             return false;
         }
     }
@@ -156,12 +144,8 @@ public class TelegramSenderService {
     private void execute(SendMessage message) {
 
         try {
-
             telegramClient.execute(message);
-            log.info("Telegram message sent to chat {}",
-                message.getChatId()
-            );
-
+            log.info("Telegram message sent to chat {}", message.getChatId());
         } catch (Exception exception) {
             log.error("Telegram send error", exception);
         }

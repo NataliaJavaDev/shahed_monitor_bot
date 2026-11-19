@@ -5,15 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tgbot.shahedmonitorbot.admin.enums.SourceStatus;
 import com.tgbot.shahedmonitorbot.config.AppProperties;
-import com.tgbot.shahedmonitorbot.monitoring.source.ChatInfoService;
-import com.tgbot.shahedmonitorbot.monitoring.source.MonitoredSourceService;
-import com.tgbot.shahedmonitorbot.monitoring.source.UnknownSourceCandidateService;
-import com.tgbot.shahedmonitorbot.processing.AlertMessageFormatter;
-import com.tgbot.shahedmonitorbot.processing.MessageAnalysis;
-import com.tgbot.shahedmonitorbot.processing.MessageAnalysisService;
-import com.tgbot.shahedmonitorbot.processing.MessageIntent;
-import com.tgbot.shahedmonitorbot.sender.AnalysisMessageFormatter;
-import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
+import com.tgbot.shahedmonitorbot.monitoring.source.*;
+import com.tgbot.shahedmonitorbot.processing.*;
+import com.tgbot.shahedmonitorbot.sender.*;
 import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
 
 import org.slf4j.Logger;
@@ -38,18 +32,18 @@ public class TdLibUpdateHandler {
     private final MonitoringStateService monitoringStateService;
 
     public TdLibUpdateHandler(
-            ObjectMapper objectMapper,
-            AppProperties appProperties,
-            ChatInfoService chatInfoService,
-            MonitoredSourceService monitoredSourceService,
-            UnknownSourceCandidateService unknownSourceCandidateService,
-            AnalysisMessageFormatter analysisMessageFormatter,
-            AlertMessageFormatter alertMessageFormatter,
-            TelegramSenderService telegramSenderService,
-            MessageAnalysisService messageAnalysisService,
-            PendingPhotoMessageService pendingPhotoMessageService,
-            TdLibClientService tdLibClientService,
-            MonitoringStateService monitoringStateService
+        ObjectMapper objectMapper,
+        AppProperties appProperties,
+        ChatInfoService chatInfoService,
+        MonitoredSourceService monitoredSourceService,
+        UnknownSourceCandidateService unknownSourceCandidateService,
+        AnalysisMessageFormatter analysisMessageFormatter,
+        AlertMessageFormatter alertMessageFormatter,
+        TelegramSenderService telegramSenderService,
+        MessageAnalysisService messageAnalysisService,
+        PendingPhotoMessageService pendingPhotoMessageService,
+        TdLibClientService tdLibClientService,
+        MonitoringStateService monitoringStateService
     ) {
         this.objectMapper = objectMapper;
         this.appProperties = appProperties;
@@ -79,7 +73,6 @@ public class TdLibUpdateHandler {
                     chat.path("id").asText(),
                     chat.path("title").asText()
                 );
-
                 return;
             }
 
@@ -88,7 +81,6 @@ public class TdLibUpdateHandler {
                     root.path("chat_id").asText(),
                     root.path("title").asText()
                 );
-
                 return;
             }
 
@@ -124,7 +116,6 @@ public class TdLibUpdateHandler {
                     chatInfoService.getTitle(chatId),
                     text
                 );
-
                 return;
             }
 
@@ -181,10 +172,7 @@ public class TdLibUpdateHandler {
 
             telegramSenderService.sendToChat(
                 appProperties.telegram().targetChannelId(),
-                alertMessageFormatter.format(
-                    source.title(),
-                    analysis.originalMessage()
-                )
+                alertMessageFormatter.format(source.title(), analysis.originalMessage())
             );
 
             telegramSenderService.sendToChat(
@@ -231,7 +219,6 @@ public class TdLibUpdateHandler {
 
             return new TdMessageContent(text, photoFileId);
         }
-
         return new TdMessageContent("", null);
     }
 
@@ -261,7 +248,6 @@ public class TdLibUpdateHandler {
         }
 
         int fileId = largestSize.path("photo").path("id").asInt(0);
-
         return fileId > 0 ? fileId : null;
     }
 
@@ -316,11 +302,7 @@ public class TdLibUpdateHandler {
                 log.info("Downloaded Telegram photo deleted: {}", localPath);
 
             } catch (Exception exception) {
-
-                log.error("Failed to delete downloaded Telegram photo: {}",
-                    localPath,
-                    exception
-                );
+                log.error("Failed to delete downloaded Telegram photo: {}",localPath, exception);
             }
         }
     }
@@ -329,10 +311,7 @@ public class TdLibUpdateHandler {
 
         telegramSenderService.sendToChat(
             appProperties.telegram().targetChannelId(),
-            alertMessageFormatter.format(
-                sourceTitle,
-                analysis.originalMessage()
-            )
+            alertMessageFormatter.format(sourceTitle, analysis.originalMessage())
         );
 
         telegramSenderService.sendToChat(

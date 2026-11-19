@@ -1,6 +1,7 @@
 package com.tgbot.shahedmonitorbot.manualalert;
 
 public enum AlertType {
+    
     RED_ALERT,
     YELLOW_ALERT,
     RED_TO_YELLOW,

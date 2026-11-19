@@ -1,7 +1,7 @@
 package com.tgbot.shahedmonitorbot.processing;
 
 public record ContextResolution(
-        MonitorMatch match,
-        boolean contextUsed
+    MonitorMatch match,
+    boolean contextUsed
 ) {
 }

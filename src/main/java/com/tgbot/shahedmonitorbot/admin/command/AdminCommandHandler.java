@@ -363,11 +363,10 @@ public class AdminCommandHandler {
                     tdLibAuthorizationService.submitPhoneNumber(text.trim());
                     sessionService.reset(userId);
                     senderService.sendToChat(chatId,
-                            "Номер телефону збережено та передано TDLib.\n\n" +
-                            "Коли отримаєш код Telegram, натисни «Код авторизації».");
+                        "Номер телефону збережено та передано TDLib.\n\n" +
+                        "Коли отримаєш код Telegram, натисни «Код авторизації».");
                 } catch (IllegalArgumentException | IllegalStateException e) {
-                    senderService.sendToChat(chatId,
-                            "Не вдалося передати номер телефону. Спробуй ще раз.");
+                    senderService.sendToChat(chatId,"Не вдалося передати номер телефону. Спробуй ще раз.");
                 }
                 return true;
 
@@ -381,11 +380,11 @@ public class AdminCommandHandler {
                     tdLibAuthorizationService.submitAuthenticationCode(text.trim());
                     sessionService.reset(userId);
                     senderService.sendToChat(chatId,
-                            "Код авторизації збережено та передано TDLib.\n\n" +
-                            "Якщо Telegram запросить пароль 2FA, натисни відповідну кнопку.");
+                        "Код авторизації збережено та передано TDLib.\n\n" +
+                        "Якщо Telegram запросить пароль 2FA, натисни відповідну кнопку.");
                 } catch (IllegalArgumentException | IllegalStateException e) {
                     senderService.sendToChat(chatId,
-                            "Не вдалося передати код авторизації. Спробуй ще раз.");
+                        "Не вдалося передати код авторизації. Спробуй ще раз.");
                 }
                 return true;
 
@@ -399,10 +398,10 @@ public class AdminCommandHandler {
                     tdLibAuthorizationService.submitTwoFactorPassword(text);
                     sessionService.reset(userId);
                     senderService.sendToChat(chatId,
-                            "Пароль 2FA збережено та передано TDLib.");
+                        "Пароль 2FA збережено та передано TDLib.");
                 } catch (IllegalArgumentException | IllegalStateException e) {
                     senderService.sendToChat(chatId,
-                            "Не вдалося передати пароль 2FA. Спробуй ще раз.");
+                        "Не вдалося передати пароль 2FA. Спробуй ще раз.");
                 }
                 return true;
 
@@ -626,11 +625,7 @@ public class AdminCommandHandler {
     	senderService.sendToChatWithKeyboard(
     		chatId,
     		title,
-    		dictionaryMenuService.categoriesKeyboard(
-    			type,
-    			categories,
-    			false
-    		)
+    		dictionaryMenuService.categoriesKeyboard(type, categories, false)
     	);
     }
 
@@ -657,11 +652,10 @@ public class AdminCommandHandler {
         if (categoryBased) {
 
             if (action == DictionaryAction.ADD) {
-            success = dictionaryAdminService.addAlias(type, category, value);
+                success = dictionaryAdminService.addAlias(type, category, value);
             } else {
                 success = dictionaryAdminService.removeAlias(type, category, value);
             }
-
         } else {
 
             if (action == DictionaryAction.ADD) {
@@ -679,7 +673,6 @@ public class AdminCommandHandler {
         } else {
             message = success ? AdminMessage.VALUE_IS_REMOVED.format(value) : AdminMessage.VALUE_NOT_FOUND.text();
         }
-
         senderService.sendToChat(chatId, message);
     }
 

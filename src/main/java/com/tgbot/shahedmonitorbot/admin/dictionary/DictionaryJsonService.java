@@ -23,8 +23,7 @@ public class DictionaryJsonService {
     ) {
         this.storage = storage;
         this.properties = properties;
-        this.objectMapper = new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT);
+        this.objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
     }
 
     public void save() {
@@ -36,7 +35,6 @@ public class DictionaryJsonService {
             if (parent != null) {
                 Files.createDirectories(parent);
             }
-
             objectMapper.writeValue(path.toFile(), storage.get());
 
         } catch (IOException exception) {

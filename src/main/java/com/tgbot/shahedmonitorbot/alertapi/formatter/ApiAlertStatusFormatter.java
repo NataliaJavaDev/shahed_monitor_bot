@@ -11,8 +11,7 @@ import java.time.format.DateTimeFormatter;
 @Component
 public class ApiAlertStatusFormatter {
 
-    private static final DateTimeFormatter DATE_TIME_FORMATTER =
-            DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
 
     /** Сумісність зі старими викликами: без інформації про помилки. */
     public String format(ApiAlertStatus status) {
@@ -31,25 +30,22 @@ public class ApiAlertStatusFormatter {
             builder.append("⏳ Ще не було жодної успішної перевірки API\n");
         } else {
             builder.append("Тривога по району: ")
-                    .append(describeLevel(status.districtLevel()))
-                    .append("\n");
+                .append(describeLevel(status.districtLevel())).append("\n");
 
             builder.append("Підвищена небезпека: ")
-                    .append(status.highRiskActive() ? "‼️ є" : "немає")
-                    .append("\n");
+                .append(status.highRiskActive() ? "‼️ є" : "немає данних").append("\n");
         }
 
         appendHealth(builder, health, noDataYet);
 
         LocalDateTime lastSuccess = health != null
-                ? health.lastSuccessAt()
-                : status.checkedAt();
+            ? health.lastSuccessAt()
+            : status.checkedAt();
 
         if (lastSuccess != null) {
             builder.append("\nОстання успішна перевірка API: ")
-                    .append(lastSuccess.format(DATE_TIME_FORMATTER));
+                .append(lastSuccess.format(DATE_TIME_FORMATTER));
         }
-
         return builder.toString();
     }
 
@@ -70,31 +66,25 @@ public class ApiAlertStatusFormatter {
         if (health.consecutiveFailures() > 0) {
 
             builder.append("\n⚠️ Помилка API (поспіль: ")
-                    .append(health.consecutiveFailures())
-                    .append(")\n");
+                .append(health.consecutiveFailures()).append(")\n");
 
             builder.append("Помилка: ")
-                    .append(health.lastError())
-                    .append("\n");
+                .append(health.lastError()).append("\n");
 
             builder.append("Час: ")
-                    .append(health.lastErrorAt().format(DATE_TIME_FORMATTER))
-                    .append("\n");
+                .append(health.lastErrorAt().format(DATE_TIME_FORMATTER)).append("\n");
 
             if (!noDataYet) {
                 builder.append("Дані вище можуть бути застарілими.\n");
             }
-
             return;
         }
 
         if (health.lastError() != null) {
 
             builder.append("\nОстання помилка (вже відновлено): ")
-                    .append(health.lastError())
-                    .append(" (")
-                    .append(health.lastErrorAt().format(DATE_TIME_FORMATTER))
-                    .append(")\n");
+                .append(health.lastError()).append(" (")
+                .append(health.lastErrorAt().format(DATE_TIME_FORMATTER)).append(")\n");
         }
     }
 }

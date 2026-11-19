@@ -23,7 +23,7 @@ public class TdLibClientService {
                 {
                   "@type": "getAuthorizationState"
                 }
-                """);
+            """);
     }
 
     public int getClientId() {
@@ -44,14 +44,14 @@ public class TdLibClientService {
 
     public void downloadFile(int fileId) {
         send("""
-                {
+            {
                 "@type": "downloadFile",
                 "file_id": %d,
                 "priority": 32,
                 "offset": 0,
                 "limit": 0,
                 "synchronous": false
-                }
-                """.formatted(fileId));
+            }
+        """.formatted(fileId));
     }
 }

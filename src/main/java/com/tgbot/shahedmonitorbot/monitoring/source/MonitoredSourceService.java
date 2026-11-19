@@ -24,12 +24,10 @@ public class MonitoredSourceService {
     }
 
     public synchronized List<MonitoredSource> getAllSources() {
-
         return List.copyOf(getConfig().sources());
     }
 
     public synchronized List<MonitoredSource> getActiveSources() {
-
         return getConfig()
             .sources()
             .stream()
@@ -38,7 +36,6 @@ public class MonitoredSourceService {
     }
 
     public synchronized List<MonitoredSource> getIgnoredSources() {
-
         return getConfig()
             .sources()
             .stream()
@@ -65,7 +62,6 @@ public class MonitoredSourceService {
     }
 
     public synchronized boolean isMonitored(String chatId) {
-
         MonitoredSource source = findByChatId(chatId);
         return source != null && source.status() == SourceStatus.ACTIVE;
     }
@@ -84,7 +80,6 @@ public class MonitoredSourceService {
 
         sources.add(new MonitoredSource(chatId, safeTitle(title), status));
         replaceSources(sources);
-
         return true;
     }
 
@@ -122,17 +117,13 @@ public class MonitoredSourceService {
 
             sources.set(index, new MonitoredSource(current.chatId(), current.title(), status));
             replaceSources(sources);
-
             return true;
         }
-
         return false;
     }
 
     private void replaceSources(List<MonitoredSource> sources) {
-
         DynamicConfig current = getConfig();
-
         storage.replace(new DynamicConfig(current.dictionaries(), List.copyOf(sources)));
         jsonService.save();
     }
@@ -142,7 +133,6 @@ public class MonitoredSourceService {
         if (title == null || title.isBlank()) {
             return "Невідоме джерело";
         }
-
         return title.trim();
     }
 
@@ -153,7 +143,6 @@ public class MonitoredSourceService {
         if (config == null) {
             throw new IllegalStateException("Dynamic configuration is not initialized");
         }
-    
         return config;
     }
 }
