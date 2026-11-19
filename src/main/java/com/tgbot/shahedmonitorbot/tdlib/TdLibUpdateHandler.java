@@ -12,15 +12,10 @@ import com.tgbot.shahedmonitorbot.processing.AlertMessageFormatter;
 import com.tgbot.shahedmonitorbot.processing.MessageAnalysis;
 import com.tgbot.shahedmonitorbot.processing.MessageAnalysisService;
 import com.tgbot.shahedmonitorbot.processing.MessageIntent;
-import com.tgbot.shahedmonitorbot.processing.RecentMessageCacheService;
 import com.tgbot.shahedmonitorbot.sender.AnalysisMessageFormatter;
 import com.tgbot.shahedmonitorbot.sender.TelegramSenderService;
-import com.tgbot.shahedmonitorbot.tdlib.history.TdHistoryMessage;
 import com.tgbot.shahedmonitorbot.monitoring.MonitoringStateService;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +33,6 @@ public class TdLibUpdateHandler {
     private final AlertMessageFormatter alertMessageFormatter;
     private final TelegramSenderService telegramSenderService;
     private final MessageAnalysisService messageAnalysisService;
-    private final RecentMessageCacheService recentMessageCacheService;
     private final PendingPhotoMessageService pendingPhotoMessageService;
     private final TdLibClientService tdLibClientService;
     private final MonitoringStateService monitoringStateService;
@@ -53,7 +47,6 @@ public class TdLibUpdateHandler {
             AlertMessageFormatter alertMessageFormatter,
             TelegramSenderService telegramSenderService,
             MessageAnalysisService messageAnalysisService,
-            RecentMessageCacheService recentMessageCacheService,
             PendingPhotoMessageService pendingPhotoMessageService,
             TdLibClientService tdLibClientService,
             MonitoringStateService monitoringStateService
@@ -67,7 +60,6 @@ public class TdLibUpdateHandler {
         this.alertMessageFormatter = alertMessageFormatter;
         this.telegramSenderService = telegramSenderService;
         this.messageAnalysisService = messageAnalysisService;
-        this.recentMessageCacheService = recentMessageCacheService;
         this.pendingPhotoMessageService = pendingPhotoMessageService;
         this.tdLibClientService = tdLibClientService;
         this.monitoringStateService = monitoringStateService;
@@ -117,20 +109,6 @@ public class TdLibUpdateHandler {
             if (chatId.equals(appProperties.telegram().targetChannelId())) {
                 return;
             }
-
-            recentMessageCacheService.add(
-                chatId,
-                new TdHistoryMessage(
-                    message.path("id").asLong(),
-                    LocalDateTime.ofInstant(
-                        Instant.ofEpochSecond(
-                            message.path("date").asLong()
-                        ),
-                        ZoneId.of("Europe/Kyiv")
-                    ),
-                    text
-                )
-            );
 
             var source = monitoredSourceService.findByChatId(chatId);
 

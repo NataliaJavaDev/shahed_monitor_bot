@@ -1,7 +1,6 @@
 package com.tgbot.shahedmonitorbot.tdlib;
 
 import com.tgbot.shahedmonitorbot.config.AppProperties;
-import com.tgbot.shahedmonitorbot.monitoring.history.RecentHistoryBootstrapService;
 import com.tgbot.shahedmonitorbot.tdlib.history.TdLibHistoryRequestService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,7 +21,6 @@ public class TdLibAuthorizationService {
     private final TemporaryHistoryExportService temporaryHistoryExportService;
     private final TdLibHistoryRequestService tdLibHistoryRequestService;
     private final TdLibStatusService tdLibStatusService;
-    private final RecentHistoryBootstrapService recentHistoryBootstrapService;
     private final TdLibAuthFileService tdLibAuthFileService;
     private final ObjectMapper objectMapper;
     private final TdLibAdminChatDiscoveryService tdLibAdminChatDiscoveryService;
@@ -37,7 +35,6 @@ public class TdLibAuthorizationService {
         TemporaryHistoryExportService temporaryHistoryExportService,
         TdLibHistoryRequestService tdLibHistoryRequestService,
         TdLibStatusService tdLibStatusService,
-        RecentHistoryBootstrapService recentHistoryBootstrapService,
         TdLibAuthFileService tdLibAuthFileService,
         ObjectMapper objectMapper,
         TdLibAdminChatDiscoveryService tdLibAdminChatDiscoveryService
@@ -48,7 +45,6 @@ public class TdLibAuthorizationService {
         this.temporaryHistoryExportService = temporaryHistoryExportService;
         this.tdLibHistoryRequestService = tdLibHistoryRequestService;
         this.tdLibStatusService = tdLibStatusService;
-        this.recentHistoryBootstrapService = recentHistoryBootstrapService;
         this.tdLibAuthFileService = tdLibAuthFileService;
         this.objectMapper = objectMapper;
         this.tdLibAdminChatDiscoveryService = tdLibAdminChatDiscoveryService;
@@ -85,7 +81,7 @@ public class TdLibAuthorizationService {
                 log.info("TDLib chats loaded");
 
                 requestChatDetails(update);
-                recentHistoryBootstrapService.bootstrap();
+                // temporaryHistoryExportService.startExport(java.time.Duration.ofHours(2));
             }
 
             if (update.contains("\"authorizationStateWaitTdlibParameters\"")) {
