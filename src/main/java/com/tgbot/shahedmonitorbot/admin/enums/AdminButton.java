@@ -28,6 +28,13 @@ public enum AdminButton {
     ADD_MESSAGE_INTENTS("➕ Додати слово"),
     REMOVE_MESSAGE_INTENTS("➖ Видалити слово"),
 
+    MANAGE("⚙️ Керування"),
+
+    MANAGE_ADMINS("👤 Керування адмінами"),
+    SHOW_ADMINS("📋 Показати адмінів"),
+    ADD_ADMIN("➕ Додати адміна"),
+    REMOVE_ADMIN("➖ Видалити адміна"),
+
     ALERTS("🚨 Керування тривогами"),
     RED_ALERT("🔴 Червоний рівень небезпеки"),
     YELLOW_ALERT("🟡 Жовтий рівень небезпеки"),

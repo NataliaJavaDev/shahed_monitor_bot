@@ -19,7 +19,7 @@ public class AdminMenuService {
 
         KeyboardRow row1 = new KeyboardRow();
         row1.add(AdminButton.KEYWORDS.text());
-        row1.add(AdminButton.ALERTS.text());
+        row1.add(AdminButton.MANAGE.text());
 
         KeyboardRow row2 = new KeyboardRow();
         row2.add(AdminButton.STATUS.text());
@@ -59,6 +59,33 @@ public class AdminMenuService {
         KeyboardRow row2 = new KeyboardRow();
         row2.add(AdminButton.ADD_VALUE.text());
         row2.add(AdminButton.REMOVE_VALUE.text());
+
+        KeyboardRow row3 = new KeyboardRow();
+        row3.add(AdminButton.BACK.text());
+
+        return buildKeyboard(List.of(row1, row2, row3));
+    }
+
+    public ReplyKeyboardMarkup manageReplyKeyboard() {
+
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add(AdminButton.MANAGE_ADMINS.text());
+        row1.add(AdminButton.ALERTS.text());
+
+        KeyboardRow row2 = new KeyboardRow();
+        row2.add(AdminButton.BACK.text());
+
+        return buildKeyboard(List.of(row1, row2));
+    }
+
+    public ReplyKeyboardMarkup adminManageReplyKeyboard() {
+
+        KeyboardRow row1 = new KeyboardRow();
+        row1.add(AdminButton.SHOW_ADMINS.text());
+
+        KeyboardRow row2 = new KeyboardRow();
+        row2.add(AdminButton.ADD_ADMIN.text());
+        row2.add(AdminButton.REMOVE_ADMIN.text());
 
         KeyboardRow row3 = new KeyboardRow();
         row3.add(AdminButton.BACK.text());

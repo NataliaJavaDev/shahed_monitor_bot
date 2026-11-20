@@ -508,8 +508,32 @@ public class AdminCommandHandler {
                 requestDictionaryInput(userId, chatId, currentType2, DictionaryAction.REMOVE, AdminMessage.REMOVE_VALUE.text());
                 return true;
 
+            case MANAGE:
+                senderService.sendToChatWithReplyKeyboard(chatId, AdminMessage.MANAGE_MENU.text(),
+                    menuService.manageReplyKeyboard());
+                return true;
+
+            case MANAGE_ADMINS:
+                senderService.sendToChatWithReplyKeyboard(chatId, AdminMessage.MANAGE_ADMINS_MENU.text(),
+                    menuService.adminManageReplyKeyboard());
+                return true;
+
+
+            //Заглушки для кнопок керування адмінами
+            case SHOW_ADMINS:
+                return true;
+
+            case ADD_ADMIN:
+                return true;
+
+            case REMOVE_ADMIN:
+                return true;
+
+            //-----------------------------
+
             case ALERTS:
-                senderService.sendToChatWithReplyKeyboard(chatId, AdminMessage.ALERT_MENU_TITLE.text(), menuService.alertReplyKeyboard());
+                senderService.sendToChatWithReplyKeyboard(chatId, AdminMessage.ALERT_MENU_TITLE.text(), 
+                    menuService.alertReplyKeyboard());
                 return true;
 
             case RED_ALERT:
