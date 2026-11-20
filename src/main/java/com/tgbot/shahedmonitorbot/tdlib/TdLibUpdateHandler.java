@@ -165,8 +165,12 @@ public class TdLibUpdateHandler {
                 return;
             }
 
+            // if (analysis.intent() == MessageIntent.FORECAST) {
+            //     sendSpecialAnalysis(analysis, source.title());
+            //     return;
+            // }
+
             if (analysis.intent() == MessageIntent.FORECAST) {
-                sendSpecialAnalysis(analysis, source.title());
                 return;
             }
 
